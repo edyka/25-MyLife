@@ -1,4 +1,4 @@
-import React, { memo } from 'react'; // eslint-disable-line no-unused-vars
+import { memo } from 'react';
 import { Plus, Edit3, X, Save } from 'lucide-react';
 
 const MilestonePanel = ({ 

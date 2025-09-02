@@ -1,22 +1,75 @@
-export const saveToLocalStorage = (birthDay, birthMonth, birthYear, lifeExpectancy, milestones, customCategories = {}, goals = []) => {
-  const data = { birthDay, birthMonth, birthYear, lifeExpectancy, milestones, customCategories, goals };
-  localStorage.setItem('lifeWeeksData', JSON.stringify(data));
+import {
+  saveToSecureStorage,
+  loadFromSecureStorage,
+  exportSecureData,
+  migrateFromLegacyStorage,
+} from "./secureStorage.js";
+
+export const saveToLocalStorage = (
+  birthDay,
+  birthMonth,
+  birthYear,
+  lifeExpectancy,
+  milestones,
+  customCategories = {},
+  goals = []
+) => {
+  try {
+    return saveToSecureStorage(
+      birthDay,
+      birthMonth,
+      birthYear,
+      lifeExpectancy,
+      milestones,
+      customCategories,
+      goals
+    );
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+       
+      console.error("Failed to save data:", error);
+    }
+    return false;
+  }
 };
 
 export const loadFromLocalStorage = () => {
-  const saved = localStorage.getItem('lifeWeeksData');
-  if (saved) {
-    return JSON.parse(saved);
+  try {
+    migrateFromLegacyStorage();
+    return loadFromSecureStorage();
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+       
+      console.error("Failed to load data:", error);
+    }
+    return null;
   }
-  return null;
 };
 
-export const exportData = (birthDay, birthMonth, birthYear, lifeExpectancy, milestones, customCategories = {}, goals = []) => {
-  const data = { birthDay, birthMonth, birthYear, lifeExpectancy, milestones, customCategories, goals };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'my-life-in-weeks.json';
-  a.click();
+export const exportData = (
+  birthDay,
+  birthMonth,
+  birthYear,
+  lifeExpectancy,
+  milestones,
+  customCategories = {},
+  goals = []
+) => {
+  try {
+    return exportSecureData(
+      birthDay,
+      birthMonth,
+      birthYear,
+      lifeExpectancy,
+      milestones,
+      customCategories,
+      goals
+    );
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+       
+      console.error("Failed to export data:", error);
+    }
+    return false;
+  }
 };

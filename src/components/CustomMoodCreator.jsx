@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import { Plus, Palette, Save, X, Heart, Smile, Sun, Star, Target, Zap } from 'lucide-react';
 
 const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
@@ -58,37 +57,28 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
   return (
     <div>
       {/* Add Custom Mood Button */}
-      <motion.button
+      <button
         onClick={() => setShowCreator(true)}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
           darkMode 
             ? 'border-gray-500 bg-gray-700 hover:border-gray-400 hover:bg-gray-600 text-gray-300' 
             : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100 text-gray-600'
         }`}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
       >
         <Plus className="w-4 h-4" />
         <span className="text-sm font-medium">Add Custom Mood</span>
-      </motion.button>
+      </button>
 
       {/* Custom Mood Creator Modal */}
-      <AnimatePresence>
-        {showCreator && (
-          <motion.div
+      {showCreator && (
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             onClick={() => setShowCreator(false)}
           >
-            <motion.div
+            <div
               className={`rounded-2xl shadow-2xl p-6 w-full max-w-md ${
                 darkMode ? 'bg-gray-800' : 'bg-white'
               }`}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -211,7 +201,7 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
 
               {/* Action Buttons */}
               <div className="flex gap-3 mt-6">
-                <motion.button
+                <button
                   onClick={handleSave}
                   disabled={!newMood.name || !newMood.label}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${
@@ -219,29 +209,24 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-500 hover:bg-green-600 text-white'
                   }`}
-                  whileHover={{ scale: (!newMood.name || !newMood.label) ? 1 : 1.02 }}
-                  whileTap={{ scale: (!newMood.name || !newMood.label) ? 1 : 0.98 }}
                 >
                   <Save className="w-4 h-4" />
                   Create Mood
-                </motion.button>
-                <motion.button
+                </button>
+                <button
                   onClick={() => setShowCreator(false)}
                   className={`px-4 py-3 rounded-lg font-medium transition-colors ${
                     darkMode 
                       ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                   }`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                 >
                   Cancel
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

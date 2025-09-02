@@ -1,5 +1,6 @@
-# 🕐 Memento Vivere
-*Remember to Live - A Tool for Conscious Time*
+# 🕐 Viventiva
+
+_Remember to Live - A Tool for Conscious Time_
 
 A philosophical React application that transforms your finite weeks into a canvas for intentional living. More than a time tracker, this is an instrument for examining the fundamental questions of human existence within the bounds of mortality.
 
@@ -16,7 +17,7 @@ A philosophical React application that transforms your finite weeks into a canva
 ## 🏷️ Categories
 
 - 🩷 **Personal** - Life events, relationships, personal growth
-- 💼 **Career** - Jobs, promotions, professional milestones  
+- 💼 **Career** - Jobs, promotions, professional milestones
 - 🎓 **Education** - Schools, degrees, learning achievements
 - 🏠 **Family** - Family events, marriages, children
 - 🎯 **Goals** - Future aspirations and planned objectives
@@ -32,17 +33,20 @@ A philosophical React application that transforms your finite weeks into a canva
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd 25-MyLife
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -85,13 +89,13 @@ src/
 
 ## 📜 Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server on http://localhost:5173 |
-| `npm run build` | Build optimized production bundle |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint code analysis |
-| `npm run lint:fix` | Automatically fix ESLint issues |
+| Command            | Description                                       |
+| ------------------ | ------------------------------------------------- |
+| `npm run dev`      | Start development server on http://localhost:5173 |
+| `npm run build`    | Build optimized production bundle                 |
+| `npm run preview`  | Preview production build locally                  |
+| `npm run lint`     | Run ESLint code analysis                          |
+| `npm run lint:fix` | Automatically fix ESLint issues                   |
 
 ## 🛠️ Technologies Used
 
@@ -105,6 +109,7 @@ src/
 ## 🌐 Browser Support
 
 This application supports all modern browsers with ES2020+ support:
+
 - Chrome 88+
 - Firefox 78+
 - Safari 14+
@@ -113,6 +118,7 @@ This application supports all modern browsers with ES2020+ support:
 ## 💾 Data Storage
 
 Your life data is stored locally in your browser using localStorage. This means:
+
 - ✅ Your data stays private and never leaves your device
 - ✅ No account registration or login required
 - ⚠️ Remember to export your data regularly as backups

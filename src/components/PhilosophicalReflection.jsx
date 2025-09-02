@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Heart, Clock, Target, Sparkles, ChevronRight } from 'lucide-react';
 
 const PhilosophicalReflection = ({ darkMode, currentWeek }) => {
   const [showReflection, setShowReflection] = useState(false);
-  const [currentQuote, setCurrentQuote] = useState(0);
   const [reflectionPrompt, setReflectionPrompt] = useState(0);
 
   // Philosophical quotes about time and living
@@ -77,12 +76,9 @@ const PhilosophicalReflection = ({ darkMode, currentWeek }) => {
 
   // Rotate quotes weekly
   useEffect(() => {
-    const weekBasedIndex = Math.floor(currentWeek / 7) % wisdomQuotes.length;
-    setCurrentQuote(weekBasedIndex);
-    
     const promptIndex = Math.floor(currentWeek / 4) % reflectionPrompts.length;
     setReflectionPrompt(promptIndex);
-  }, [currentWeek]);
+  }, [currentWeek, wisdomQuotes.length, reflectionPrompts.length]);
 
   const currentPromptData = reflectionPrompts[reflectionPrompt];
   const IconComponent = currentPromptData.icon;
@@ -94,25 +90,6 @@ const PhilosophicalReflection = ({ darkMode, currentWeek }) => {
         : 'bg-white shadow-xl border border-gray-100'
     }`}>
 
-      {/* Present Week Ritual */}
-      <div className={`p-4 rounded-lg mb-4 ${
-        darkMode 
-          ? 'bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700' 
-          : 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
-      }`}>
-        <div className="flex items-center gap-2 mb-2">
-          <div className={`w-3 h-3 rounded-full animate-pulse ${
-            darkMode ? 'bg-red-400' : 'bg-red-500'
-          }`}></div>
-          <h4 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            Week {currentWeek} - This Moment in Your One Life
-          </h4>
-        </div>
-        <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          You are living in week {currentWeek} of your finite existence. This exact week will never come again. 
-          How will you honor this irreplaceable fragment of time?
-        </p>
-      </div>
 
       {/* Philosophical Reflection Prompt */}
       <div className="border-t border-gray-200 dark:border-gray-600 pt-4">

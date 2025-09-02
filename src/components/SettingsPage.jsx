@@ -1,4 +1,3 @@
-import React from 'react'; // eslint-disable-line no-unused-vars
 import { ArrowLeft } from 'lucide-react';
 import { exportData } from '../utils/storageUtils';
 

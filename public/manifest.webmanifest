@@ -1,0 +1,22 @@
+{
+  "name": "Viventiva",
+  "short_name": "Viventiva",
+  "description": "Remember to Live - visualize your finite weeks with intention",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
+
+
+
+
+
+
