@@ -8,6 +8,12 @@ export { useMilestoneStore } from './useMilestoneStore';
 export { useSelectionStore } from './useSelectionStore';
 export { useUIStore } from './useUIStore';
 
+// Export optimized selectors
+export { useLifeSelectors } from './useLifeStore';
+export { useMilestoneSelectors } from './useMilestoneStore';
+export { useSelectionSelectors } from './useSelectionStore';
+export { useUISelectors } from './useUIStore';
+
 /**
  * Store Documentation:
  * 

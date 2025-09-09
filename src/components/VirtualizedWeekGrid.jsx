@@ -1,7 +1,8 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useRef, useEffect } from "react";
 import { FixedSizeList as List } from "react-window";
-import WeekBox from "./WeekBox";
 import { lifeStages } from "../utils/constants";
+import WeekBox from "./WeekBox";
+import { useRenderPerformance } from "../utils/performanceMonitor";
 
 const VirtualizedWeekGrid = memo(
   ({
@@ -27,11 +28,20 @@ const VirtualizedWeekGrid = memo(
     showWeeks = true,
     rangeStart = null,
     isInRangeMode = false,
+    enableVirtualization = false,
   }) => {
+    // Performance monitoring for grid rendering
+    useRenderPerformance("VirtualizedWeekGrid");
+
     const totalYears = parseInt(lifeExpectancy) || 80;
     const COLUMNS = showWeeks ? 52 : 12;
-    const ROW_HEIGHT = isMobile ? 32 : 40; // Height of each year row
-    const CONTAINER_HEIGHT = Math.min(600, totalYears * ROW_HEIGHT); // Max height with scrolling
+    const ROW_HEIGHT = isMobile ? 32 : 40;
+    const CONTAINER_HEIGHT = Math.min(600, totalYears * ROW_HEIGHT);
+
+    // Modern responsive sizing for weeks
+    const weekSize = isMobile ? 6 : 8; // Fixed size instead of flexible
+    const weekGap = isMobile ? 1 : 2;
+    const listRef = useRef(null);
 
     // Memoize expensive calculations
     const rowData = useMemo(() => {
@@ -47,6 +57,15 @@ const VirtualizedWeekGrid = memo(
         ),
       }));
     }, [totalYears, COLUMNS]);
+
+    // Auto-scroll to current week on mount
+    useEffect(() => {
+      if (listRef.current && currentWeek) {
+        const currentYear = Math.floor((currentWeek - 1) / COLUMNS);
+        const scrollOffset = Math.max(0, currentYear * ROW_HEIGHT - CONTAINER_HEIGHT / 2);
+        listRef.current.scrollTo(scrollOffset);
+      }
+    }, [currentWeek, COLUMNS, ROW_HEIGHT, CONTAINER_HEIGHT]);
 
     // Memoize props object to prevent WeekBox recreations
     const weekBoxProps = useMemo(() => ({
@@ -84,7 +103,7 @@ const VirtualizedWeekGrid = memo(
       return (
         <div
           style={style}
-          className={`flex items-center w-full min-w-max justify-start sm:justify-center ${
+          className={`flex items-center w-full justify-start sm:justify-center ${
             lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
           }`}
         >
@@ -96,80 +115,61 @@ const VirtualizedWeekGrid = memo(
           >
             {yearIndex % 5 === 0 ? yearIndex : ""}
           </div>
-          <div className="flex w-auto select-none touch-manipulation justify-start sm:justify-center overflow-x-visible">
+          <div
+            className="flex flex-1 select-none touch-manipulation overflow-x-auto"
+            style={{
+              gap: `${weekGap}px`,
+              paddingRight: '8px'
+            }}
+          >
             {rowItems.map((itemNum) => (
-              <WeekBox
+              <div
                 key={itemNum}
-                weekNum={itemNum}
-                {...weekBoxProps}
-              />
+                className="flex-shrink-0"
+                style={{
+                  width: `${weekSize}px`,
+                  height: `${weekSize}px`
+                }}
+              >
+                <WeekBox
+                  weekNum={itemNum}
+                  {...weekBoxProps}
+                />
+              </div>
             ))}
           </div>
         </div>
       );
-    }, [rowData, darkMode, isMobile, weekBoxProps]);
+    }, [rowData, darkMode, isMobile, weekBoxProps, COLUMNS, weekSize, weekGap]);
 
     const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
 
-    if (isTestEnv) {
-      // Render non-virtualized in tests for stable selectors and counts
+    // Use virtualized list only when explicitly enabled
+    if (enableVirtualization && !isTestEnv && totalYears > 10) {
       return (
         <div
-          className="flex flex-col gap-0 items-center w-full week-grid-container"
+          className="w-full"
           data-testid="week-grid"
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onTouchEnd={handleTouchEnd}
+          style={{ overflow: 'visible' }}
         >
-          {rowData.map(({ yearIndex, currentAge, lifeStage, rowItems }) => (
-            <div
-              key={yearIndex}
-              className={`flex items-center w-full min-w-max justify-start sm:justify-center ${
-                lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
-              }`}
-            >
-              <div
-                className={`text-xs font-medium mr-1 sm:mr-2 flex-shrink-0 text-center ${
-                  isMobile ? "w-5 text-[10px]" : "w-8"
-                } ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-                title={lifeStage ? lifeStage.label : `Age ${currentAge}`}
-              >
-                {yearIndex % 5 === 0 ? yearIndex : ""}
-              </div>
-              <div className="flex w-auto select-none touch-manipulation justify-start sm:justify-center overflow-x-visible">
-                {rowItems.map((itemNum) => (
-                  <WeekBox
-                    key={itemNum}
-                    weekNum={itemNum}
-                    currentWeek={currentWeek}
-                    milestones={milestones}
-                    selectedWeek={selectedWeek}
-                    selectedColor={selectedColor}
-                    selectedWeeks={selectedWeeks}
-                    handleWeekClick={handleWeekClick}
-                    handleWeekMouseDown={handleWeekMouseDown}
-                    handleWeekMouseEnter={handleWeekMouseEnter}
-                    handleTouchStart={handleTouchStart}
-                    handleTouchMove={handleTouchMove}
-                    handleTouchEnd={handleTouchEnd}
-                    isDragging={isDragging}
-                    draggedWeeks={draggedWeeks}
-                    isMobile={isMobile}
-                    darkMode={darkMode}
-                    allCategories={allCategories}
-                    selectionMode={selectionMode}
-                    showWeeks={showWeeks}
-                    rangeStart={rangeStart}
-                    isInRangeMode={isInRangeMode}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+          <List
+            ref={listRef}
+            height={CONTAINER_HEIGHT}
+            itemCount={totalYears}
+            itemSize={ROW_HEIGHT}
+            overscanCount={5} // Render 5 extra rows for smoother scrolling
+            style={{ overflow: 'auto' }}
+          >
+            {Row}
+          </List>
         </div>
       );
     }
 
+    // Fallback to non-virtualized for small grids or tests
     return (
       <div
         className="flex flex-col gap-0 items-center w-full week-grid-container"
@@ -178,16 +178,46 @@ const VirtualizedWeekGrid = memo(
         onMouseLeave={handleMouseUp}
         onTouchEnd={handleTouchEnd}
       >
-        <List
-          height={CONTAINER_HEIGHT}
-          itemCount={totalYears}
-          itemSize={ROW_HEIGHT}
-          width="100%"
-          overscanCount={2}
-          className="scrollbar-thin"
-        >
-          {Row}
-        </List>
+        {rowData.map(({ yearIndex, currentAge, lifeStage, rowItems }) => (
+          <div
+            key={yearIndex}
+            className={`flex items-center w-full justify-start sm:justify-center ${
+              lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
+            }`}
+          >
+            <div
+              className={`text-xs font-medium mr-1 sm:mr-2 flex-shrink-0 text-center ${
+                isMobile ? "w-5 text-[10px]" : "w-8"
+              } ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+              title={lifeStage ? lifeStage.label : `Age ${currentAge}`}
+            >
+              {yearIndex % 5 === 0 ? yearIndex : ""}
+            </div>
+            <div
+              className="flex flex-1 select-none touch-manipulation overflow-x-auto"
+              style={{
+                gap: `${weekGap}px`,
+                paddingRight: '8px'
+              }}
+            >
+              {rowItems.map((itemNum) => (
+                <div
+                  key={itemNum}
+                  className="flex-shrink-0"
+                  style={{
+                    width: `${weekSize}px`,
+                    height: `${weekSize}px`
+                  }}
+                >
+                  <WeekBox
+                    weekNum={itemNum}
+                    {...weekBoxProps}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

@@ -191,3 +191,60 @@ export const useSelectionStore = create((set, get) => ({
     });
   }
 }));
+
+// Optimized selectors to prevent unnecessary re-renders
+export const useSelectionSelectors = () => {
+  const store = useSelectionStore();
+
+  return {
+    // Selection state selectors
+    selectedWeek: store.selectedWeek,
+    selectedColor: store.selectedColor,
+    selectedWeeks: store.selectedWeeks,
+    pinnedWeeks: store.pinnedWeeks,
+
+    // Interaction state selectors
+    isDragging: store.isDragging,
+    draggedWeeks: store.draggedWeeks,
+    dragStartWeek: store.dragStartWeek,
+    selectionMode: store.selectionMode,
+
+    // Range selection selectors
+    rangeStart: store.rangeStart,
+    isInRangeMode: store.isInRangeMode,
+
+    // Preview selectors
+    selectionPreview: store.selectionPreview,
+
+    // Computed selectors
+    weeksInSelection: store.getWeeksInSelection(),
+    selectionCount: store.getSelectionCount(),
+
+    // Actions
+    setSelectedWeek: store.setSelectedWeek,
+    setSelectedColor: store.setSelectedColor,
+    setSelectionMode: store.setSelectionMode,
+    setIsDragging: store.setIsDragging,
+    setDraggedWeeks: store.setDraggedWeeks,
+    setDragStartWeek: store.setDragStartWeek,
+    setSelectedWeeks: store.setSelectedWeeks,
+    addToSelectedWeeks: store.addToSelectedWeeks,
+    removeFromSelectedWeeks: store.removeFromSelectedWeeks,
+    toggleWeekSelection: store.toggleWeekSelection,
+    clearSelectedWeeks: store.clearSelectedWeeks,
+    setPinnedWeeks: store.setPinnedWeeks,
+    addToPinnedWeeks: store.addToPinnedWeeks,
+    removeFromPinnedWeeks: store.removeFromPinnedWeeks,
+    clearPinnedWeeks: store.clearPinnedWeeks,
+    startRangeSelection: store.startRangeSelection,
+    completeRangeSelection: store.completeRangeSelection,
+    resetRangeSelection: store.resetRangeSelection,
+    setSelectionPreview: store.setSelectionPreview,
+    clearSelectionPreview: store.clearSelectionPreview,
+    selectRectangularArea: store.selectRectangularArea,
+    getWeeksInSelection: store.getWeeksInSelection,
+    isWeekSelected: store.isWeekSelected,
+    getSelectionCount: store.getSelectionCount,
+    clearAllSelections: store.clearAllSelections,
+  };
+};

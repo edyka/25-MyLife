@@ -20,11 +20,17 @@ export const categories = {
 export const getColorOptions = (customCategories = {}) => ({
   none: { color: 'bg-white border-gray-400', icon: X, label: 'Clear' },
   ...categories,
+  ...getEmotionalCategories(),
+  ...getRelationshipCategories(),
+  ...getExperienceCategories(),
   ...customCategories
 });
 
 export const getAllCategories = (customCategories = {}) => ({
   ...categories,
+  ...getEmotionalCategories(),
+  ...getRelationshipCategories(),
+  ...getExperienceCategories(),
   ...customCategories
 });
 

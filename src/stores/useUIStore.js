@@ -30,7 +30,7 @@ export const useUIStore = create(
       enableVirtualization: true,
       
       // Grid display preferences
-      gridLayout: 'quarterly', // 'yearly', 'quarterly', 'compact'
+      gridLayout: 'standard', // 'standard', 'compact', 'quarterly'
       showCurrentWeekIndicator: true,
       showMilestoneIndicators: true,
       showAgeLabels: true,
@@ -144,6 +144,7 @@ export const useUIStore = create(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         darkMode: state.darkMode,
+        currentPage: state.currentPage,
         currentTab: state.currentTab,
         showWeeks: state.showWeeks,
         enableAnimations: state.enableAnimations,
@@ -156,6 +157,61 @@ export const useUIStore = create(
     }
   )
 );
+
+// Optimized selectors to prevent unnecessary re-renders
+export const useUISelectors = () => {
+  const store = useUIStore();
+
+  return {
+    // Theme selectors
+    darkMode: store.darkMode,
+    themeClasses: store.getThemeClasses(),
+
+    // Navigation selectors
+    currentTab: store.currentTab,
+    currentPage: store.currentPage,
+
+    // Layout selectors
+    showWeeks: store.showWeeks,
+    isMobile: store.isMobile,
+    layoutClasses: store.getLayoutClasses(),
+
+    // Modal selectors
+    showMobileColorSelection: store.showMobileColorSelection,
+    showLifeInsights: store.showLifeInsights,
+    showSettingsModal: store.showSettingsModal,
+    showGoalModal: store.showGoalModal,
+
+    // Performance selectors
+    enableAnimations: store.enableAnimations,
+    enableVirtualization: store.enableVirtualization,
+
+    // Grid selectors
+    gridLayout: store.gridLayout,
+    showCurrentWeekIndicator: store.showCurrentWeekIndicator,
+    showMilestoneIndicators: store.showMilestoneIndicators,
+    showAgeLabels: store.showAgeLabels,
+
+    // Actions
+    setDarkMode: store.setDarkMode,
+    toggleDarkMode: store.toggleDarkMode,
+    setCurrentTab: store.setCurrentTab,
+    setCurrentPage: store.setCurrentPage,
+    setShowWeeks: store.setShowWeeks,
+    setIsMobile: store.setIsMobile,
+    setShowMobileColorSelection: store.setShowMobileColorSelection,
+    setShowLifeInsights: store.setShowLifeInsights,
+    setShowSettingsModal: store.setShowSettingsModal,
+    setShowGoalModal: store.setShowGoalModal,
+    setEnableAnimations: store.setEnableAnimations,
+    setEnableVirtualization: store.setEnableVirtualization,
+    setGridLayout: store.setGridLayout,
+    setShowCurrentWeekIndicator: store.setShowCurrentWeekIndicator,
+    setShowMilestoneIndicators: store.setShowMilestoneIndicators,
+    setShowAgeLabels: store.setShowAgeLabels,
+    closeAllModals: store.closeAllModals,
+  };
+};
 
 // Initialize theme and device detection on store creation
 if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !/jsdom/i.test(navigator.userAgent || '')) {

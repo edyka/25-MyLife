@@ -1,29 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import { Moon, Sun, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 import { saveTheme } from "../utils/themeUtils";
 
-const SetupPage = ({
-  birthDay,
-  setBirthDay,
-  birthMonth,
-  setBirthMonth,
-  birthYear,
-  setBirthYear,
-  lifeExpectancy,
-  setLifeExpectancy,
-  isLoading,
-  setIsLoading,
-  setCurrentPage,
-  darkMode,
-  setDarkMode,
-}) => {
-  // Auto-fill test data on component mount
+// Import Zustand stores and selectors
+import { useLifeStore } from "../stores/useLifeStore";
+import { useUIStore, useUISelectors } from "../stores/useUIStore";
+
+const SetupPage = ({ darkMode }) => {
+  // Local state for loading
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Use Zustand stores directly
+  const lifeStore = useLifeStore();
+  const uiStore = useUIStore();
+
+  // Extract values and setters from stores
+  const { birthDay, birthMonth, birthYear, lifeExpectancy, setBirthData, setLifeExpectancy } = lifeStore;
+  const { setCurrentPage } = uiStore;
+  const { setDarkMode } = useUISelectors();
+  // Auto-fill demo data only on initial setup (when no data exists)
   React.useEffect(() => {
     if (!birthDay && !birthMonth && !birthYear && !lifeExpectancy) {
-      setBirthDay("27");
-      setBirthMonth("11");
-      setBirthYear("1979");
+      setBirthData("27", "11", "1979");
       setLifeExpectancy("90");
     }
   }, [
@@ -31,12 +30,23 @@ const SetupPage = ({
     birthMonth,
     birthYear,
     lifeExpectancy,
-    setBirthDay,
-    setBirthMonth,
-    setBirthYear,
+    setBirthData,
     setLifeExpectancy,
   ]);
   
+  // Individual handlers for form inputs
+  const handleBirthDayChange = (value) => {
+    setBirthData(value, birthMonth || "1", birthYear || "2000");
+  };
+
+  const handleBirthMonthChange = (value) => {
+    setBirthData(birthDay || "1", value, birthYear || "2000");
+  };
+
+  const handleBirthYearChange = (value) => {
+    setBirthData(birthDay || "1", birthMonth || "1", value);
+  };
+
   const isFormValid = () => {
     const lifeExp = parseInt(lifeExpectancy);
     return (
@@ -146,8 +156,10 @@ const SetupPage = ({
                 darkMode ? "text-slate-300" : "text-slate-600"
               }`}
             >
-              Transform your finite weeks into a canvas for intentional existence. 
-              Visualize your life's journey through conscious living.
+              {birthDay && birthMonth && birthYear
+                ? "Update your birth information to recalculate your life timeline."
+                : "Transform your finite weeks into a canvas for intentional existence. Visualize your life's journey through conscious living."
+              }
             </p>
 
             {/* Philosophical Quote */}
@@ -203,14 +215,14 @@ const SetupPage = ({
                   <input
                     type="number"
                     inputMode="numeric"
-                    value={birthDay}
-                    onChange={(e) => setBirthDay(e.target.value)}
+                    value={birthDay || ""}
+                    onChange={(e) => handleBirthDayChange(e.target.value)}
                     placeholder="Day"
                     min="1"
                     max="31"
                     className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
-                      darkMode 
-                        ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" 
+                      darkMode
+                        ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
                         : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400"
                     }`}
                     onKeyDown={handleKeyDown}
@@ -223,11 +235,11 @@ const SetupPage = ({
                     Month
                   </label>
                   <select
-                    value={birthMonth}
-                    onChange={(e) => setBirthMonth(e.target.value)}
+                    value={birthMonth || ""}
+                    onChange={(e) => handleBirthMonthChange(e.target.value)}
                     className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
-                      darkMode 
-                        ? "bg-slate-700 border-slate-600 text-slate-200" 
+                      darkMode
+                        ? "bg-slate-700 border-slate-600 text-slate-200"
                         : "bg-slate-50 border-slate-200 text-slate-800"
                     }`}
                     onKeyDown={handleKeyDown}
@@ -256,14 +268,14 @@ const SetupPage = ({
                   <input
                     type="number"
                     inputMode="numeric"
-                    value={birthYear}
-                    onChange={(e) => setBirthYear(e.target.value)}
+                    value={birthYear || ""}
+                    onChange={(e) => handleBirthYearChange(e.target.value)}
                     placeholder="1990"
                     min="1920"
                     max={new Date().getFullYear()}
                     className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
-                      darkMode 
-                        ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" 
+                      darkMode
+                        ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
                         : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400"
                     }`}
                     onKeyDown={handleKeyDown}
@@ -282,13 +294,13 @@ const SetupPage = ({
               <input
                 type="number"
                 inputMode="numeric"
-                value={lifeExpectancy}
+                value={lifeExpectancy || ""}
                 onChange={(e) => setLifeExpectancy(e.target.value)}
                 min="50"
                 max="110"
                 className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
-                  darkMode 
-                    ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500" 
+                  darkMode
+                    ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
                     : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400"
                 }`}
                 onKeyDown={handleKeyDown}
@@ -314,10 +326,15 @@ const SetupPage = ({
               {isLoading ? (
                 <div className="flex items-center justify-center gap-3">
                   <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating Your Timeline...
+                  {birthDay && birthMonth && birthYear
+                    ? "Updating Your Timeline..."
+                    : "Creating Your Timeline..."
+                  }
                 </div>
               ) : (
-                "Begin Conscious Living"
+                birthDay && birthMonth && birthYear
+                  ? "Update Life Timeline"
+                  : "Begin Conscious Living"
               )}
             </button>
 

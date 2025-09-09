@@ -79,5 +79,30 @@ export const useLifeStore = create(
   )
 );
 
+// Optimized selectors to prevent unnecessary re-renders
+export const useLifeSelectors = () => {
+  const store = useLifeStore();
+
+  return {
+    // Core data selectors
+    birthDay: store.birthDay,
+    birthMonth: store.birthMonth,
+    birthYear: store.birthYear,
+    lifeExpectancy: store.lifeExpectancy,
+    currentWeek: store.currentWeek,
+
+    // Computed selectors
+    totalWeeks: store.getTotalWeeks(),
+
+    // Actions
+    setBirthData: store.setBirthData,
+    setLifeExpectancy: store.setLifeExpectancy,
+    calculateCurrentWeek: store.calculateCurrentWeek,
+    getAgeFromWeek: store.getAgeFromWeek,
+    getQuarterFromWeek: store.getQuarterFromWeek,
+    initialize: store.initialize,
+  };
+};
+
 // Initialize current week calculation on app start
 useLifeStore.getState().initialize();

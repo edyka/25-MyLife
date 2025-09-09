@@ -126,3 +126,35 @@ export const useMilestoneStore = create(
     }
   )
 );
+
+// Optimized selectors to prevent unnecessary re-renders
+export const useMilestoneSelectors = () => {
+  const store = useMilestoneStore();
+
+  return {
+    // Core data selectors
+    milestones: store.milestones,
+    customCategories: store.customCategories,
+    goals: store.goals,
+
+    // Computed selectors
+    colorOptions: store.getColorOptions(),
+    allCategories: store.getAllCategories(),
+
+    // Actions
+    setMilestones: store.setMilestones,
+    updateMilestone: store.updateMilestone,
+    deleteMilestone: store.deleteMilestone,
+    clearMilestones: store.clearMilestones,
+    setCustomCategories: store.setCustomCategories,
+    addCustomCategory: store.addCustomCategory,
+    removeCustomCategory: store.removeCustomCategory,
+    setGoals: store.setGoals,
+    addGoal: store.addGoal,
+    updateGoal: store.updateGoal,
+    deleteGoal: store.deleteGoal,
+    getMilestoneByWeek: store.getMilestoneByWeek,
+    getMilestonesByCategory: store.getMilestonesByCategory,
+    getMilestonesInRange: store.getMilestonesInRange,
+  };
+};

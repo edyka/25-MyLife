@@ -1,9 +1,10 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
-import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "../stores";
+import { useLifeSelectors, useMilestoneSelectors, useSelectionSelectors, useUISelectors } from "../stores";
+import { useRenderPerformance } from "../utils/performanceMonitor";
 
-const WeekBox = ({
+const WeekBox = memo(({
   weekNum,
   handleWeekClick,
   handleWeekMouseDown,
@@ -14,10 +15,14 @@ const WeekBox = ({
   isSelected,
   isInPreview,
 }) => {
-  // Get state from Zustand stores
-  const lifeStore = useLifeStore();
-  const currentWeek = lifeStore.currentWeek;
-  const { milestones, getAllCategories } = useMilestoneStore();
+  // Performance monitoring (only in development for performance-critical component)
+  if (process.env.NODE_ENV === 'development') {
+    useRenderPerformance(`WeekBox-${weekNum}`);
+  }
+
+  // Get state from optimized Zustand selectors
+  const { currentWeek } = useLifeSelectors();
+  const { milestones, allCategories } = useMilestoneSelectors();
   const {
     selectedWeek,
     selectedColor,
@@ -25,19 +30,54 @@ const WeekBox = ({
     isDragging,
     draggedWeeks,
     selectionMode
-  } = useSelectionStore();
-  const { isMobile, darkMode } = useUIStore();
-  
-  const allCategories = getAllCategories();
-  const isPast = weekNum < currentWeek;
-  const isCurrent = weekNum === currentWeek;
-  const hasMilestone = milestones && milestones[weekNum];
-  const isBeingDragged = draggedWeeks && draggedWeeks.has(weekNum);
-  const isWeekSelected =
-    (isSelected && isSelected(weekNum)) || selectedWeeks.has(weekNum);
-  const isWeekInPreview = isInPreview && isInPreview(weekNum);
-  const isInMultiSelectMode = selectionMode !== "single";
-  const shouldShowHoverEffect = selectedColor || !isMobile;
+  } = useSelectionSelectors();
+  const { isMobile, darkMode } = useUISelectors();
+
+  // Memoize expensive calculations
+  const weekState = useMemo(() => {
+    const isPast = weekNum < currentWeek;
+    const isCurrent = weekNum === currentWeek;
+    const hasMilestone = milestones && milestones[weekNum];
+    const isBeingDragged = draggedWeeks && draggedWeeks.has(weekNum);
+    const isWeekSelected =
+      (isSelected && isSelected(weekNum)) || selectedWeeks.has(weekNum);
+    const isWeekInPreview = isInPreview && isInPreview(weekNum);
+    const isInMultiSelectMode = selectionMode !== "single";
+    const shouldShowHoverEffect = selectedColor || !isMobile;
+
+    return {
+      isPast,
+      isCurrent,
+      hasMilestone,
+      isBeingDragged,
+      isWeekSelected,
+      isWeekInPreview,
+      isInMultiSelectMode,
+      shouldShowHoverEffect,
+    };
+  }, [
+    weekNum,
+    currentWeek,
+    milestones,
+    draggedWeeks,
+    selectedWeeks,
+    isSelected,
+    isInPreview,
+    selectionMode,
+    selectedColor,
+    isMobile
+  ]);
+
+  const {
+    isPast,
+    isCurrent,
+    hasMilestone,
+    isBeingDragged,
+    isWeekSelected,
+    isWeekInPreview,
+    isInMultiSelectMode,
+    shouldShowHoverEffect,
+  } = weekState;
 
   let bgColor = darkMode
     ? "bg-gray-700 border border-gray-600"
@@ -68,11 +108,12 @@ const WeekBox = ({
     }`;
   }
 
-  const sizeClass = isMobile ? "flex-1 h-4 min-w-0" : "flex-1 h-6 min-w-0";
+  // Modern responsive sizing for the week box
+  const sizeClass = "w-full h-full rounded-sm";
 
   return (
     <motion.div
-      className={`${sizeClass} cursor-pointer relative select-none ${bgColor} ${
+      className={`${sizeClass} week-square cursor-pointer relative select-none ${bgColor} ${
         selectedWeek === weekNum ? "ring-2 ring-blue-500" : ""
       } ${isBeingDragged ? "ring-2 ring-yellow-400 shadow-lg" : ""} ${
         isWeekSelected && !isBeingDragged
@@ -81,37 +122,13 @@ const WeekBox = ({
       } ${isWeekInPreview ? "ring-2 ring-blue-400 ring-opacity-60" : ""} ${
         isInMultiSelectMode ? "ring-1 ring-gray-400 ring-opacity-50" : ""
       } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200`}
-      whileHover={
-        shouldShowHoverEffect
-          ? {
-              scale: selectedColor ? 1.1 : 1.05,
-              y: -2,
-              boxShadow: darkMode
-                ? "0 6px 20px rgba(59, 130, 246, 0.4)"
-                : "0 6px 20px rgba(59, 130, 246, 0.25)",
-              transition: { type: "spring", stiffness: 600, damping: 25 },
-            }
-          : {}
-      }
+      whileHover={shouldShowHoverEffect ? { scale: 1.03 } : {}}
       whileTap={{
-        scale: 0.88,
-        transition: { type: "spring", stiffness: 700, damping: 20 },
+        scale: 0.95,
+        transition: { type: "spring", stiffness: 650, damping: 22 },
       }}
-      initial={{ opacity: 0, scale: 0.8, y: 5 }}
-      animate={{
-        opacity: 1,
-        scale:
-          selectedWeek === weekNum || isBeingDragged || isWeekSelected
-            ? 1.08
-            : 1,
-        y:
-          selectedWeek === weekNum || isBeingDragged || isWeekSelected ? -1 : 0,
-        transition: {
-          opacity: { duration: 0.2, ease: "easeOut" },
-          scale: { type: "spring", stiffness: 500, damping: 25 },
-          y: { type: "spring", stiffness: 500, damping: 25 },
-        },
-      }}
+      initial={false}
+      animate={false}
       onMouseDown={(e) => {
         e.preventDefault();
         handleWeekMouseDown(weekNum, e);
@@ -197,6 +214,8 @@ const WeekBox = ({
       )}
     </motion.div>
   );
-};
+});
 
-export default memo(WeekBox);
+WeekBox.displayName = "WeekBox";
+
+export default WeekBox;

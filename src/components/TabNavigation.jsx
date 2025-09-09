@@ -2,6 +2,9 @@
 import { BarChart3, Grid, Target, Settings, Shield, Moon, Sun } from "lucide-react";
 import { Switch } from "@headlessui/react";
 
+// Import optimized life selectors
+import { useLifeSelectors } from "../stores/useLifeStore";
+
 const TABS = [
   { key: "grid", label: "Life Grid", icon: Grid },
   { key: "stats", label: "Stats", icon: BarChart3 },
@@ -18,6 +21,9 @@ const TabNavigation = ({
   setShowWeeks,
   setDarkMode,
 }) => {
+  // Get current age from optimized selectors
+  const { currentWeek } = useLifeSelectors();
+  const currentAge = Math.floor((currentWeek - 1) / 52);
   return (
     <nav className={`w-full flex flex-col items-center border-b backdrop-blur-md sticky top-0 z-30 ${
       darkMode 
@@ -25,6 +31,21 @@ const TabNavigation = ({
         : "border-orange-200/50 bg-white/95"
     }`}>
         <div className="w-full max-w-6xl px-2 sm:px-4 py-2 sm:py-3 min-h-[56px] flex flex-col items-center gap-2 md:grid md:grid-cols-[auto_1fr_auto] md:items-center">
+        {/* Left side - Age display */}
+        <div className="order-3 md:order-none md:col-start-1 flex items-center">
+          <button
+            onClick={() => setCurrentTab("settings")}
+            className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 ${
+              darkMode
+                ? "bg-slate-800/60 text-slate-200 hover:bg-slate-700"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+            }`}
+            title="Click to update age information"
+          >
+            Age: {currentAge}y ✏️
+          </button>
+        </div>
+
         {/* center tabs (row 1 on mobile, middle column on desktop) */}
         <div className="order-1 md:order-none md:col-start-2 flex justify-center gap-1 items-center overflow-x-auto flex-nowrap no-scrollbar" style={{ scrollbarWidth: 'none' }}>
           {TABS.map(({ key, label, icon: Icon }) => {

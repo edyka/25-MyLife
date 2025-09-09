@@ -47,3 +47,50 @@ code {
 .touch-manipulation {
   touch-action: manipulation;
 }
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* GPU acceleration for animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Optimize rendering for grid items */
+.grid-item {
+  contain: layout style paint;
+}
+
+/* Reduce layout shifts */
+.aspect-square {
+  aspect-ratio: 1;
+}
+
+/* Optimize font loading */
+.font-optimized {
+  font-display: swap;
+  text-rendering: optimizeLegibility;
+}
+
+/* Week grid container should not show inner scroll; let page scroll */
+.week-grid-container {
+  overflow: visible !important;
+}
+
+/* Modern square styling */
+.week-square {
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+.dark .week-square {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
