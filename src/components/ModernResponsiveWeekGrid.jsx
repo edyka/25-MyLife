@@ -143,8 +143,7 @@ const ModernResponsiveWeekGrid = memo(
         lifeStage,
         rowItems,
         isDecadeMarker,
-        isQuinquennialMarker,
-        isQuarterStart
+        isQuinquennialMarker
       } = rowData[index];
 
       return (

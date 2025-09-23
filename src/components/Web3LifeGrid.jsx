@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useEffect } from "react";
 import { FixedSizeList as List } from "react-window";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { lifeStages } from "../utils/constants";
 import Web3WeekBox from "./Web3WeekBox";
 import { useRenderPerformance } from "../utils/performanceMonitor";
@@ -71,7 +71,7 @@ const Web3LifeGrid = memo(
       }
     }, [isMobile, gridLayout, totalYears]);
 
-    const { weekSize, weekGap, rowHeight, containerHeight } = getWeb3Sizing();
+    const { weekSize, rowHeight, containerHeight } = getWeb3Sizing();
     const listRef = useRef(null);
 
     // Enhanced row data with Web3 visual properties
@@ -310,7 +310,7 @@ const Web3LifeGrid = memo(
           )}
         </motion.div>
       );
-    }, [rowData, darkMode, isMobile, weekBoxProps, weekSize, gridLayout, totalYears]);
+    }, [rowData, darkMode, weekBoxProps, weekSize, gridLayout, totalYears, currentWeek, milestones, showWeeks]);
 
     const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
 
@@ -414,7 +414,7 @@ const Web3LifeGrid = memo(
           onMouseLeave={handleMouseUp}
           onTouchEnd={handleTouchEnd}
         >
-          {rowData.map(({ yearIndex, currentAge, lifeStage, rowItems, isDecadeMarker, isQuinquennialMarker, glowIntensity, isMilestoneRow }) => {
+          {rowData.map(({ yearIndex, currentAge: _currentAge, lifeStage, rowItems, isDecadeMarker, isQuinquennialMarker, glowIntensity, isMilestoneRow: _isMilestoneRow }) => {
             // Use the same modern Web3 color logic as virtualized version
             const ageRatio = yearIndex / totalYears;
             const web3Colors = lifeStage ? {

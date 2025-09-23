@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import { getTotalWeeks } from "../utils/dateUtils";
 import { getAllCategories } from "../utils/constants";
 
 export const useWeekInteractions = ({
   lifeExpectancy,
-  milestones,
+  milestones: _milestones,
   setMilestones,
   updateMilestone,
   deleteMilestone,
@@ -31,13 +31,10 @@ export const useWeekInteractions = ({
     selectionPreview,
     setSelectionPreview,
     rangeStart,
-    setRangeStart,
     isInRangeMode,
-    setIsInRangeMode,
     pinnedWeeks,
     setPinnedWeeks,
     startRangeSelection,
-    completeRangeSelection,
     resetRangeSelection,
     clearPinnedWeeks,
     getWeeksInSelection
@@ -137,7 +134,7 @@ export const useWeekInteractions = ({
         setShowMobileMenu(false);
       }
     },
-    [selectedColor, rangeStart, getLinearWeeksInSelection, paintWeek, paintWeeks, setShowMobileMenu, pinnedWeeks, setSelectedWeeks, setPinnedWeeks, resetRangeSelection, setSelectionPreview, startRangeSelection]
+    [selectedColor, rangeStart, getLinearWeeksInSelection, paintWeek, paintWeeks, setShowMobileMenu, pinnedWeeks, setSelectedWeeks, setPinnedWeeks, resetRangeSelection, setSelectionPreview, startRangeSelection, setSelectedWeek]
   );
 
   const beginDrag = useCallback((weekNum) => {
@@ -146,7 +143,7 @@ export const useWeekInteractions = ({
     const startSet = new Set([weekNum]);
     setDraggedWeeks(startSet);
     setSelectedWeeks(startSet);
-  }, []);
+  }, [setIsDragging, setDragStartWeek, setDraggedWeeks, setSelectedWeeks]);
 
   // Memoized updateDrag function to prevent excessive callback recreation
   const memoizedUpdateDrag = useCallback((weekNum) => {
@@ -155,7 +152,7 @@ export const useWeekInteractions = ({
     setDraggedWeeks(range);
     setSelectedWeeks(range);
     setSelectionPreview({ weekCount: range.size });
-  }, [isDragging, dragStartWeek, getLinearWeeksInSelection]);
+  }, [isDragging, dragStartWeek, getLinearWeeksInSelection, setDraggedWeeks, setSelectedWeeks, setSelectionPreview]);
 
   // Memoized endDrag function to prevent excessive event listener re-registration
   const memoizedEndDrag = useCallback(() => {
@@ -166,7 +163,7 @@ export const useWeekInteractions = ({
     setDraggedWeeks(new Set());
     setDragStartWeek(null);
     setSelectionPreview(null);
-  }, [isDragging, draggedWeeks, paintWeeks]);
+  }, [isDragging, draggedWeeks, paintWeeks, setIsDragging, setDraggedWeeks, setDragStartWeek, setSelectionPreview]);
 
   const handleWeekMouseDown = useCallback(
     (weekNum) => {
@@ -180,7 +177,7 @@ export const useWeekInteractions = ({
       // Paint immediately so single click without movement colors the first week
       paintWeek(weekNum);
     },
-    [selectedColor, setShowMobileMenu, beginDrag, paintWeek]
+    [selectedColor, setShowMobileMenu, beginDrag, paintWeek, setSelectedWeek]
   );
 
   const handleWeekMouseEnter = useCallback(
@@ -197,7 +194,7 @@ export const useWeekInteractions = ({
         setSelectionPreview({ weekCount: preview.size });
       }
     },
-    [isDragging, memoizedUpdateDrag, rangeStart, getLinearWeeksInSelection, pinnedWeeks]
+    [isDragging, memoizedUpdateDrag, rangeStart, getLinearWeeksInSelection, pinnedWeeks, setSelectedWeeks, setSelectionPreview]
   );
   const handleMouseUp = useCallback(memoizedEndDrag, [memoizedEndDrag]);
   const handleMouseMove = useCallback((weekNum) => memoizedUpdateDrag(weekNum), [memoizedUpdateDrag]);
@@ -213,7 +210,7 @@ export const useWeekInteractions = ({
       beginDrag(weekNum);
       paintWeek(weekNum);
     },
-    [selectedColor, setShowMobileMenu, beginDrag, paintWeek]
+    [selectedColor, setShowMobileMenu, beginDrag, paintWeek, setSelectedWeek]
   );
 
   const handleTouchMove = useCallback(

@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, memo } from "react";
-import { getColorOptions } from "../utils/constants";
+import { useEffect, useMemo, useCallback, memo } from "react";
 import { getStats } from "../utils/dateUtils";
 import TabNavigation from "./TabNavigation";
 import Footer from "./Footer";
@@ -10,7 +9,6 @@ import MoodPalette from "./MoodPalette";
 import GoalTracker from "./GoalTracker";
 import StatsSection from "./StatsSection";
 import LifeInsights from "./LifeInsights";
-import LifeStageLegend from "./LifeStageLegend";
 import MobileColorSelection from "./MobileColorSelection";
 import { useWeekInteractions } from "../hooks/useWeekInteractions";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -26,7 +24,7 @@ import { useSelectionSelectors } from "../stores/useSelectionStore";
 import { useUIStore } from "../stores/useUIStore";
 
 // Import performance monitoring
-import { performanceMonitor, useRenderPerformance } from "../utils/performanceMonitor";
+import { useRenderPerformance } from "../utils/performanceMonitor";
 
 const MainApp = memo(() => {
   // Performance monitoring for render time
@@ -45,7 +43,9 @@ const MainApp = memo(() => {
     setIsMobile,
     gridLayout,
     setDarkMode,
-    setGridLayout
+    setGridLayout,
+    pastWeekStyle,
+    setPastWeekStyle
   } = useUISelectors();
 
   // Get UI store for actions
@@ -62,8 +62,6 @@ const MainApp = memo(() => {
     colorOptions: storeColorOptions
   } = useMilestoneSelectors();
   const { selectedColor, setSelectedColor, selectedWeeks, setSelectedWeeks } = useSelectionSelectors();
-
-  const gridRef = useRef(null);
 
   // Use color options from optimized store selector
   const colorOptions = storeColorOptions;
@@ -153,7 +151,7 @@ const MainApp = memo(() => {
         clearTimeout(resizeTimeout);
       }
     };
-  }, []);
+  }, [setIsMobile]);
 
   // Memoize keyboard shortcuts dependencies
   const keyboardShortcutDeps = useMemo(() => ({
@@ -228,10 +226,10 @@ const MainApp = memo(() => {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${
+      className={`min-h-screen flex flex-col transition-all duration-500 ${
         darkMode
-          ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-          : "bg-gradient-to-br from-orange-50 via-red-50 to-pink-50"
+          ? "modern-bg-dark"
+          : "modern-bg"
       }`}
     >
       <TabNavigation
@@ -242,36 +240,67 @@ const MainApp = memo(() => {
         setShowWeeks={setShowWeeks}
         setDarkMode={setDarkMode}
       />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-3 pt-16 sm:pt-20 overflow-hidden">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 pt-20 sm:pt-24 overflow-hidden">
                 {/* Tabbed Navigation Content */}
         {currentTab === "grid" && (
-          <>
-            <MoodPalette
-              colorOptions={colorOptions || { none: { label: 'Clear' } }}
-              selectedColor={selectedColor}
-              setSelectedColor={setSelectedColor}
-              selectedWeeks={selectedWeeks}
-              setSelectedWeeks={setSelectedWeeks}
-              pinnedWeeks={pinnedWeeks}
-              setPinnedWeeks={setPinnedWeeks}
-              lifeExpectancy={lifeExpectancy}
-              darkMode={darkMode}
-              onAddCustomMood={handleAddCustomMood}
-              customCategories={customCategories}
-              rangeStart={rangeStart}
-              isInRangeMode={isInRangeMode}
-              resetRangeSelection={resetRangeSelection}
-              clearPinnedWeeks={clearPinnedWeeks}
-            />
-            <LifeStageLegend darkMode={darkMode} />
-          </>
+          <div className={`relative mt-8 overflow-visible space-y-8`}>
+            {/* Mood/Colors card */}
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element` }>
+              <MoodPalette
+                colorOptions={colorOptions}
+                selectedColor={selectedColor}
+                setSelectedColor={setSelectedColor}
+                selectedWeeks={selectedWeeks}
+                setSelectedWeeks={setSelectedWeeks}
+                pinnedWeeks={pinnedWeeks}
+                setPinnedWeeks={setPinnedWeeks}
+                lifeExpectancy={lifeExpectancy}
+                darkMode={darkMode}
+                onAddCustomMood={handleAddCustomMood}
+                customCategories={customCategories}
+                rangeStart={rangeStart}
+                isInRangeMode={isInRangeMode}
+                resetRangeSelection={resetRangeSelection}
+                clearPinnedWeeks={clearPinnedWeeks}
+              />
+            </div>
+             <div className={`${
+              darkMode ? 'premium-card-dark' : 'premium-card'
+            } p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl` }>
+               <ClearLifeGrid
+                 lifeExpectancy={lifeExpectancy}
+                 currentWeek={currentWeek}
+                 milestones={milestones}
+                 selectedWeek={selectedWeek}
+                 selectedColor={selectedColor}
+                 selectedWeeks={selectedWeeks}
+                 handleWeekClick={handleWeekClick}
+                 handleWeekMouseDown={handleWeekMouseDown}
+                 handleWeekMouseEnter={handleWeekMouseEnter}
+                 handleMouseUp={handleMouseUp}
+                 handleTouchStart={handleTouchStart}
+                 handleTouchMove={handleTouchMove}
+                 handleTouchEnd={handleTouchEnd}
+                 isDragging={isDragging}
+                 draggedWeeks={draggedWeeks}
+                 isMobile={isMobile}
+                 darkMode={darkMode}
+                 allCategories={allCategories}
+                 selectionMode={selectionMode}
+                 showWeeks={showWeeks}
+                 rangeStart={rangeStart}
+                 isInRangeMode={isInRangeMode}
+                 enableVirtualization={false}
+               />
+            </div>
+          </div>
         )}
         {currentTab === "stats" && (
-          <>
-            <div className="mb-6">
+          <div className="space-y-8 mt-8">
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
               <StatsSection stats={stats} showStats={true} darkMode={darkMode} />
             </div>
-            <div className="mb-6">
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
               <LifeInsights
                 milestones={milestones}
                 birthYear={birthYear}
@@ -281,50 +310,25 @@ const MainApp = memo(() => {
                 darkMode={darkMode}
               />
             </div>
-          </>
-        )}
-
-        {/* Render grid for both grid and stats tabs */}
-        {(currentTab === "grid" || currentTab === "stats") && (
-          <div className={`relative ${currentTab === "stats" ? "mt-2" : "mt-6"} overflow-visible`}>
-            <ClearLifeGrid
-              lifeExpectancy={lifeExpectancy}
-              currentWeek={currentWeek}
-              milestones={milestones}
-              selectedWeek={selectedWeek}
-              selectedColor={selectedColor}
-              selectedWeeks={selectedWeeks}
-              handleWeekClick={handleWeekClick}
-              handleWeekMouseDown={handleWeekMouseDown}
-              handleWeekMouseEnter={handleWeekMouseEnter}
-              handleMouseUp={handleMouseUp}
-              handleTouchStart={handleTouchStart}
-              handleTouchMove={handleTouchMove}
-              handleTouchEnd={handleTouchEnd}
-              isDragging={isDragging}
-              draggedWeeks={draggedWeeks}
-              isMobile={isMobile}
-              darkMode={darkMode}
-              allCategories={allCategories}
-              selectionMode={selectionMode}
-              showWeeks={showWeeks}
-              rangeStart={rangeStart}
-              isInRangeMode={isInRangeMode}
-              enableVirtualization={false}
-            />
           </div>
         )}
+
         {currentTab === "goals" && (
-          <GoalTracker goals={goals} setGoals={setGoals} darkMode={darkMode} />
+          <div className="mt-8">
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
+              <GoalTracker goals={goals} setGoals={setGoals} darkMode={darkMode} />
+            </div>
+          </div>
         )}
         {currentTab === "settings" && (
-          <div className="space-y-6">
+          <div className="space-y-8 mt-8">
             {/* Color Selection Section */}
-            <div>
-              <h3 className={`text-lg font-semibold mb-4 ${
-                darkMode ? "text-slate-200" : "text-slate-800"
-              }`}>
-                🎨 Week Colors
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
+              <h3 className={`text-heading mb-6 ${
+                darkMode ? "text-slate-100" : "text-slate-800"
+              } flex items-center gap-3`}>
+                <span className="text-2xl">🎨</span>
+                Week Colors
               </h3>
               <MobileColorSelection
                 colorOptions={colorOptions}
@@ -335,16 +339,17 @@ const MainApp = memo(() => {
             </div>
 
             {/* Age Re-entry Section */}
-            <div>
-              <h3 className={`text-lg font-semibold mb-4 ${
-                darkMode ? "text-slate-200" : "text-slate-800"
-              }`}>
-                📅 Update Your Age
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
+              <h3 className={`text-heading mb-6 ${
+                darkMode ? "text-slate-100" : "text-slate-800"
+              } flex items-center gap-3`}>
+                <span className="text-2xl">📅</span>
+                Update Your Age
               </h3>
-              <div className={`p-6 rounded-2xl border-2 transition-all duration-200 ${
+              <div className={`p-6 rounded-2xl border transition-all duration-200 ${
                 darkMode
-                  ? "bg-slate-800/50 border-slate-600"
-                  : "bg-white/50 border-slate-200"
+                  ? "bg-slate-800/30 border-slate-600/50"
+                  : "bg-slate-50/50 border-slate-200/50"
               }`}>
                 <p className={`text-sm mb-4 ${
                   darkMode ? "text-slate-300" : "text-slate-600"
@@ -395,9 +400,12 @@ const MainApp = memo(() => {
 
                   <button
                     onClick={() => setCurrentPage("setup")}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg shadow-orange-500/25"
+                    className="w-full py-4 px-6 btn-gradient-accent text-white font-bold rounded-2xl interactive-element shadow-lg"
                   >
-                    ✏️ Re-enter Age Information
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="text-lg">✏️</span>
+                      Re-enter Age Information
+                    </span>
                   </button>
 
                   <p className={`text-xs text-center mt-2 ${
@@ -410,16 +418,17 @@ const MainApp = memo(() => {
             </div>
 
             {/* Grid Layout Settings */}
-            <div>
-              <h3 className={`text-lg font-semibold mb-4 ${
-                darkMode ? "text-slate-200" : "text-slate-800"
-              }`}>
-                🎨 Grid Layout
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
+              <h3 className={`text-heading mb-6 ${
+                darkMode ? "text-slate-100" : "text-slate-800"
+              } flex items-center gap-3`}>
+                <span className="text-2xl">🎨</span>
+                Grid Layout
               </h3>
-              <div className={`p-4 rounded-xl border ${
+              <div className={`p-6 rounded-2xl border ${
                 darkMode
-                  ? "bg-slate-800/50 border-slate-600"
-                  : "bg-white/50 border-slate-200"
+                  ? "bg-slate-800/30 border-slate-600/50"
+                  : "bg-slate-50/50 border-slate-200/50"
               }`}>
                 <div className="space-y-3">
                   <div>
@@ -439,16 +448,59 @@ const MainApp = memo(() => {
                           onClick={() => setGridLayout(layout.key)}
                           className={`p-3 rounded-lg border-2 transition-all duration-200 text-center ${
                             gridLayout === layout.key
-                              ? darkMode
-                                ? "bg-orange-500/20 border-orange-500 text-orange-300"
-                                : "bg-orange-500/10 border-orange-500 text-orange-700"
-                              : darkMode
-                              ? "border-slate-600 hover:border-slate-500 text-slate-300"
-                              : "border-slate-300 hover:border-slate-400 text-slate-600"
+                              ? (darkMode ? "bg-cyan-500/15 border-cyan-400 text-cyan-200" : "bg-cyan-50 border-cyan-400 text-cyan-700")
+                              : (darkMode ? "border-slate-600 hover:border-slate-500 text-slate-300" : "border-slate-300 hover:border-slate-400 text-slate-600")
                           }`}
                         >
                           <div className="text-sm font-medium">{layout.label}</div>
                           <div className="text-xs opacity-75">{layout.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className={`block text-sm font-medium mb-2 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                      Theme Preset
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { key: 'mint', label: 'Neo Mint', preview: 'from-emerald-400 to-teal-500' },
+                        { key: 'indigo', label: 'Indigo', preview: 'from-indigo-500 to-violet-500' },
+                        { key: 'cyan', label: 'Cyan', preview: 'from-cyan-500 to-sky-600' },
+                      ].map((t) => (
+                        <button
+                          key={t.key}
+                          onClick={() => setPastWeekStyle && uiStore.setThemePreset ? uiStore.setThemePreset(t.key) : null}
+                          className={`p-3 rounded-lg border-2 transition-all duration-200 text-center ${
+                            uiStore.themePreset === t.key
+                              ? darkMode ? "border-emerald-400" : "border-emerald-500"
+                              : darkMode ? "border-slate-600" : "border-slate-300"
+                          }`}
+                        >
+                          <div className={`h-6 rounded-md bg-gradient-to-r ${t.preview} mb-1`} />
+                          <div className="text-sm font-medium">{t.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${
+                      darkMode ? "text-slate-200" : "text-slate-800"
+                    }`}>
+                      Past Week Style
+                    </span>
+                    <div className="flex gap-2">
+                      {[
+                        { key: 'none', label: 'None' },
+                        { key: 'hatch', label: 'Hatch' },
+                        { key: 'corner', label: 'Corner' },
+                      ].map(opt => (
+                        <button
+                          key={opt.key}
+                          onClick={() => setPastWeekStyle(opt.key)}
+                          className={`px-2 py-1 rounded-lg text-xs font-semibold border ${pastWeekStyle===opt.key ? 'border-orange-500 text-orange-600' : (darkMode ? 'border-slate-600 text-slate-300' : 'border-slate-300 text-slate-700')}`}
+                        >
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -458,16 +510,17 @@ const MainApp = memo(() => {
             </div>
 
             {/* Additional Settings */}
-            <div>
-              <h3 className={`text-lg font-semibold mb-4 ${
-                darkMode ? "text-slate-200" : "text-slate-800"
-              }`}>
-                ⚙️ App Settings
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
+              <h3 className={`text-heading mb-6 ${
+                darkMode ? "text-slate-100" : "text-slate-800"
+              } flex items-center gap-3`}>
+                <span className="text-2xl">⚙️</span>
+                App Settings
               </h3>
-              <div className={`p-4 rounded-xl border ${
+              <div className={`p-6 rounded-2xl border ${
                 darkMode
-                  ? "bg-slate-800/50 border-slate-600"
-                  : "bg-white/50 border-slate-200"
+                  ? "bg-slate-800/30 border-slate-600/50"
+                  : "bg-slate-50/50 border-slate-200/50"
               }`}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">

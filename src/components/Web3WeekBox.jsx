@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
 import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "../stores";
@@ -9,7 +9,7 @@ import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "
  */
 const Web3WeekBox = memo(({
   weekNum,
-  glowIntensity = 0.5,
+  glowIntensity: _glowIntensity = 0.5,
   isCurrentWeek = false,
   hasMilestone = false,
   web3Colors = { accent: '#8b5cf6', glow: '#a855f7' }
@@ -22,7 +22,6 @@ const Web3WeekBox = memo(({
     selectedColor,
     isDragging,
     draggedWeeks,
-    selectionMode,
     isWeekSelected
   } = useSelectionStore();
   const { isMobile, darkMode, enableAnimations } = useUIStore();
@@ -33,7 +32,6 @@ const Web3WeekBox = memo(({
   const weekHasMilestone = milestones && milestones[weekNum];
   const isBeingDragged = draggedWeeks && draggedWeeks.has(weekNum);
   const isWeekSelectedState = isWeekSelected(weekNum);
-  const isInMultiSelectMode = selectionMode !== "single";
   const shouldShowHoverEffect = selectedColor || !isMobile;
 
   // Web3-inspired color logic
@@ -189,14 +187,14 @@ const Web3WeekBox = memo(({
   return (
     <MotionComponent
       className={`${sizeClass} cursor-pointer relative select-none rounded-lg border-2 ${styling.bg} ${styling.border} ${interactions.ring} transition-all duration-300 overflow-hidden group focus:outline-none focus:ring-2 focus:ring-cyan-400/60 focus:ring-offset-1`}
-      onMouseDown={(e) => {
-        e.preventDefault();
+      onMouseDown={(_e) => {
+        _e.preventDefault();
         // Add click handlers here if needed
       }}
       onMouseEnter={() => {
         // Add hover handlers here if needed
       }}
-      onClick={(e) => {
+      onClick={(_e) => {
         if (!isDragging) {
           // Add click handlers here if needed
         }

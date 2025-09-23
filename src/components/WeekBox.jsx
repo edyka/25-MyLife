@@ -16,9 +16,10 @@ const WeekBox = memo(({
   isInPreview,
 }) => {
   // Performance monitoring (only in development for performance-critical component)
-  if (process.env.NODE_ENV === 'development') {
-    useRenderPerformance(`WeekBox-${weekNum}`);
-  }
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  if (isDev) useRenderPerformance(`WeekBox-${weekNum}`);
 
   // Get state from optimized Zustand selectors
   const { currentWeek } = useLifeSelectors();

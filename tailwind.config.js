@@ -1,36 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   // Optimize content scanning for better performance
-  content: {
-    files: [
-      "./index.html",
-      "./src/**/*.{js,ts,jsx,tsx}",
-    ],
-    // Extract classes from dynamic content
-    extract: {
-      extensions: ['html', 'js', 'ts', 'jsx', 'tsx'],
-    },
-    // Optimize safelist for dynamic classes
-    safelist: [
-      // Common dynamic classes used in the app
-      'bg-red-500', 'border-red-700',
-      'bg-gray-600', 'border-gray-500',
-      'bg-gray-700', 'border-gray-600',
-      'bg-white', 'border-gray-300',
-      'text-gray-400', 'text-gray-600',
-      'ring-blue-500', 'ring-purple-500',
-      'ring-yellow-400', 'ring-blue-400',
-      // Theme classes
-      'dark:bg-gray-700', 'dark:border-gray-600',
-      'dark:bg-gray-600', 'dark:border-gray-500',
-      'dark:text-gray-400', 'dark:text-gray-600',
-      // Grid layouts
-      'grid-cols-12', 'grid-cols-52',
-      // Mobile responsive classes
-      'sm:mr-2', 'sm:mr-1', 'sm:w-8', 'sm:w-5',
-      'sm:text-[10px]',
-    ],
-  },
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  // Optimize safelist for dynamic classes
+  safelist: [
+    // Common dynamic classes used in the app
+    'bg-red-500', 'border-red-700',
+    'bg-gray-600', 'border-gray-500',
+    'bg-gray-700', 'border-gray-600',
+    'bg-white', 'border-gray-300',
+    'text-gray-400', 'text-gray-600',
+    'ring-blue-500', 'ring-purple-500',
+    'ring-yellow-400', 'ring-blue-400',
+    // Theme classes
+    'dark:bg-gray-700', 'dark:border-gray-600',
+    'dark:bg-gray-600', 'dark:border-gray-500',
+    'dark:text-gray-400', 'dark:text-gray-600',
+    // Grid layouts
+    'grid-cols-12', 'grid-cols-52',
+    // Mobile responsive classes
+    'sm:mr-2', 'sm:mr-1', 'sm:w-8', 'sm:w-5',
+    'sm:text-[10px]',
+  ],
   darkMode: 'class',
   theme: {
     extend: {

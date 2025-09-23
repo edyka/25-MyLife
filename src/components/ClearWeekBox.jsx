@@ -16,13 +16,11 @@ const ClearWeekBox = memo(({
   const { currentWeek } = useLifeSelectors();
   const { milestones, allCategories } = useMilestoneSelectors();
   const {
-    selectedWeek,
-    selectedColor,
     selectedWeeks,
     draggedWeeks,
-    selectionMode,
+    selectedColor,
   } = useSelectionSelectors();
-  const { isMobile, darkMode } = useUISelectors();
+  const { isMobile, darkMode, pastWeekStyle } = useUISelectors();
 
   const weekState = useMemo(() => {
     const isPast = weekNum < currentWeek;
@@ -42,28 +40,43 @@ const ClearWeekBox = memo(({
 
   const { isPast, isCurrent, hasMilestone, isBeingDragged, isWeekSelected } = weekState;
 
-  let baseBg = darkMode ? "bg-slate-800" : "bg-white";
+  let baseBg = darkMode ? "bg-slate-700/60" : "bg-white/90";
+  let borderColor = darkMode ? "border-slate-600/50" : "border-slate-300/50";
+  let shadowClass = "shadow-sm";
+  
   if (isPast) {
-    baseBg = darkMode ? "bg-slate-600" : "bg-slate-200";
+    baseBg = darkMode ? "bg-slate-600/70" : "bg-slate-200/80";
+    borderColor = darkMode ? "border-slate-500/60" : "border-slate-400/60";
   }
+  
   if (hasMilestone && allCategories[hasMilestone.category]) {
     baseBg = allCategories[hasMilestone.category].color;
+    shadowClass = "shadow-md";
+    borderColor = "border-white/20";
   }
 
-  const borderClass = isCurrent
-    ? "border-2 border-red-500"
-    : darkMode
-    ? "border border-slate-500"
-    : "border border-slate-300";
+  if (isCurrent) {
+    borderColor = "border-2 border-red-400";
+    shadowClass = "shadow-lg shadow-red-400/30";
+  } else {
+    borderColor = `border ${borderColor}`;
+  }
 
   return (
     <motion.div
       data-week-num={weekNum}
-      className={`w-full h-full ${baseBg} ${borderClass} ${
-        isWeekSelected ? "ring-2 ring-blue-400" : ""
-      } ${isBeingDragged ? "ring-2 ring-yellow-400" : ""} rounded-sm`} 
-      whileHover={selectedColor ? { scale: 1.02 } : {}}
-      whileTap={{ scale: 0.96 }}
+      className={`week-square relative w-full h-full ${baseBg} ${borderColor} ${shadowClass} ${
+        isWeekSelected ? "ring-2 ring-blue-400/60" : ""
+      } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""} rounded-lg overflow-hidden cursor-pointer transition-all duration-200`} 
+      whileHover={selectedColor ? { 
+        scale: 1.08, 
+        y: -1,
+        boxShadow: "0 8px 25px rgba(0, 0, 0, 0.15)"
+      } : { 
+        scale: 1.05, 
+        y: -0.5 
+      }}
+      whileTap={{ scale: 0.95 }}
       onMouseDown={(e) => { e.preventDefault(); handleWeekMouseDown(weekNum); }}
       onMouseEnter={() => handleWeekMouseEnter(weekNum)}
       onClick={() => { if (!isDragging) handleWeekClick(weekNum); }}
@@ -73,7 +86,60 @@ const ClearWeekBox = memo(({
       title={`Week ${weekNum} - Age ${getYearFromWeek(weekNum)} years, ${getQuarterFromWeek(weekNum)}`}
       role="button"
       tabIndex={0}
-    />
+    >
+      {/* Enhanced past week indicators (only when not colored) */}
+      {isPast && !hasMilestone && pastWeekStyle !== 'none' && (
+        pastWeekStyle === 'hatch' ? (
+          <div className="absolute inset-0 pointer-events-none opacity-30">
+            <div
+              className="w-full h-full rounded-lg"
+              style={{
+                background: `repeating-linear-gradient(135deg, transparent, transparent 3px, ${darkMode ? '#64748b' : '#94a3b8'} 3px, ${darkMode ? '#64748b' : '#94a3b8'} 6px)`
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            className="absolute top-1 right-1 w-0 h-0 border-transparent pointer-events-none"
+            style={{
+              borderTopWidth: '6px',
+              borderRightWidth: '6px',
+              borderRightColor: darkMode ? '#64748b' : '#94a3b8'
+            }}
+          />
+        )
+      )}
+
+      {/* Enhanced current week indicator */}
+      {isCurrent && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 rounded-lg border-2 border-red-400 animate-pulse"></div>
+          <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-400 rounded-full animate-ping"></div>
+        </div>
+      )}
+
+      {/* Enhanced X overlay for difficult weeks */}
+      {hasMilestone && hasMilestone.category === 'difficult' && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div className={`w-2/3 h-[3px] ${darkMode ? 'bg-red-300' : 'bg-red-600'} rotate-45 absolute rounded-full shadow-sm`} />
+          <div className={`w-2/3 h-[3px] ${darkMode ? 'bg-red-300' : 'bg-red-600'} -rotate-45 absolute rounded-full shadow-sm`} />
+        </div>
+      )}
+
+      {/* Selection highlight */}
+      {isWeekSelected && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 rounded-lg bg-blue-400/20 border-2 border-blue-400/60"></div>
+        </div>
+      )}
+
+      {/* Drag highlight */}
+      {isBeingDragged && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 rounded-lg bg-yellow-400/20 border-2 border-yellow-400/60"></div>
+        </div>
+      )}
+    </motion.div>
   );
 });
 

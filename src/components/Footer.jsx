@@ -58,67 +58,71 @@ const Footer = ({ darkMode, onNavigate }) => {
 
   return (
     <footer
-      className={`mt-16 border-t transition-all duration-300 ${
+      className={`mt-20 border-t-2 transition-all duration-500 ${
         darkMode
-          ? "bg-slate-900/50 border-slate-700/50 backdrop-blur-sm"
-          : "bg-white/50 border-orange-200/50 backdrop-blur-sm"
-      }`}
+          ? "premium-card-dark border-slate-700/30"
+          : "premium-card border-slate-200/30"
+      } backdrop-blur-lg`}
     >
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* Brand Section */}
+          {/* Enhanced Brand Section */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-5 mb-8">
               <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl shadow-lg shadow-orange-500/25 flex items-center justify-center">
-                  <div className="grid grid-cols-3 gap-0.5 w-4 h-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl shadow-xl shadow-emerald-500/30 flex items-center justify-center group">
+                  <div className="grid grid-cols-3 gap-1 w-6 h-6">
                     {[...Array(9)].map((_, i) => (
-                      <div key={i} className="bg-white/90 rounded-sm"></div>
+                      <div key={i} className="bg-white/95 rounded-sm group-hover:bg-white transition-all duration-300"></div>
                     ))}
                   </div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border border-white shadow-sm"></div>
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
               </div>
-              <h3
-                className={`text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent ${
-                  darkMode ? "drop-shadow-sm" : ""
-                }`}
-              >
-                Viventiva
-              </h3>
+              <div>
+                <h3
+                  className={`text-display font-black bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent ${
+                    darkMode ? "drop-shadow-sm" : ""
+                  }`}
+                >
+                  Viventiva
+                </h3>
+                <p className={`text-caption font-medium ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  Life Week Visualization
+                </p>
+              </div>
             </div>
             <p
-              className={`text-sm leading-relaxed mb-6 max-w-md ${
+              className={`text-body leading-relaxed mb-8 max-w-lg ${
                 darkMode ? "text-slate-300" : "text-slate-600"
               }`}
             >
-              A meaningful way to visualize your life's journey. Each week
-              matters, each moment counts. Transform how you see time and make
-              every week intentional.
+              Transform how you visualize your life's journey. Each week matters, each moment counts. 
+              Make every week intentional with beautiful, meaningful life tracking.
             </p>
             <div
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold ${
+              className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold border-2 transition-all duration-300 ${
                 darkMode
-                  ? "bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-300 border border-orange-500/30"
-                  : "bg-gradient-to-r from-orange-50 to-red-50 text-orange-700 border border-orange-200"
-              }`}
+                  ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-400/30 hover:border-emerald-400/50"
+                  : "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-200 hover:border-emerald-300"
+              } shadow-lg hover:shadow-xl group`}
             >
-              Made with <Heart className="w-3 h-3 text-red-500" /> for
+              Made with <Heart className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform duration-300" /> for
               intentional living
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Enhanced Quick Links */}
           <div>
             <h4
-              className={`font-bold mb-4 text-lg ${
+              className={`text-heading mb-6 ${
                 darkMode ? "text-slate-100" : "text-slate-800"
               }`}
             >
               Quick Links
             </h4>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {footerLinks.map((link, index) => {
                 const IconComponent = link.icon;
                 const Component = link.href ? motion.a : motion.button;
@@ -130,15 +134,15 @@ const Footer = ({ darkMode, onNavigate }) => {
                   <li key={index}>
                     <Component
                       {...props}
-                      className={`flex items-center gap-3 text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                      className={`interactive-element flex items-center gap-4 text-body font-semibold transition-all duration-300 px-3 py-2 rounded-xl ${
                         darkMode
-                          ? "text-slate-300 hover:text-slate-100"
-                          : "text-slate-600 hover:text-slate-800"
-                      }`}
-                      whileHover={{ x: 4 }}
-                      transition={{ duration: 0.2 }}
+                          ? "text-slate-300 hover:text-slate-100 hover:bg-slate-800/40"
+                          : "text-slate-600 hover:text-slate-800 hover:bg-slate-100/60"
+                      } group`}
+                      whileHover={{ x: 6 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <IconComponent className="w-4 h-4" />
+                      <IconComponent className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
                       {link.label}
                     </Component>
                   </li>
@@ -147,32 +151,32 @@ const Footer = ({ darkMode, onNavigate }) => {
             </ul>
           </div>
 
-          {/* Social Media */}
+          {/* Enhanced Social Media */}
           <div>
             <h4
-              className={`font-bold mb-4 text-lg ${
+              className={`text-heading mb-6 ${
                 darkMode ? "text-slate-100" : "text-slate-800"
               }`}
             >
-              Connect
+              Connect With Us
             </h4>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-3 gap-4">
               {socialLinks.map((social, index) => {
                 const IconComponent = social.icon;
                 return (
                   <motion.a
                     key={index}
                     href={social.href}
-                    className={`p-3 rounded-xl transition-all duration-300 ${
+                    className={`interactive-element p-4 rounded-2xl transition-all duration-300 border-2 ${
                       darkMode
-                        ? "bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:scale-110"
-                        : "bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:scale-110"
-                    }`}
-                    whileHover={{ scale: 1.1, y: -2 }}
+                        ? "bg-slate-800/50 hover:bg-slate-700/60 border-slate-700/50 hover:border-slate-600"
+                        : "bg-slate-50 hover:bg-slate-100 border-slate-200/50 hover:border-slate-300"
+                    } shadow-lg hover:shadow-xl group`}
+                    whileHover={{ scale: 1.05, y: -4 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label={social.label}
                   >
-                    <IconComponent className={`w-4 h-4 ${social.color}`} />
+                    <IconComponent className={`w-6 h-6 ${social.color} group-hover:scale-110 transition-transform duration-300`} />
                   </motion.a>
                 );
               })}
@@ -180,33 +184,35 @@ const Footer = ({ darkMode, onNavigate }) => {
           </div>
         </div>
 
-        {/* Divider */}
+        {/* Enhanced Divider */}
         <div
-          className={`border-t pt-8 ${
-            darkMode ? "border-slate-700/50" : "border-orange-200/50"
+          className={`border-t-2 pt-8 ${
+            darkMode ? "border-slate-700/30" : "border-slate-200/30"
           }`}
         >
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            {/* Copyright */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            {/* Enhanced Copyright */}
             <div
-              className={`text-sm font-medium ${
+              className={`text-body font-semibold ${
                 darkMode ? "text-slate-400" : "text-slate-600"
               }`}
             >
               © {currentYear} Viventiva. All rights reserved.
             </div>
 
-            {/* Tech Stack Credit */}
+            {/* Enhanced Tech Stack Credit */}
             <div
-              className={`text-xs flex items-center gap-3 font-medium ${
-                darkMode ? "text-slate-500" : "text-slate-500"
+              className={`text-caption flex items-center gap-4 font-semibold px-4 py-2 rounded-2xl border ${
+                darkMode 
+                  ? "text-slate-400 bg-slate-800/40 border-slate-700/50" 
+                  : "text-slate-600 bg-slate-100/60 border-slate-200/50"
               }`}
             >
               <span>Built with React, Tailwind CSS & Framer Motion</span>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse delay-100"></div>
-                <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse delay-200"></div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse delay-150"></div>
+                <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-pulse delay-300"></div>
               </div>
             </div>
           </div>

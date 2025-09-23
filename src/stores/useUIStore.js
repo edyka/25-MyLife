@@ -31,6 +31,11 @@ export const useUIStore = create(
       
       // Grid display preferences
       gridLayout: 'standard', // 'standard', 'compact', 'quarterly'
+      // Past weeks visualization: 'hatch' | 'corner' | 'none'
+      pastWeekStyle: 'hatch',
+
+      // Theme preset for accent gradients: 'mint' | 'indigo' | 'cyan'
+      themePreset: 'cyan',
       showCurrentWeekIndicator: true,
       showMilestoneIndicators: true,
       showAgeLabels: true,
@@ -65,6 +70,8 @@ export const useUIStore = create(
       setShowCurrentWeekIndicator: (show) => set({ showCurrentWeekIndicator: show }),
       setShowMilestoneIndicators: (show) => set({ showMilestoneIndicators: show }),
       setShowAgeLabels: (show) => set({ showAgeLabels: show }),
+      setPastWeekStyle: (style) => set({ pastWeekStyle: style }),
+      setThemePreset: (preset) => set({ themePreset: preset }),
       
       // Computed getters
       getThemeClasses: () => {
@@ -84,6 +91,20 @@ export const useUIStore = create(
           grid: isMobile ? 'gap-1' : 'gap-2',
           text: isMobile ? 'text-sm' : 'text-base'
         };
+      },
+
+      // Accent helpers
+      getAccentGradient: () => {
+        const { themePreset } = get();
+        if (themePreset === 'indigo') return 'from-indigo-500 to-violet-500';
+        if (themePreset === 'cyan') return 'from-cyan-500 to-sky-600';
+        return 'from-emerald-400 to-teal-500'; // mint default
+      },
+      getLightBgGradient: () => {
+        const { themePreset } = get();
+        if (themePreset === 'indigo') return 'from-indigo-50 via-violet-50 to-purple-50';
+        if (themePreset === 'cyan') return 'from-sky-300 via-sky-400 to-blue-500';
+        return 'from-emerald-50 via-teal-50 to-green-50';
       },
       
       // Initialize device detection
@@ -150,6 +171,8 @@ export const useUIStore = create(
         enableAnimations: state.enableAnimations,
         enableVirtualization: state.enableVirtualization,
         gridLayout: state.gridLayout,
+        pastWeekStyle: state.pastWeekStyle,
+        themePreset: state.themePreset,
         showCurrentWeekIndicator: state.showCurrentWeekIndicator,
         showMilestoneIndicators: state.showMilestoneIndicators,
         showAgeLabels: state.showAgeLabels
@@ -188,6 +211,7 @@ export const useUISelectors = () => {
 
     // Grid selectors
     gridLayout: store.gridLayout,
+    pastWeekStyle: store.pastWeekStyle,
     showCurrentWeekIndicator: store.showCurrentWeekIndicator,
     showMilestoneIndicators: store.showMilestoneIndicators,
     showAgeLabels: store.showAgeLabels,
@@ -209,6 +233,7 @@ export const useUISelectors = () => {
     setShowCurrentWeekIndicator: store.setShowCurrentWeekIndicator,
     setShowMilestoneIndicators: store.setShowMilestoneIndicators,
     setShowAgeLabels: store.setShowAgeLabels,
+    setPastWeekStyle: store.setPastWeekStyle,
     closeAllModals: store.closeAllModals,
   };
 };

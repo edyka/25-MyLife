@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense, memo } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy load page components for code splitting
@@ -14,13 +14,11 @@ import BrowserCompatibility from "./components/BrowserCompatibility";
 // Import optimized Zustand selectors
 import { useLifeSelectors } from "./stores/useLifeStore";
 import { useUISelectors } from "./stores/useUIStore";
-import { useMilestoneSelectors } from "./stores/useMilestoneStore";
 
 const App = () => {
   // Use optimized Zustand selectors to prevent unnecessary re-renders
   const { birthDay, birthMonth, birthYear, lifeExpectancy } = useLifeSelectors();
-  const { darkMode, currentPage, setCurrentPage, setDarkMode } = useUISelectors();
-  const { milestones, setMilestones, customCategories, setCustomCategories, goals, setGoals } = useMilestoneSelectors();
+  const { darkMode, currentPage, setCurrentPage } = useUISelectors();
 
   // Check if user has completed setup
   const hasCompletedSetup = birthYear && birthMonth && birthDay && lifeExpectancy;
@@ -95,9 +93,11 @@ const App = () => {
   return (
     <ErrorBoundary darkMode={darkMode} onError={handleError}>
       <BrowserCompatibility darkMode={darkMode} />
-      <Suspense fallback={<LoadingSpinner darkMode={darkMode} message="Loading your life weeks..." />}>
-        <MainApp />
-      </Suspense>
+      <div className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500`}>
+        <Suspense fallback={<LoadingSpinner darkMode={darkMode} message="Loading your life weeks..." />}>
+          <MainApp />
+        </Suspense>
+      </div>
     </ErrorBoundary>
   );
 };

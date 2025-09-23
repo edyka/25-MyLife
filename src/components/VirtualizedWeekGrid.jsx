@@ -140,7 +140,7 @@ const VirtualizedWeekGrid = memo(
           </div>
         </div>
       );
-    }, [rowData, darkMode, isMobile, weekBoxProps, COLUMNS, weekSize, weekGap]);
+    }, [rowData, darkMode, isMobile, weekBoxProps, weekSize, weekGap]);
 
     const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
 

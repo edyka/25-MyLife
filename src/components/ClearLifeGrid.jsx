@@ -1,13 +1,13 @@
 import { memo, useMemo } from "react";
 import ClearWeekBox from "./ClearWeekBox";
 
-const ClearLifeGrid = memo(({ 
+const ClearLifeGrid = memo(({
   lifeExpectancy,
-  currentWeek,
-  milestones,
-  selectedWeek,
-  selectedColor,
-  selectedWeeks,
+  currentWeek: _currentWeek,
+  milestones: _milestones,
+  selectedWeek: _selectedWeek,
+  selectedColor: _selectedColor,
+  selectedWeeks: _selectedWeeks,
   handleWeekClick,
   handleWeekMouseDown,
   handleWeekMouseEnter,
@@ -18,8 +18,8 @@ const ClearLifeGrid = memo(({
   isDragging,
   isMobile,
   darkMode,
-  allCategories,
-  selectionMode,
+  allCategories: _allCategories,
+  selectionMode: _selectionMode,
   showWeeks = true
 }) => {
   const totalYears = parseInt(lifeExpectancy) || 80;
