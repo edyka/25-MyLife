@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Plus, X, Calendar } from 'lucide-react';
+import { useUIStore } from '../stores/useUIStore';
+import { getTheme } from '../utils/themeConfig';
 
 const GoalTracker = ({ goals = [], setGoals, darkMode }) => {
+  const themePreset = useUIStore((state) => state.themePreset);
+  const theme = getTheme(themePreset);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [newGoal, setNewGoal] = useState({
     title: '',
@@ -44,14 +48,16 @@ const GoalTracker = ({ goals = [], setGoals, darkMode }) => {
     }`}>
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <Target className={`w-6 h-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-          <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+          <div className={`p-2 rounded-xl bg-gradient-to-br ${theme.iconBg} shadow-lg`}>
+            <Target className="w-5 h-5 text-white" />
+          </div>
+          <h2 className={`text-xl font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
             Life Goals
           </h2>
         </div>
         <motion.button
           onClick={() => setShowAddGoal(!showAddGoal)}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          className={`flex items-center gap-2 bg-gradient-to-r ${theme.primary} text-white px-4 py-2 rounded-xl shadow-lg ${theme.shadow} transition-all duration-300 font-semibold`}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -108,7 +114,7 @@ const GoalTracker = ({ goals = [], setGoals, darkMode }) => {
             <div className="flex gap-2 mt-3">
               <motion.button
                 onClick={addGoal}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+                className={`bg-gradient-to-r ${theme.secondary} text-white px-4 py-2 rounded-xl shadow-lg font-semibold transition-all duration-300`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

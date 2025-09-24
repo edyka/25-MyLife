@@ -26,6 +26,9 @@ import { useUIStore } from "../stores/useUIStore";
 // Import performance monitoring
 import { useRenderPerformance } from "../utils/performanceMonitor";
 
+// Import theme utilities
+import { getTheme } from "../utils/themeConfig";
+
 const MainApp = memo(() => {
   // Performance monitoring for render time
   useRenderPerformance("MainApp");
@@ -57,6 +60,7 @@ const MainApp = memo(() => {
     deleteMilestone,
     customCategories,
     setCustomCategories,
+    addCustomCategory,
     goals,
     setGoals,
     colorOptions: storeColorOptions
@@ -210,11 +214,8 @@ const MainApp = memo(() => {
 
   // Handle custom mood creation - memoized to prevent unnecessary re-renders
   const handleAddCustomMood = useCallback((moodName, moodData) => {
-    setCustomCategories((prev) => ({
-      ...prev,
-      [moodName]: moodData,
-    }));
-  }, [setCustomCategories]);
+    addCustomCategory(moodName, moodData);
+  }, [addCustomCategory]);
 
   // theme toggle handled elsewhere
 
@@ -266,7 +267,7 @@ const MainApp = memo(() => {
             </div>
              <div className={`${
               darkMode ? 'premium-card-dark' : 'premium-card'
-            } p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl` }>
+            } p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl mt-8` }>
                <ClearLifeGrid
                  lifeExpectancy={lifeExpectancy}
                  currentWeek={currentWeek}
@@ -296,20 +297,8 @@ const MainApp = memo(() => {
           </div>
         )}
         {currentTab === "stats" && (
-          <div className="space-y-8 mt-8">
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
-              <StatsSection stats={stats} showStats={true} darkMode={darkMode} />
-            </div>
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
-              <LifeInsights
-                milestones={milestones}
-                birthYear={birthYear}
-                birthMonth={birthMonth}
-                birthDay={birthDay}
-                lifeExpectancy={lifeExpectancy}
-                darkMode={darkMode}
-              />
-            </div>
+          <div className="mt-8 mx-auto w-full max-w-6xl px-4">
+            <StatsSection stats={stats} darkMode={darkMode} />
           </div>
         )}
 
@@ -321,226 +310,162 @@ const MainApp = memo(() => {
           </div>
         )}
         {currentTab === "settings" && (
-          <div className="space-y-8 mt-8">
-            {/* Color Selection Section */}
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
-              <h3 className={`text-heading mb-6 ${
-                darkMode ? "text-slate-100" : "text-slate-800"
-              } flex items-center gap-3`}>
-                <span className="text-2xl">🎨</span>
-                Week Colors
-              </h3>
-              <MobileColorSelection
-                colorOptions={colorOptions}
-                selectedColor={selectedColor}
-                setSelectedColor={setSelectedColor}
-                darkMode={darkMode}
-              />
-            </div>
-
-            {/* Age Re-entry Section */}
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
-              <h3 className={`text-heading mb-6 ${
-                darkMode ? "text-slate-100" : "text-slate-800"
-              } flex items-center gap-3`}>
-                <span className="text-2xl">📅</span>
-                Update Your Age
-              </h3>
-              <div className={`p-6 rounded-2xl border transition-all duration-200 ${
-                darkMode
-                  ? "bg-slate-800/30 border-slate-600/50"
-                  : "bg-slate-50/50 border-slate-200/50"
-              }`}>
-                <p className={`text-sm mb-4 ${
-                  darkMode ? "text-slate-300" : "text-slate-600"
-                }`}>
-                  Want to change your birth date or life expectancy? This will recalculate your entire life timeline.
+          <div className="mt-8 mx-auto w-full max-w-6xl px-4">
+            <div className="space-y-8">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h2 className={`text-3xl font-black bg-gradient-to-r ${uiStore.themePreset ? getTheme(uiStore.themePreset).primary : 'from-emerald-500 to-teal-600'} bg-clip-text text-transparent mb-2`}>
+                  Settings & Preferences
+                </h2>
+                <p className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  Customize your life visualization experience
                 </p>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm font-medium ${
-                      darkMode ? "text-slate-200" : "text-slate-800"
-                    }`}>
-                      Current Age: {Math.floor((currentWeek - 1) / 52)} years
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      darkMode ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"
-                    }`}>
-                      Week {currentWeek}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className={`block text-xs font-medium mb-1 ${
-                        darkMode ? "text-slate-400" : "text-slate-600"
-                      }`}>
-                        Birth Year
-                      </span>
-                      <span className={`text-sm font-semibold ${
-                        darkMode ? "text-slate-200" : "text-slate-800"
-                      }`}>
-                        {birthYear || "Not set"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className={`block text-xs font-medium mb-1 ${
-                        darkMode ? "text-slate-400" : "text-slate-600"
-                      }`}>
-                        Life Expectancy
-                      </span>
-                      <span className={`text-sm font-semibold ${
-                        darkMode ? "text-slate-200" : "text-slate-800"
-                      }`}>
-                        {lifeExpectancy || "Not set"} years
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setCurrentPage("setup")}
-                    className="w-full py-4 px-6 btn-gradient-accent text-white font-bold rounded-2xl interactive-element shadow-lg"
-                  >
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="text-lg">✏️</span>
-                      Re-enter Age Information
-                    </span>
-                  </button>
-
-                  <p className={`text-xs text-center mt-2 ${
-                    darkMode ? "text-slate-400" : "text-slate-500"
-                  }`}>
-                    This will take you back to the setup screen
-                  </p>
-                </div>
               </div>
-            </div>
 
-            {/* Grid Layout Settings */}
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
-              <h3 className={`text-heading mb-6 ${
-                darkMode ? "text-slate-100" : "text-slate-800"
-              } flex items-center gap-3`}>
-                <span className="text-2xl">🎨</span>
-                Grid Layout
-              </h3>
-              <div className={`p-6 rounded-2xl border ${
-                darkMode
-                  ? "bg-slate-800/30 border-slate-600/50"
-                  : "bg-slate-50/50 border-slate-200/50"
-              }`}>
-                <div className="space-y-3">
-                  <div>
-                    <span className={`block text-sm font-medium mb-2 ${
-                      darkMode ? "text-slate-200" : "text-slate-800"
-                    }`}>
-                      Layout Style
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { key: 'standard', label: 'Standard', desc: 'Balanced view' },
-                        { key: 'compact', label: 'Compact', desc: 'More weeks visible' },
-                        { key: 'quarterly', label: 'Quarterly', desc: 'Quarter markers' }
-                      ].map((layout) => (
-                        <button
-                          key={layout.key}
-                          onClick={() => setGridLayout(layout.key)}
-                          className={`p-3 rounded-lg border-2 transition-all duration-200 text-center ${
-                            gridLayout === layout.key
-                              ? (darkMode ? "bg-cyan-500/15 border-cyan-400 text-cyan-200" : "bg-cyan-50 border-cyan-400 text-cyan-700")
-                              : (darkMode ? "border-slate-600 hover:border-slate-500 text-slate-300" : "border-slate-300 hover:border-slate-400 text-slate-600")
-                          }`}
-                        >
-                          <div className="text-sm font-medium">{layout.label}</div>
-                          <div className="text-xs opacity-75">{layout.desc}</div>
-                        </button>
-                      ))}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Profile Settings */}
+                <div className={`p-6 rounded-2xl ${darkMode ? 'premium-card-dark' : 'premium-card'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`p-2 rounded-xl bg-gradient-to-br ${getTheme(uiStore.themePreset).iconBg} shadow-lg`}>
+                      <span className="text-2xl">👤</span>
                     </div>
+                    <h3 className={`text-xl font-bold ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
+                      Profile
+                    </h3>
                   </div>
-                  <div>
-                    <span className={`block text-sm font-medium mb-2 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
-                      Theme Preset
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { key: 'mint', label: 'Neo Mint', preview: 'from-emerald-400 to-teal-500' },
-                        { key: 'indigo', label: 'Indigo', preview: 'from-indigo-500 to-violet-500' },
-                        { key: 'cyan', label: 'Cyan', preview: 'from-cyan-500 to-sky-600' },
-                      ].map((t) => (
-                        <button
-                          key={t.key}
-                          onClick={() => setPastWeekStyle && uiStore.setThemePreset ? uiStore.setThemePreset(t.key) : null}
-                          className={`p-3 rounded-lg border-2 transition-all duration-200 text-center ${
-                            uiStore.themePreset === t.key
-                              ? darkMode ? "border-emerald-400" : "border-emerald-500"
-                              : darkMode ? "border-slate-600" : "border-slate-300"
-                          }`}
-                        >
-                          <div className={`h-6 rounded-md bg-gradient-to-r ${t.preview} mb-1`} />
-                          <div className="text-sm font-medium">{t.label}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm font-medium ${
-                      darkMode ? "text-slate-200" : "text-slate-800"
-                    }`}>
-                      Past Week Style
-                    </span>
-                    <div className="flex gap-2">
-                      {[
-                        { key: 'none', label: 'None' },
-                        { key: 'hatch', label: 'Hatch' },
-                        { key: 'corner', label: 'Corner' },
-                      ].map(opt => (
-                        <button
-                          key={opt.key}
-                          onClick={() => setPastWeekStyle(opt.key)}
-                          className={`px-2 py-1 rounded-lg text-xs font-semibold border ${pastWeekStyle===opt.key ? 'border-orange-500 text-orange-600' : (darkMode ? 'border-slate-600 text-slate-300' : 'border-slate-300 text-slate-700')}`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Additional Settings */}
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
-              <h3 className={`text-heading mb-6 ${
-                darkMode ? "text-slate-100" : "text-slate-800"
-              } flex items-center gap-3`}>
-                <span className="text-2xl">⚙️</span>
-                App Settings
-              </h3>
-              <div className={`p-6 rounded-2xl border ${
-                darkMode
-                  ? "bg-slate-800/30 border-slate-600/50"
-                  : "bg-slate-50/50 border-slate-200/50"
-              }`}>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm font-medium ${
-                      darkMode ? "text-slate-200" : "text-slate-800"
-                    }`}>
-                      Show Week Numbers
-                    </span>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className={`p-4 rounded-xl ${darkMode ? "bg-slate-800/50" : "bg-slate-50"}`}>
+                        <span className={`block text-xs font-medium mb-1 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                          Current Age
+                        </span>
+                        <span className={`text-2xl font-bold bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                          {Math.floor((currentWeek - 1) / 52)}y
+                        </span>
+                      </div>
+                      <div className={`p-4 rounded-xl ${darkMode ? "bg-slate-800/50" : "bg-slate-50"}`}>
+                        <span className={`block text-xs font-medium mb-1 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                          Current Week
+                        </span>
+                        <span className={`text-2xl font-bold bg-gradient-to-r ${getTheme(uiStore.themePreset).secondary} bg-clip-text text-transparent`}>
+                          {currentWeek}
+                        </span>
+                      </div>
+                    </div>
+
                     <button
-                      onClick={() => setShowWeeks(!showWeeks)}
-                      className={`w-12 h-6 rounded-full transition-all duration-200 ${
-                        showWeeks
-                          ? "bg-orange-500"
-                          : darkMode ? "bg-slate-600" : "bg-slate-300"
-                      }`}
+                      onClick={() => setCurrentPage("setup")}
+                      className={`w-full py-3 px-6 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} text-white font-semibold rounded-xl hover:scale-105 transition-all duration-300 shadow-lg ${getTheme(uiStore.themePreset).shadow}`}
                     >
-                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                        showWeeks ? "translate-x-6" : "translate-x-0.5"
-                      }`}></div>
+                      Update Profile
                     </button>
+                  </div>
+                </div>
+
+                {/* Appearance Settings */}
+                <div className={`p-6 rounded-2xl ${darkMode ? 'premium-card-dark' : 'premium-card'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`p-2 rounded-xl bg-gradient-to-br ${getTheme(uiStore.themePreset).tertiary} shadow-lg`}>
+                      <span className="text-2xl">🎨</span>
+                    </div>
+                    <h3 className={`text-xl font-bold ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
+                      Grid Style
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <span className={`block text-sm font-medium mb-3 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+                        Layout
+                      </span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'standard', label: 'Standard', icon: '▦' },
+                          { key: 'compact', label: 'Compact', icon: '▧' },
+                          { key: 'quarterly', label: 'Quarterly', icon: '▨' }
+                        ].map((layout) => (
+                          <button
+                            key={layout.key}
+                            onClick={() => setGridLayout(layout.key)}
+                            className={`p-3 rounded-xl transition-all duration-200 ${
+                              gridLayout === layout.key
+                                ? `bg-gradient-to-br ${getTheme(uiStore.themePreset).primary} text-white shadow-lg`
+                                : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                          >
+                            <div className="text-xl mb-1">{layout.icon}</div>
+                            <div className="text-xs font-semibold">{layout.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className={`block text-sm font-medium mb-3 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+                        Past Week Style
+                      </span>
+                      <div className="flex gap-2">
+                        {[
+                          { key: 'none', label: 'None' },
+                          { key: 'hatch', label: 'Hatch' },
+                          { key: 'corner', label: 'Corner' },
+                        ].map(opt => (
+                          <button
+                            key={opt.key}
+                            onClick={() => setPastWeekStyle(opt.key)}
+                            className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                              pastWeekStyle === opt.key
+                                ? `bg-gradient-to-r ${getTheme(uiStore.themePreset).tertiary} text-white shadow-lg`
+                                : darkMode ? "bg-slate-800/50 text-slate-300" : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Theme Color */}
+                <div className={`p-6 rounded-2xl ${darkMode ? 'premium-card-dark' : 'premium-card'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`p-2 rounded-xl bg-gradient-to-br ${getTheme(uiStore.themePreset).quaternary} shadow-lg`}>
+                      <span className="text-2xl">🎨</span>
+                    </div>
+                    <h3 className={`text-xl font-bold ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
+                      Theme Color
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <span className={`block text-sm font-medium mb-3 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+                        Stats Page Theme
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                        {[
+                          { key: 'emerald', label: 'Emerald', preview: 'from-emerald-500 to-teal-600' },
+                          { key: 'ocean', label: 'Ocean', preview: 'from-blue-500 to-cyan-600' },
+                          { key: 'sunset', label: 'Sunset', preview: 'from-orange-500 to-red-600' },
+                          { key: 'purple', label: 'Purple', preview: 'from-purple-500 to-violet-600' },
+                        ].map((t) => (
+                          <button
+                            key={t.key}
+                            onClick={() => uiStore.setThemePreset(t.key)}
+                            className={`p-4 rounded-xl transition-all duration-200 ${
+                              uiStore.themePreset === t.key
+                                ? `bg-gradient-to-br ${t.preview} text-white shadow-lg scale-105`
+                                : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            }`}
+                          >
+                            <div className={`h-8 rounded-lg bg-gradient-to-r ${t.preview} mb-2 ${uiStore.themePreset === t.key ? 'ring-2 ring-white/50' : ''}`} />
+                            <div className="text-xs font-semibold">{t.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -548,8 +473,258 @@ const MainApp = memo(() => {
           </div>
         )}
         {currentTab === "policy" && (
-          <div className="mt-4">
-            {/* Overlay not used in new selection model */}
+          <div className="mt-8 mx-auto w-full max-w-5xl px-4 pb-16">
+            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-8 sm:p-12`}>
+              {/* Header */}
+              <div className="mb-12">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className={`p-3 rounded-2xl bg-gradient-to-br ${getTheme(uiStore.themePreset || 'emerald').iconBg} shadow-lg`}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className={`text-4xl font-black bg-gradient-to-r ${getTheme(uiStore.themePreset || 'emerald').primary} bg-clip-text text-transparent`}>
+                      Privacy Policy
+                    </h1>
+                    <p className={`text-sm mt-1 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                      Effective Date: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className={`space-y-10 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+                {/* Introduction */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Introduction
+                  </h2>
+                  <p className="leading-relaxed mb-4">
+                    At Viventiva, we believe your personal data should belong to you and only you. This Privacy Policy explains our
+                    commitment to protecting your privacy and outlines how we handle information when you use our life visualization application.
+                  </p>
+                  <p className="leading-relaxed">
+                    By using Viventiva, you agree to the practices described in this policy. We encourage you to read this document
+                    carefully to understand how we safeguard your information.
+                  </p>
+                </section>
+
+                {/* Information Collection */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Information We Collect
+                  </h2>
+                  <div className={`p-6 rounded-xl mb-6 ${darkMode ? "bg-slate-800/50 border border-slate-700" : "bg-slate-50 border border-slate-200"}`}>
+                    <h3 className={`font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                      Personal Data You Provide
+                    </h3>
+                    <p className="leading-relaxed mb-4">
+                      When you use Viventiva, you may choose to provide the following information, which is stored locally on your device:
+                    </p>
+                    <ul className="space-y-2 ml-6">
+                      <li className="flex items-start">
+                        <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
+                        <span><strong>Birth Information:</strong> Your birth date (day, month, year) used to calculate your current age and life weeks</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
+                        <span><strong>Life Expectancy:</strong> Your estimated life expectancy used to visualize remaining time</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
+                        <span><strong>Milestones & Events:</strong> Personal life events, memories, and colored weeks you choose to track</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
+                        <span><strong>Goals & Categories:</strong> Personal goals and custom categorization you create</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
+                        <span><strong>Preferences:</strong> UI settings including dark mode, grid layout, theme colors, and display preferences</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className={`p-6 rounded-xl ${darkMode ? "bg-emerald-500/10 border border-emerald-500/30" : "bg-emerald-50 border border-emerald-200"}`}>
+                    <h3 className={`font-bold mb-3 ${darkMode ? "text-emerald-300" : "text-emerald-700"}`}>
+                      Information We Do NOT Collect
+                    </h3>
+                    <p className="leading-relaxed">
+                      We do not collect, transmit, or store any of your personal information on our servers. We do not use cookies,
+                      tracking pixels, analytics services, or any other data collection mechanisms. Your information never leaves your device.
+                    </p>
+                  </div>
+                </section>
+
+                {/* How We Use Information */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    How We Use Your Information
+                  </h2>
+                  <p className="leading-relaxed mb-4">
+                    All data you enter into Viventiva is used exclusively on your device to:
+                  </p>
+                  <div className="grid gap-4 ml-6">
+                    <div className="flex items-start">
+                      <span className={`mr-3 mt-1 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>•</span>
+                      <div>
+                        <strong>Visualize your life:</strong> Display your life weeks, calculate statistics, and show your progress through time
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <span className={`mr-3 mt-1 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>•</span>
+                      <div>
+                        <strong>Track milestones:</strong> Color and categorize important weeks, events, and relationships in your life
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <span className={`mr-3 mt-1 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>•</span>
+                      <div>
+                        <strong>Manage goals:</strong> Help you set, track, and visualize personal goals and aspirations
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <span className={`mr-3 mt-1 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>•</span>
+                      <div>
+                        <strong>Personalize experience:</strong> Remember your UI preferences for a better user experience
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Data Storage */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Data Storage & Security
+                  </h2>
+                  <div className={`p-6 rounded-xl mb-4 ${darkMode ? "bg-slate-800/50 border border-slate-700" : "bg-slate-50 border border-slate-200"}`}>
+                    <h3 className={`font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                      Local Storage Technology
+                    </h3>
+                    <p className="leading-relaxed">
+                      All your data is stored using your browser's localStorage technology. This means:
+                    </p>
+                    <ul className="space-y-2 mt-3 ml-6">
+                      <li className="flex items-start">
+                        <span className={`mr-2 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>→</span>
+                        <span>Data persists only in your browser on your device</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-2 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>→</span>
+                        <span>No data is transmitted over the internet to any server</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-2 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>→</span>
+                        <span>Clearing your browser data will delete all Viventiva information</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className={`mr-2 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>→</span>
+                        <span>Using the app on different devices or browsers creates separate, isolated data</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <p className="leading-relaxed">
+                    We recommend backing up your data regularly if it's important to you. Since everything is stored locally,
+                    losing or clearing your browser data will result in permanent data loss.
+                  </p>
+                </section>
+
+                {/* Third-Party Services */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Third-Party Services
+                  </h2>
+                  <p className="leading-relaxed mb-4">
+                    Viventiva does not integrate with any third-party services, analytics platforms, advertising networks, or data brokers.
+                    We do not share, sell, rent, or otherwise transfer your information to any third parties because we simply don't have
+                    access to it.
+                  </p>
+                  <p className="leading-relaxed">
+                    The application runs entirely in your browser without making network requests for user data. Any data you see
+                    comes from your local storage, not from external servers.
+                  </p>
+                </section>
+
+                {/* Your Rights */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Your Rights & Control
+                  </h2>
+                  <p className="leading-relaxed mb-4">
+                    You have complete control over your data:
+                  </p>
+                  <div className="space-y-4">
+                    <div className={`p-4 rounded-lg ${darkMode ? "bg-slate-800/30" : "bg-slate-50"}`}>
+                      <h4 className={`font-semibold mb-2 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>Access & Export</h4>
+                      <p className="text-sm leading-relaxed">
+                        You can access all your data at any time through the application. Export functionality allows you to download
+                        your data for backup or transfer purposes.
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-lg ${darkMode ? "bg-slate-800/30" : "bg-slate-50"}`}>
+                      <h4 className={`font-semibold mb-2 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>Modification & Deletion</h4>
+                      <p className="text-sm leading-relaxed">
+                        You can modify or delete any information at any time through the application's interface. You can also clear
+                        all data by clearing your browser's local storage.
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-lg ${darkMode ? "bg-slate-800/30" : "bg-slate-50"}`}>
+                      <h4 className={`font-semibold mb-2 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>No Account Required</h4>
+                      <p className="text-sm leading-relaxed">
+                        You don't need to create an account, provide an email address, or register in any way to use Viventiva.
+                        Start using the app immediately without sharing any identifying information.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Changes to Policy */}
+                <section>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Changes to This Policy
+                  </h2>
+                  <p className="leading-relaxed">
+                    We may update this Privacy Policy from time to time to reflect changes in our practices or for legal reasons.
+                    Any changes will be posted on this page with an updated effective date. We encourage you to review this policy
+                    periodically to stay informed about how we protect your privacy.
+                  </p>
+                </section>
+
+                {/* Contact */}
+                <section className={`p-8 rounded-2xl border-2 ${darkMode ? `border-${getTheme(uiStore.themePreset).primary.split('-')[1]}-500/30 bg-gradient-to-br ${getTheme(uiStore.themePreset).primary.replace('from-', 'from-').replace(' to-', '/5 to-')}/5` : `border-${getTheme(uiStore.themePreset).primary.split('-')[1]}-300 bg-gradient-to-br ${getTheme(uiStore.themePreset).primary.replace('from-', 'from-').replace(' to-', '-50 to-')}-50`}`}>
+                  <h2 className={`text-xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                    Contact Us
+                  </h2>
+                  <p className="leading-relaxed mb-4">
+                    If you have any questions, concerns, or suggestions about this Privacy Policy or our privacy practices,
+                    please don't hesitate to contact us:
+                  </p>
+                  <div className="space-y-2">
+                    <p>
+                      <strong>Email:</strong>{' '}
+                      <a href="mailto:privacy@viventiva.com" className={`font-semibold underline ${darkMode ? "text-emerald-400 hover:text-emerald-300" : "text-emerald-600 hover:text-emerald-700"} transition-colors`}>
+                        privacy@viventiva.com
+                      </a>
+                    </p>
+                    <p>
+                      <strong>Support:</strong>{' '}
+                      <a href="mailto:support@viventiva.com" className={`font-semibold underline ${darkMode ? "text-emerald-400 hover:text-emerald-300" : "text-emerald-600 hover:text-emerald-700"} transition-colors`}>
+                        support@viventiva.com
+                      </a>
+                    </p>
+                  </div>
+                </section>
+
+                {/* Final Note */}
+                <div className={`p-6 rounded-xl text-center ${darkMode ? "bg-slate-800/30" : "bg-slate-50"}`}>
+                  <p className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                    Your privacy is our priority. We built Viventiva to help you visualize your life without compromising your personal data.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>

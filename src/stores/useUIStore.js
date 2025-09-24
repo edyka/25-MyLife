@@ -34,8 +34,8 @@ export const useUIStore = create(
       // Past weeks visualization: 'hatch' | 'corner' | 'none'
       pastWeekStyle: 'hatch',
 
-      // Theme preset for accent gradients: 'mint' | 'indigo' | 'cyan'
-      themePreset: 'cyan',
+      // Theme preset for accent gradients: 'emerald' | 'ocean' | 'sunset' | 'purple'
+      themePreset: 'emerald',
       showCurrentWeekIndicator: true,
       showMilestoneIndicators: true,
       showAgeLabels: true,

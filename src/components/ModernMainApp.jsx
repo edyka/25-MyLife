@@ -5,6 +5,8 @@ import Footer from "./Footer";
 import VirtualizedWeekGrid from "./VirtualizedWeekGrid";
 import MoodPalette from "./MoodPalette";
 import LoadingSpinner from "./LoadingSpinner";
+import { useState } from "react";
+import { toPng } from "html-to-image";
 
 // Lazy load heavy components that are not immediately visible
 const GoalTracker = lazy(() => import("./GoalTracker"));
@@ -25,6 +27,29 @@ import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "
  */
 const ModernMainApp = () => {
   const gridRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  const zoomIn = useCallback(() => setScale((s) => Math.min(2, parseFloat((s + 0.1).toFixed(2)))), []);
+  const zoomOut = useCallback(() => setScale((s) => Math.max(0.5, parseFloat((s - 0.1).toFixed(2)))), []);
+  const resetZoom = useCallback(() => setScale(1), []);
+
+  const handleSavePng = useCallback(async () => {
+    if (!gridRef.current) return;
+    try {
+      const dataUrl = await toPng(gridRef.current, {
+        cacheBust: true,
+        pixelRatio: Math.min(2, window.devicePixelRatio || 1),
+        backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+      });
+      const link = document.createElement("a");
+      link.download = "life-grid.png";
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      // noop: optionally surface a toast in future
+      // console.error(err);
+    }
+  }, []);
 
   // Get state from Zustand stores
   const {
@@ -209,31 +234,46 @@ const ModernMainApp = () => {
 
         {/* Life Grid (shown on both grid and stats tabs) */}
         {(currentTab === "grid" || currentTab === "stats") && (
-          <div className={`relative ${currentTab === "stats" ? "mt-2" : "mt-6"}`} ref={gridRef}>
-            <VirtualizedWeekGrid
-              lifeExpectancy={lifeExpectancy}
-              currentWeek={currentWeek}
-              milestones={milestones}
-              selectedWeek={selectedWeek}
-              selectedColor={selectedColor}
-              selectedWeeks={selectedWeeks}
-              handleWeekClick={weekInteractions.handleWeekClick}
-              handleWeekMouseDown={weekInteractions.handleWeekMouseDown}
-              handleWeekMouseEnter={weekInteractions.handleWeekMouseEnter}
-              handleMouseUp={weekInteractions.handleMouseUp}
-              handleTouchStart={handleTouchStart}
-              handleTouchMove={handleTouchMove}
-              handleTouchEnd={handleTouchEnd}
-              isDragging={isDragging}
-              draggedWeeks={draggedWeeks}
-              isMobile={isMobile}
-              darkMode={darkMode}
-              allCategories={allCategories}
-              selectionMode={selectionMode}
-              showWeeks={showWeeks}
-              rangeStart={rangeStart}
-              isInRangeMode={isInRangeMode}
-            />
+          <div className={`relative ${currentTab === "stats" ? "mt-2" : "mt-6"}`}>
+            <div
+              ref={gridRef}
+              style={{ transform: `scale(${scale})`, transformOrigin: "center top" }}
+            >
+              <VirtualizedWeekGrid
+                lifeExpectancy={lifeExpectancy}
+                currentWeek={currentWeek}
+                milestones={milestones}
+                selectedWeek={selectedWeek}
+                selectedColor={selectedColor}
+                selectedWeeks={selectedWeeks}
+                handleWeekClick={weekInteractions.handleWeekClick}
+                handleWeekMouseDown={weekInteractions.handleWeekMouseDown}
+                handleWeekMouseEnter={weekInteractions.handleWeekMouseEnter}
+                handleMouseUp={weekInteractions.handleMouseUp}
+                handleTouchStart={handleTouchStart}
+                handleTouchMove={handleTouchMove}
+                handleTouchEnd={handleTouchEnd}
+                isDragging={isDragging}
+                draggedWeeks={draggedWeeks}
+                isMobile={isMobile}
+                darkMode={darkMode}
+                allCategories={allCategories}
+                selectionMode={selectionMode}
+                showWeeks={showWeeks}
+                rangeStart={rangeStart}
+                isInRangeMode={isInRangeMode}
+              />
+            </div>
+
+            {/* Floating controls */}
+            <div className="absolute right-2 bottom-2 flex items-center gap-2">
+              <div className={`flex items-center rounded-md shadow-sm border ${darkMode ? "bg-slate-800 border-slate-700 text-slate-100" : "bg-white border-slate-200 text-slate-700"}`} role="group" aria-label="Zoom controls">
+                <button onClick={zoomOut} className="px-2 py-1 text-sm hover:opacity-80" aria-label="Zoom out">−</button>
+                <button onClick={resetZoom} className="px-2 py-1 text-sm min-w-[56px]" aria-label="Reset zoom">{Math.round(scale * 100)}%</button>
+                <button onClick={zoomIn} className="px-2 py-1 text-sm hover:opacity-80" aria-label="Zoom in">+</button>
+              </div>
+              <button onClick={handleSavePng} className={`px-3 py-1 text-sm rounded-md shadow-sm border ${darkMode ? "bg-slate-800 border-slate-700 text-slate-100" : "bg-white border-slate-200 text-slate-700"}`} aria-label="Save as PNG">Save PNG</button>
+            </div>
           </div>
         )}
 

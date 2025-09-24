@@ -56,17 +56,17 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
 
   return (
     <div>
-      {/* Add Custom Mood Button */}
+      {/* Add Custom Color Button */}
       <button
         onClick={() => setShowCreator(true)}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
-          darkMode 
-            ? 'border-gray-500 bg-gray-700 hover:border-gray-400 hover:bg-gray-600 text-gray-300' 
+          darkMode
+            ? 'border-gray-500 bg-gray-700 hover:border-gray-400 hover:bg-gray-600 text-gray-300'
             : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100 text-gray-600'
         }`}
       >
         <Plus className="w-4 h-4" />
-        <span className="text-sm font-medium">Add Custom Mood</span>
+        <span className="text-sm font-medium">Add Custom Color</span>
       </button>
 
       {/* Custom Mood Creator Modal */}
@@ -85,7 +85,7 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
                 <div className="flex items-center gap-2">
                   <Palette className={`w-5 h-5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                   <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                    Create Custom Mood
+                    Paint Your Life
                   </h3>
                 </div>
                 <button
@@ -97,37 +97,23 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
               </div>
 
               <div className="space-y-4">
-                {/* Mood Name */}
+                {/* Label Field */}
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Mood Name (internal identifier)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., peaceful, inspired, grateful"
-                    value={newMood.name}
-                    onChange={(e) => setNewMood({ ...newMood, name: e.target.value.toLowerCase().replace(/\s+/g, '') })}
-                    className={`w-full p-3 rounded-lg border ${
-                      darkMode 
-                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                        : 'bg-white border-gray-300 placeholder-gray-500'
-                    }`}
-                  />
-                </div>
-
-                {/* Display Label */}
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Display Label
+                    Label
                   </label>
                   <input
                     type="text"
                     placeholder="e.g., Peaceful, Inspired, Grateful"
                     value={newMood.label}
-                    onChange={(e) => setNewMood({ ...newMood, label: e.target.value })}
+                    onChange={(e) => {
+                      const label = e.target.value;
+                      const name = label.toLowerCase().replace(/\s+/g, '');
+                      setNewMood({ ...newMood, label, name });
+                    }}
                     className={`w-full p-3 rounded-lg border ${
-                      darkMode 
-                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                         : 'bg-white border-gray-300 placeholder-gray-500'
                     }`}
                   />
@@ -193,7 +179,7 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
                   <div className={`flex items-center gap-2 p-3 rounded-lg border-2 ${newMood.color} border-gray-300`}>
                     <SelectedIcon className="w-4 h-4 text-white" />
                     <span className="text-sm font-medium text-white">
-                      {newMood.label || 'Your Custom Mood'}
+                      {newMood.label || 'Your Custom Color'}
                     </span>
                   </div>
                 </div>
@@ -203,15 +189,15 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={handleSave}
-                  disabled={!newMood.name || !newMood.label}
+                  disabled={!newMood.label}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${
-                    !newMood.name || !newMood.label
+                    !newMood.label
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-500 hover:bg-green-600 text-white'
                   }`}
                 >
                   <Save className="w-4 h-4" />
-                  Create Mood
+                  Create Color
                 </button>
                 <button
                   onClick={() => setShowCreator(false)}

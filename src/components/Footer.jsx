@@ -11,8 +11,12 @@ import {
   FileText,
   Info,
 } from "lucide-react";
+import { useUIStore } from "../stores/useUIStore";
+import { getTheme } from "../utils/themeConfig";
 
 const Footer = ({ darkMode, onNavigate }) => {
+  const themePreset = useUIStore((state) => state.themePreset);
+  const theme = getTheme(themePreset);
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
@@ -71,18 +75,18 @@ const Footer = ({ darkMode, onNavigate }) => {
           <div className="md:col-span-2">
             <div className="flex items-center gap-5 mb-8">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl shadow-xl shadow-emerald-500/30 flex items-center justify-center group">
+                <div className={`w-12 h-12 bg-gradient-to-br ${theme.iconBg} rounded-3xl shadow-xl ${theme.shadow} flex items-center justify-center group`}>
                   <div className="grid grid-cols-3 gap-1 w-6 h-6">
                     {[...Array(9)].map((_, i) => (
                       <div key={i} className="bg-white/95 rounded-sm group-hover:bg-white transition-all duration-300"></div>
                     ))}
                   </div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                <div className={`absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-lg animate-pulse`}></div>
               </div>
               <div>
                 <h3
-                  className={`text-display font-black bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent ${
+                  className={`text-display font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent ${
                     darkMode ? "drop-shadow-sm" : ""
                   }`}
                 >
@@ -102,11 +106,16 @@ const Footer = ({ darkMode, onNavigate }) => {
               Make every week intentional with beautiful, meaningful life tracking.
             </p>
             <div
-              className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold border-2 transition-all duration-300 ${
-                darkMode
-                  ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-400/30 hover:border-emerald-400/50"
-                  : "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-200 hover:border-emerald-300"
-              } shadow-lg hover:shadow-xl group`}
+              className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 shadow-lg hover:shadow-xl group`}
+              style={{
+                background: darkMode
+                  ? `linear-gradient(to right, ${theme.colors.primary}20, ${theme.colors.secondary}20)`
+                  : `linear-gradient(to right, ${theme.colors.primary}0D, ${theme.colors.secondary}0D)`,
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: darkMode ? `${theme.colors.primary}50` : `${theme.colors.primary}30`,
+                color: theme.colors.primary
+              }}
             >
               Made with <Heart className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform duration-300" /> for
               intentional living
