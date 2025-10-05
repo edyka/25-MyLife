@@ -3,7 +3,7 @@ import { BarChart3, Grid, Target, Settings, Shield, Moon, Sun } from "lucide-rea
 import { Switch } from "@headlessui/react";
 
 // Import optimized life selectors
-import { useLifeSelectors } from "../stores/useLifeStore";
+import { useLifeStore } from "../stores/useLifeStore";
 import { useUIStore } from "../stores/useUIStore";
 import { getTheme } from "../utils/themeConfig";
 
@@ -24,7 +24,7 @@ const TabNavigation = ({
   setDarkMode,
 }) => {
   // Get current age from optimized selectors
-  const { currentWeek } = useLifeSelectors();
+  const currentWeek = useLifeStore(state => state.currentWeek);
   const currentAge = Math.floor((currentWeek - 1) / 52);
 
   const themePreset = useUIStore((state) => state.themePreset);

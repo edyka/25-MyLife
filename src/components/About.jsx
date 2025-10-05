@@ -1,7 +1,15 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Heart, Clock, Target, Lightbulb, Code, Quote, Star, Calendar, Palette, Shield } from "lucide-react";
+import { useUIStore } from "../stores/useUIStore";
+import { getTheme } from "../utils/themeConfig";
 
-const About = ({ darkMode, onBack }) => {
+const About = ({ onBack }) => {
+  // Get current theme state
+  const darkMode = useUIStore(state => state.darkMode);
+  const themePreset = useUIStore(state => state.themePreset);
+
+  // Get current theme configuration
+  const theme = getTheme(themePreset);
   const features = [
     {
       icon: Calendar,
@@ -52,9 +60,9 @@ const About = ({ darkMode, onBack }) => {
 
   return (
     <div className={`min-h-screen transition-all duration-300 ${
-      darkMode 
-        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white" 
-        : "bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900"
+      darkMode
+        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+        : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').replace('from-', 'from-').replace(' to-', '-50 to-')}-50 text-gray-900`
     }`}>
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
@@ -78,11 +86,7 @@ const About = ({ darkMode, onBack }) => {
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-6">
               <div
-                className={`w-3 h-12 rounded-full ${
-                  darkMode
-                    ? "bg-gradient-to-b from-purple-400 to-blue-500"
-                    : "bg-gradient-to-b from-purple-600 to-blue-600"
-                }`}
+                className={`w-3 h-12 rounded-full bg-gradient-to-b ${theme.primary}`}
               />
               <h1 className={`text-5xl font-bold ${
                 darkMode ? "text-white" : "text-gray-900"
@@ -104,13 +108,13 @@ const About = ({ darkMode, onBack }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className={`p-8 rounded-2xl mb-12 text-center ${
-            darkMode 
-              ? "bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20" 
-              : "bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200"
+            darkMode
+              ? `bg-gradient-to-r ${theme.primary.replace('500', '500/10').replace('600', '500/10')} border border-${themePreset}-500/20`
+              : `bg-gradient-to-r ${theme.primary.replace('500', '100').replace('600', '100')} border border-${themePreset}-200`
           }`}
         >
           <Quote className={`w-12 h-12 mx-auto mb-4 ${
-            darkMode ? "text-purple-400" : "text-purple-600"
+            darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
           }`} />
           <blockquote className={`text-2xl font-medium mb-4 italic ${
             darkMode ? "text-white" : "text-gray-900"
@@ -152,10 +156,10 @@ const About = ({ darkMode, onBack }) => {
                   }`}
                 >
                   <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                    darkMode ? "bg-purple-500/20" : "bg-purple-100"
+                    darkMode ? `bg-${themePreset}-500/20` : `bg-${themePreset}-100`
                   }`}>
                     <IconComponent className={`w-8 h-8 ${
-                      darkMode ? "text-purple-400" : "text-purple-600"
+                      darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
                     }`} />
                   </div>
                   <h3 className={`text-xl font-semibold mb-3 ${
@@ -202,7 +206,7 @@ const About = ({ darkMode, onBack }) => {
                   }`}
                 >
                   <IconComponent className={`w-8 h-8 mb-4 ${
-                    darkMode ? "text-blue-400" : "text-blue-600"
+                    darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
                   }`} />
                   <h3 className={`text-lg font-semibold mb-2 ${
                     darkMode ? "text-white" : "text-gray-900"
@@ -246,7 +250,7 @@ const About = ({ darkMode, onBack }) => {
                 }`}
               >
                 <div className={`text-3xl font-bold mb-2 ${
-                  darkMode ? "text-purple-400" : "text-purple-600"
+                  darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
                 }`}>
                   {stat.number}
                 </div>
@@ -326,13 +330,13 @@ const About = ({ darkMode, onBack }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0 }}
           className={`text-center p-8 rounded-2xl ${
-            darkMode 
-              ? "bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20" 
-              : "bg-gradient-to-r from-pink-100 to-purple-100 border border-pink-200"
+            darkMode
+              ? `bg-gradient-to-r ${theme.tertiary.replace('500', '500/10').replace('600', '500/10')} border border-${themePreset}-500/20`
+              : `bg-gradient-to-r ${theme.tertiary.replace('500', '100').replace('600', '100')} border border-${themePreset}-200`
           }`}
         >
           <Star className={`w-12 h-12 mx-auto mb-4 ${
-            darkMode ? "text-pink-400" : "text-pink-600"
+            darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
           }`} />
           <h2 className={`text-2xl font-bold mb-4 ${
             darkMode ? "text-white" : "text-gray-900"

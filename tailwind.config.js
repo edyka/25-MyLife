@@ -15,6 +15,12 @@ export default {
     'text-gray-400', 'text-gray-600',
     'ring-blue-500', 'ring-purple-500',
     'ring-yellow-400', 'ring-blue-400',
+    // Modern mood colors
+    'bg-emerald-500', 'bg-pink-500', 'bg-blue-500', 'bg-indigo-500',
+    'bg-teal-500', 'bg-amber-500', 'bg-purple-500', 'bg-orange-500',
+    // Legacy mood colors
+    'bg-green-400', 'bg-blue-400', 'bg-pink-400', 'bg-yellow-400',
+    'bg-red-400', 'bg-purple-500', 'bg-orange-500', 'bg-teal-400',
     // Theme classes
     'dark:bg-gray-700', 'dark:border-gray-600',
     'dark:bg-gray-600', 'dark:border-gray-500',

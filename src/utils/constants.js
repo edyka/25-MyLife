@@ -1,7 +1,19 @@
-import { 
+import {
   Smile, Frown, Zap, Heart, CloudRain, X, TreePine, Lightbulb, Flower2,
-  Sun, Moon, Meh, Coffee
+  Sun, Moon, Meh, Coffee, Target, Sparkles, Wind
 } from 'lucide-react';
+
+// Modern predefined moods for the new MoodPalette
+export const modernMoods = {
+  happy: { color: 'bg-emerald-500', icon: Smile, label: 'Happy' },
+  inlove: { color: 'bg-pink-500', icon: Heart, label: 'In Love' },
+  focused: { color: 'bg-blue-500', icon: Target, label: 'Focused' },
+  sad: { color: 'bg-indigo-500', icon: Frown, label: 'Sad' },
+  peaceful: { color: 'bg-teal-500', icon: Flower2, label: 'Peaceful' },
+  energetic: { color: 'bg-amber-500', icon: Zap, label: 'Energetic' },
+  creative: { color: 'bg-purple-500', icon: Sparkles, label: 'Creative' },
+  grateful: { color: 'bg-orange-500', icon: Wind, label: 'Grateful' }
+};
 
 export const categories = {
   // Essential Emotional States
@@ -10,7 +22,7 @@ export const categories = {
   love: { color: 'bg-pink-400', icon: Heart, label: 'Love' },
   energetic: { color: 'bg-yellow-400', icon: Zap, label: 'Energetic' },
   difficult: { color: 'bg-red-400', icon: CloudRain, label: 'Difficult' },
-  
+
   // Core Life Experiences
   growth: { color: 'bg-purple-500', icon: TreePine, label: 'Growth' },
   creative: { color: 'bg-orange-500', icon: Lightbulb, label: 'Creative' },
@@ -19,6 +31,7 @@ export const categories = {
 
 export const getColorOptions = (customCategories = {}) => ({
   none: { color: 'bg-white border-gray-400', icon: X, label: 'Clear' },
+  ...modernMoods,
   ...categories,
   ...getEmotionalCategories(),
   ...getRelationshipCategories(),
@@ -31,6 +44,7 @@ export const getAllCategories = (customCategories = {}) => ({
   ...getEmotionalCategories(),
   ...getRelationshipCategories(),
   ...getExperienceCategories(),
+  ...modernMoods,  // Put modernMoods last so they override any duplicates
   ...customCategories
 });
 

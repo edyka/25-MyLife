@@ -1,7 +1,5 @@
 import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
 import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
-import { useLifeSelectors, useMilestoneSelectors, useSelectionSelectors, useUISelectors } from "../stores";
 
 const ClearWeekBox = memo(({
   weekNum,
@@ -12,16 +10,17 @@ const ClearWeekBox = memo(({
   handleTouchMove,
   handleTouchEnd,
   isDragging,
+  // Performance optimization: receive store data as props
+  currentWeek,
+  milestones = {},
+  allCategories = {},
+  selectedWeeks = new Set(),
+  draggedWeeks = new Set(),
+  selectedColor,
+  isMobile = false,
+  darkMode = false,
+  pastWeekStyle = "faded"
 }) => {
-  const { currentWeek } = useLifeSelectors();
-  const { milestones, allCategories } = useMilestoneSelectors();
-  const {
-    selectedWeeks,
-    draggedWeeks,
-    selectedColor,
-  } = useSelectionSelectors();
-  const { isMobile, darkMode, pastWeekStyle } = useUISelectors();
-
   const weekState = useMemo(() => {
     const isPast = weekNum < currentWeek;
     const isCurrent = weekNum === currentWeek;
@@ -49,10 +48,13 @@ const ClearWeekBox = memo(({
     borderColor = darkMode ? "border-slate-500/60" : "border-slate-400/60";
   }
   
-  if (hasMilestone && allCategories[hasMilestone.category]) {
-    baseBg = allCategories[hasMilestone.category].color;
-    shadowClass = "shadow-md";
-    borderColor = "border-white/20";
+  if (hasMilestone) {
+    const category = allCategories[hasMilestone.category];
+    if (category) {
+      baseBg = category.color;
+      shadowClass = "shadow-md";
+      borderColor = "border-white/20";
+    }
   }
 
   if (isCurrent) {
@@ -63,20 +65,14 @@ const ClearWeekBox = memo(({
   }
 
   return (
-    <motion.div
+    <div
       data-week-num={weekNum}
       className={`week-square relative w-full h-full ${baseBg} ${borderColor} ${shadowClass} ${
         isWeekSelected ? "ring-2 ring-blue-400/60" : ""
-      } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""} rounded-lg overflow-hidden cursor-pointer transition-all duration-200`} 
-      whileHover={selectedColor ? { 
-        scale: 1.08, 
-        y: -1,
-        boxShadow: "0 8px 25px rgba(0, 0, 0, 0.15)"
-      } : { 
-        scale: 1.05, 
-        y: -0.5 
-      }}
-      whileTap={{ scale: 0.95 }}
+      } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""
+      } rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${
+        selectedColor ? "hover:shadow-xl" : ""
+      } active:scale-95`}
       onMouseDown={(e) => { e.preventDefault(); handleWeekMouseDown(weekNum); }}
       onMouseEnter={() => handleWeekMouseEnter(weekNum)}
       onClick={() => { if (!isDragging) handleWeekClick(weekNum); }}
@@ -139,7 +135,7 @@ const ClearWeekBox = memo(({
           <div className="absolute inset-0 rounded-lg bg-yellow-400/20 border-2 border-yellow-400/60"></div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 });
 

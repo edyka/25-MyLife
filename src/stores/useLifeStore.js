@@ -28,11 +28,12 @@ export const useLifeStore = create(
       
       calculateCurrentWeek: () => {
         const { birthYear, birthMonth, birthDay } = get();
+
         if (!birthYear || !birthMonth || !birthDay) {
           set({ currentWeek: 1 });
           return 1;
         }
-        
+
         const birth = new Date(
           parseInt(birthYear),
           parseInt(birthMonth) - 1,
@@ -41,7 +42,7 @@ export const useLifeStore = create(
         const now = new Date();
         const diffTime = Math.abs(now - birth);
         const currentWeek = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1;
-        
+
         set({ currentWeek });
         return currentWeek;
       },
@@ -63,7 +64,15 @@ export const useLifeStore = create(
       
       // Initialize current week on store creation
       initialize: () => {
-        get().calculateCurrentWeek();
+        const state = get();
+
+        // Force recalculation by calling calculateCurrentWeek
+        const newWeek = state.calculateCurrentWeek();
+
+        // Force a state update to trigger re-renders
+        set({ currentWeek: newWeek });
+
+        return newWeek;
       }
     }),
     {
@@ -73,36 +82,16 @@ export const useLifeStore = create(
         birthDay: state.birthDay,
         birthMonth: state.birthMonth,
         birthYear: state.birthYear,
-        lifeExpectancy: state.lifeExpectancy
+        lifeExpectancy: state.lifeExpectancy,
+        currentWeek: state.currentWeek
       })
     }
   )
 );
 
-// Optimized selectors to prevent unnecessary re-renders
-export const useLifeSelectors = () => {
-  const store = useLifeStore();
-
-  return {
-    // Core data selectors
-    birthDay: store.birthDay,
-    birthMonth: store.birthMonth,
-    birthYear: store.birthYear,
-    lifeExpectancy: store.lifeExpectancy,
-    currentWeek: store.currentWeek,
-
-    // Computed selectors
-    totalWeeks: store.getTotalWeeks(),
-
-    // Actions
-    setBirthData: store.setBirthData,
-    setLifeExpectancy: store.setLifeExpectancy,
-    calculateCurrentWeek: store.calculateCurrentWeek,
-    getAgeFromWeek: store.getAgeFromWeek,
-    getQuarterFromWeek: store.getQuarterFromWeek,
-    initialize: store.initialize,
-  };
-};
+// Optimized individual selectors for fine-grained subscriptions
+// Use these instead of useLifeSelectors to prevent unnecessary re-renders
+// Example: const birthDay = useLifeStore(state => state.birthDay);
 
 // Initialize current week calculation on app start
 useLifeStore.getState().initialize();

@@ -91,7 +91,7 @@ const ModernApp = () => {
 
   // Loading fallback with theme awareness
   const LoadingFallback = () => (
-    <LoadingSpinner darkMode={darkMode} message="Loading component..." />
+    <LoadingSpinner message="Loading component..." />
   );
 
   // Check browser compatibility
@@ -139,7 +139,7 @@ const ModernApp = () => {
 
           {currentPage === "about" && (
             <Suspense fallback={<LoadingFallback />}>
-              <About darkMode={darkMode} onNavigate={setCurrentPage} />
+              <About onNavigate={setCurrentPage} />
             </Suspense>
           )}
 

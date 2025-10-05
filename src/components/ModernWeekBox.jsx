@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { motion } from "framer-motion";
 import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
 import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "../stores";
 import { useWeekInteractionsZustand } from "../hooks/useWeekInteractionsZustand";
@@ -109,6 +108,9 @@ const ModernWeekBox = ({ weekNum }) => {
     ringClass = "ring-1 ring-gray-400 ring-opacity-50";
   }
 
+  // Add selected/dragged state to base classes
+  const selectedStateScale = selectedWeek === weekNum || isBeingDragged || isWeekSelectedState ? "scale-108 -translate-y-0.5" : "";
+
   const baseClasses = [
     sizeClass,
     "cursor-pointer relative select-none",
@@ -117,56 +119,17 @@ const ModernWeekBox = ({ weekNum }) => {
     ringClass,
     "focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1",
     "transition-all duration-200",
-    "hover:shadow-md"
+    shouldShowHoverEffect ? (selectedColor ? "hover:scale-110 hover:-translate-y-0.5" : "hover:scale-105 hover:-translate-y-0.5") : "",
+    "hover:shadow-md",
+    "active:scale-90",
+    selectedStateScale
   ].join(" ");
-
-  // Modern hover and tap animations
-  const hoverAnimation = shouldShowHoverEffect
-    ? {
-        scale: selectedColor ? 1.1 : 1.05,
-        y: -2,
-        boxShadow: darkMode
-          ? "0 8px 25px rgba(59, 130, 246, 0.4)"
-          : "0 8px 25px rgba(59, 130, 246, 0.25)",
-        transition: { type: "spring", stiffness: 600, damping: 25 },
-      }
-    : {};
-
-  const tapAnimation = {
-    scale: 0.9,
-    transition: { type: "spring", stiffness: 700, damping: 20 },
-  };
-
-  const baseAnimation = (enableAnimations && !prefersReducedMotion)
-    ? {
-        initial: { opacity: 0, scale: 0.8, y: 5 },
-        animate: {
-          opacity: 1,
-          scale: selectedWeek === weekNum || isBeingDragged || isWeekSelectedState ? 1.08 : 1,
-          y: selectedWeek === weekNum || isBeingDragged || isWeekSelectedState ? -1 : 0,
-          transition: {
-            opacity: { duration: 0.2, ease: "easeOut" },
-            scale: { type: "spring", stiffness: 500, damping: 25 },
-            y: { type: "spring", stiffness: 500, damping: 25 },
-          },
-        },
-      }
-    : {};
 
   // Enhanced accessibility description
   const ariaLabel = getWeekDescription(weekNum, hasMilestone);
 
-  const MotionComponent = (enableAnimations && !prefersReducedMotion) ? motion.div : "div";
-  const motionProps = (enableAnimations && !prefersReducedMotion)
-    ? {
-        whileHover: hoverAnimation,
-        whileTap: tapAnimation,
-        ...baseAnimation,
-      }
-    : {};
-
   return (
-    <MotionComponent
+    <div
       className={baseClasses}
       onMouseDown={(e) => {
         e.preventDefault();
@@ -207,7 +170,7 @@ const ModernWeekBox = ({ weekNum }) => {
       onKeyDown={(e) => {
         // First handle general navigation
         handleKeyboardNavigation(e);
-        
+
         // Then handle week-specific actions
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -216,35 +179,17 @@ const ModernWeekBox = ({ weekNum }) => {
           }
         }
       }}
-      {...motionProps}
     >
       {content}
 
       {/* Modern selection indicator */}
       {isWeekSelectedState && !isBeingDragged && enableAnimations && !prefersReducedMotion && (
-        <motion.div
-          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg"
-          initial={{ scale: 0, opacity: 0, rotate: -90 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          exit={{ scale: 0, opacity: 0, rotate: 90 }}
-          transition={{
-            type: "spring",
-            stiffness: 600,
-            damping: 20,
-            delay: 0.05,
-          }}
-        />
+        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg animate-in fade-in zoom-in duration-200" />
       )}
 
       {/* Drag indicator with improved styling */}
       {isBeingDragged && enableAnimations && !prefersReducedMotion && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded-full border-2 border-yellow-400/70 backdrop-blur-sm"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ type: "spring", stiffness: 800, damping: 25 }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded-full border-2 border-yellow-400/70 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150" />
       )}
 
       {/* Static indicators for reduced motion or disabled animations */}
@@ -260,7 +205,7 @@ const ModernWeekBox = ({ weekNum }) => {
       <div id={`week-${weekNum}-description`} className="sr-only">
         {ariaLabel}
       </div>
-    </MotionComponent>
+    </div>
   );
 };
 

@@ -16,7 +16,7 @@ const generatePersistentKey = () => {
     // Derive a key with PBKDF2
     const derivedKey = CryptoJS.PBKDF2(deviceSeed, KEY_DERIVATION_SALT, {
       keySize: 256/32, // 256-bit key
-      iterations: 10000, // OWASP recommended minimum
+      iterations: 100000, // OWASP 2023 standard (increased from 10000)
       hasher: CryptoJS.algo.SHA256
     });
     return derivedKey.toString();

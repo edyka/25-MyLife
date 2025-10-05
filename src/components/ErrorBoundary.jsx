@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import { getTheme } from '../utils/themeConfig';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -47,13 +48,15 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      const { darkMode = false } = this.props;
-      
+      // Get current theme state from props or defaults
+      const { darkMode = false, themePreset = 'emerald' } = this.props;
+      const theme = getTheme(themePreset);
+
       return (
         <div className={`min-h-screen flex items-center justify-center p-4 ${
-          darkMode 
-            ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-            : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+          darkMode
+            ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
+            : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').trim()}`
         }`}>
           <div className={`max-w-lg w-full p-8 rounded-3xl shadow-2xl ${
             darkMode 
@@ -63,10 +66,10 @@ class ErrorBoundary extends React.Component {
             {/* Error Icon */}
             <div className="flex justify-center mb-6">
               <div className={`p-4 rounded-full ${
-                darkMode ? 'bg-red-500/20' : 'bg-red-100'
+                darkMode ? `bg-${themePreset}-500/20` : `bg-${themePreset}-100`
               }`}>
                 <AlertTriangle className={`w-8 h-8 ${
-                  darkMode ? 'text-red-400' : 'text-red-600'
+                  darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
                 }`} />
               </div>
             </div>
@@ -90,11 +93,7 @@ class ErrorBoundary extends React.Component {
             <div className="space-y-3">
               <button
                 onClick={this.handleRetry}
-                className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                  darkMode
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                } hover:scale-[1.02] active:scale-[0.98]`}
+                className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${theme.buttonPrimary} text-white hover:scale-[1.02] active:scale-[0.98]`}
               >
                 <RefreshCw className="w-4 h-4" />
                 Try Again
@@ -102,11 +101,7 @@ class ErrorBoundary extends React.Component {
 
               <button
                 onClick={() => window.location.reload()}
-                className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                  darkMode
-                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                } hover:scale-[1.02] active:scale-[0.98]`}
+                className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${theme.buttonSecondary} hover:scale-[1.02] active:scale-[0.98]`}
               >
                 <Home className="w-4 h-4" />
                 Refresh Page
@@ -115,11 +110,7 @@ class ErrorBoundary extends React.Component {
               {this.state.retryCount >= 3 && (
                 <button
                   onClick={this.handleResetApp}
-                  className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    darkMode
-                      ? 'bg-red-600 hover:bg-red-700 text-white'
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  } hover:scale-[1.02] active:scale-[0.98]`}
+                  className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${theme.error.replace('from-', 'bg-').replace(' to-red-600', '')} hover:opacity-80 text-white hover:scale-[1.02] active:scale-[0.98]`}
                 >
                   <Bug className="w-4 h-4" />
                   Reset App Data

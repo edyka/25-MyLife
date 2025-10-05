@@ -11,7 +11,9 @@ export const useWeekInteractionsZustand = () => {
   const {
     selectedColor,
     setSelectedWeek,
+    isDragging,
     setIsDragging,
+    draggedWeeks,
     setDraggedWeeks,
     setDragStartWeek,
     selectedWeeks,
@@ -42,7 +44,7 @@ export const useWeekInteractionsZustand = () => {
 
   const paintWeek = useCallback((weekNum) => {
     if (!selectedColor) return;
-    
+
     if (selectedColor === "none") {
       setMilestones((prev) => {
         const updated = { ...prev };
@@ -135,24 +137,20 @@ export const useWeekInteractionsZustand = () => {
   }, [isMobile, selectedColor, setIsDragging, setDragStartWeek, setDraggedWeeks, paintWeek]);
 
   const handleWeekMouseEnter = useCallback((weekNum) => {
-    const { isDragging, draggedWeeks } = useSelectionStore.getState();
-    
     if (isDragging && selectedColor) {
       const newDraggedWeeks = new Set([...draggedWeeks, weekNum]);
       setDraggedWeeks(newDraggedWeeks);
       paintWeek(weekNum);
     }
-  }, [selectedColor, setDraggedWeeks, paintWeek]);
+  }, [isDragging, draggedWeeks, selectedColor, setDraggedWeeks, paintWeek]);
 
   const handleMouseUp = useCallback(() => {
-    const { isDragging } = useSelectionStore.getState();
-    
     if (isDragging) {
       setIsDragging(false);
       setDraggedWeeks(new Set());
       setDragStartWeek(null);
     }
-  }, [setIsDragging, setDraggedWeeks, setDragStartWeek]);
+  }, [isDragging, setIsDragging, setDraggedWeeks, setDragStartWeek]);
 
   // Touch handlers for mobile
   const handleTouchStart = useCallback((weekNum, event) => {

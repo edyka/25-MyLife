@@ -2,8 +2,15 @@
 // ...existing PrivacyPolicy.jsx code will be moved here...
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield } from "lucide-react";
+import { useUIStore } from "../stores/useUIStore";
+import { getTheme } from "../utils/themeConfig";
 
 const AppPolicy = ({ darkMode, onBack }) => {
+  // Get current theme state
+  const themePreset = useUIStore(state => state.themePreset);
+
+  // Get current theme configuration
+  const theme = getTheme(themePreset);
   const lastUpdated = "January 2025";
 
   // sections content removed for now; will be added when this component is wired in
@@ -13,7 +20,7 @@ const AppPolicy = ({ darkMode, onBack }) => {
       className={`min-h-screen transition-all duration-300 ${
         darkMode
           ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
-          : "bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900"
+          : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').replace('from-', 'from-').replace(' to-', '-50 to-')}-50 text-gray-900`
       }`}
     >
       <div className="max-w-4xl mx-auto px-6 py-8">

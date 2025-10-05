@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { motion } from "framer-motion";
 import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
 import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "../stores";
 
@@ -44,13 +43,9 @@ const Web3WeekBox = memo(({
         border: 'border-red-400',
         glow: `0 0 12px #ef444440, 0 0 24px #ef444420, 0 0 36px #ef444410`,
         content: (
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <div className="w-2 h-2 bg-white rounded-full shadow-lg" />
-          </motion.div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full shadow-lg animate-pulse" />
+          </div>
         )
       };
     }
@@ -63,13 +58,9 @@ const Web3WeekBox = memo(({
           border: `border-${category.borderColor || 'purple'}-400/60`,
           glow: baseGlow,
           content: (
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            >
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-1.5 h-1.5 bg-white rounded-full shadow-md" />
-            </motion.div>
+            </div>
           )
         };
       } else {
@@ -142,51 +133,18 @@ const Web3WeekBox = memo(({
   // Modern Web3 sizing
   const sizeClass = isMobile ? "w-5 h-5" : "w-7 h-7";
 
-  // Web3 hover animations
-  const hoverAnimation = shouldShowHoverEffect ? {
-    scale: selectedColor ? 1.08 : 1.06,
-    y: -1,
-    boxShadow: darkMode
-      ? `0 8px 25px rgba(168, 85, 247, 0.4), ${interactions.glow}`
-      : `0 8px 25px rgba(168, 85, 247, 0.25), ${interactions.glow}`,
-    transition: { type: "spring", stiffness: 400, damping: 25 },
-  } : {};
+  // Calculate scale classes for selected/dragged states
+  const scaleClass = interactions.scale > 1 ? `scale-${Math.round(interactions.scale * 100)}` : "";
+  const translateY = selectedWeek === weekNum || isBeingDragged || isWeekSelectedState ? "-translate-y-0.5" : "";
 
-  const tapAnimation = {
-    scale: 0.92,
-    transition: { type: "spring", stiffness: 600, damping: 20 },
-  };
-
-  // Web3 base animations
-  const baseAnimation = enableAnimations ? {
-    initial: {
-      opacity: 0,
-      scale: 0.8,
-      y: 3
-    },
-    animate: {
-      opacity: 1,
-      scale: interactions.scale,
-      y: selectedWeek === weekNum || isBeingDragged || isWeekSelectedState ? -0.5 : 0,
-      boxShadow: interactions.glow,
-      transition: {
-        opacity: { duration: 0.3, ease: "easeOut" },
-        scale: { type: "spring", stiffness: 500, damping: 25 },
-        y: { type: "spring", stiffness: 500, damping: 25 },
-      },
-    },
-  } : {};
-
-  const MotionComponent = enableAnimations ? motion.div : "div";
-  const motionProps = enableAnimations ? {
-    whileHover: hoverAnimation,
-    whileTap: tapAnimation,
-    ...baseAnimation,
-  } : {};
+  // Hover classes
+  const hoverClass = shouldShowHoverEffect
+    ? (selectedColor ? "hover:scale-108" : "hover:scale-106") + " hover:-translate-y-px"
+    : "";
 
   return (
-    <MotionComponent
-      className={`${sizeClass} cursor-pointer relative select-none rounded-lg border-2 ${styling.bg} ${styling.border} ${interactions.ring} transition-all duration-300 overflow-hidden group focus:outline-none focus:ring-2 focus:ring-cyan-400/60 focus:ring-offset-1`}
+    <div
+      className={`${sizeClass} cursor-pointer relative select-none rounded-lg border-2 ${styling.bg} ${styling.border} ${interactions.ring} transition-all duration-300 overflow-hidden group focus:outline-none focus:ring-2 focus:ring-cyan-400/60 focus:ring-offset-1 ${hoverClass} active:scale-92 ${scaleClass} ${translateY}`}
       onMouseDown={(_e) => {
         _e.preventDefault();
         // Add click handlers here if needed
@@ -209,36 +167,18 @@ const Web3WeekBox = memo(({
       }${isWeekSelectedState ? ". Currently selected" : ""}`}
       aria-pressed={isWeekSelectedState}
       data-week={weekNum}
-      {...motionProps}
     >
       {/* Web3 Content */}
       {styling.content}
 
       {/* Web3 Selection Indicator */}
       {isWeekSelectedState && !isBeingDragged && enableAnimations && (
-        <motion.div
-          className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full border-2 border-white shadow-lg"
-          initial={{ scale: 0, opacity: 0, rotate: -90 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          exit={{ scale: 0, opacity: 0, rotate: 90 }}
-          transition={{
-            type: "spring",
-            stiffness: 600,
-            damping: 20,
-            delay: 0.05,
-          }}
-        />
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full border-2 border-white shadow-lg animate-in fade-in zoom-in duration-200" />
       )}
 
       {/* Web3 Drag Indicator */}
       {isBeingDragged && enableAnimations && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-lg border-2 border-yellow-400/60 backdrop-blur-sm"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 800, damping: 25 }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-lg border-2 border-yellow-400/60 backdrop-blur-sm animate-in fade-in zoom-in-90 duration-150" />
       )}
 
       {/* Static indicators for reduced motion */}
@@ -260,22 +200,14 @@ const Web3WeekBox = memo(({
 
       {/* Milestone Pulse Effect */}
       {hasMilestone && (
-        <motion.div
-          className="absolute inset-0 rounded-lg border-2 border-yellow-400/40"
-          animate={{ opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div className="absolute inset-0 rounded-lg border-2 border-yellow-400/40 animate-pulse" />
       )}
 
       {/* Current Week Special Effect */}
       {isCurrentWeek && (
-        <motion.div
-          className="absolute inset-0 rounded-lg bg-gradient-to-br from-red-500/20 to-pink-500/20"
-          animate={{ opacity: [0.2, 0.5, 0.2] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-red-500/20 to-pink-500/20 animate-pulse" />
       )}
-    </MotionComponent>
+    </div>
   );
 });
 

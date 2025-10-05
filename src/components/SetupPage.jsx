@@ -1,26 +1,35 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Moon, Sun, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 import { saveTheme } from "../utils/themeUtils";
 
-// Import Zustand stores and selectors
+// Import Zustand stores
 import { useLifeStore } from "../stores/useLifeStore";
-import { useUIStore, useUISelectors } from "../stores/useUIStore";
+import { useUIStore } from "../stores/useUIStore";
+
+// Import theme utilities
+import { getTheme } from "../utils/themeConfig";
 
 const SetupPage = ({ darkMode }) => {
   // Local state for loading
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use Zustand stores directly
-  const lifeStore = useLifeStore();
-  const uiStore = useUIStore();
+  // Use Zustand stores with selectors
+  const birthDay = useLifeStore(state => state.birthDay);
+  const birthMonth = useLifeStore(state => state.birthMonth);
+  const birthYear = useLifeStore(state => state.birthYear);
+  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy);
+  const setBirthData = useLifeStore(state => state.setBirthData);
+  const setLifeExpectancy = useLifeStore(state => state.setLifeExpectancy);
 
-  // Extract values and setters from stores
-  const { birthDay, birthMonth, birthYear, lifeExpectancy, setBirthData, setLifeExpectancy } = lifeStore;
-  const { setCurrentPage } = uiStore;
-  const { setDarkMode } = useUISelectors();
+  const setCurrentPage = useUIStore(state => state.setCurrentPage);
+  const setDarkMode = useUIStore(state => state.setDarkMode);
+  const themePreset = useUIStore(state => state.themePreset);
+
+  // Get current theme configuration
+  const theme = getTheme(themePreset);
   // Auto-fill demo data only on initial setup (when no data exists)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!birthDay && !birthMonth && !birthYear && !lifeExpectancy) {
       setBirthData("27", "11", "1979");
       setLifeExpectancy("90");
@@ -67,11 +76,16 @@ const SetupPage = ({ darkMode }) => {
 
   const handleStart = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    if (isFormValid()) {
-      setCurrentPage("main");
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (isFormValid()) {
+        setCurrentPage("main");
+      }
+    } catch (error) {
+      console.error("Error starting app:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleKeyDown = (e) => {
@@ -91,15 +105,15 @@ const SetupPage = ({ darkMode }) => {
       className={`min-h-screen p-4 md:p-8 transition-colors duration-300 ${
         darkMode
           ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-          : "bg-gradient-to-br from-orange-50 via-red-50 to-pink-50"
+          : `bg-gradient-to-br ${theme.onboardingLight.replace('from-', 'from-').replace(' to-', '-50 to-')}-50`
       }`}
     >
       <div className="max-w-md mx-auto">
         <div
           className={`rounded-3xl shadow-2xl p-8 md:p-10 transition-all duration-300 ${
-            darkMode 
-              ? "bg-slate-800/90 backdrop-blur-sm shadow-slate-900/50 border border-slate-700/50" 
-              : "bg-white/95 backdrop-blur-sm shadow-xl border border-orange-100/50"
+            darkMode
+              ? "bg-slate-800/90 backdrop-blur-sm shadow-slate-900/50 border border-slate-700/50"
+              : `bg-white/95 backdrop-blur-sm shadow-xl ${theme.shadow} border border-${themePreset}-100/50`
           }`}
         >
           {/* Theme Toggle */}
@@ -108,7 +122,7 @@ const SetupPage = ({ darkMode }) => {
               onClick={toggleTheme}
               className={`p-3 rounded-2xl transition-all duration-300 hover:scale-105 ${
                 darkMode
-                  ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25"
+                  ? `bg-gradient-to-r ${theme.onboarding} text-white shadow-lg ${theme.shadow}`
                   : "bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-lg"
               }`}
             >
@@ -130,25 +144,25 @@ const SetupPage = ({ darkMode }) => {
             {/* Logo Grid */}
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl shadow-lg shadow-orange-500/25 flex items-center justify-center">
+                <div className={`w-16 h-16 bg-gradient-to-br ${theme.onboarding} rounded-2xl shadow-lg ${theme.shadow} flex items-center justify-center`}>
                   <div className="grid grid-cols-3 gap-1 w-8 h-8">
                     {[...Array(9)].map((_, i) => (
                       <div key={i} className="bg-white/90 rounded-sm"></div>
                     ))}
                   </div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border-2 border-white shadow-sm"></div>
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br ${theme.onboarding} rounded-full border-2 border-white shadow-sm`}></div>
               </div>
             </div>
 
             <h1
-              className={`text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent ${
+              className={`text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r ${theme.onboarding} bg-clip-text text-transparent ${
                 darkMode ? "drop-shadow-sm" : ""
               }`}
             >
               Viventiva
             </h1>
-            <p className="text-orange-500 dark:text-orange-400 text-lg font-medium mb-4">
+            <p className={`${darkMode ? theme.accentDark : theme.accent} text-lg font-medium mb-4`}>
               Remember to Live
             </p>
             <p
@@ -164,16 +178,16 @@ const SetupPage = ({ darkMode }) => {
 
             {/* Philosophical Quote */}
             <div
-              className={`p-6 rounded-2xl border-l-4 border-orange-400 ${
-                darkMode 
-                  ? "bg-orange-900/20 border-orange-500/50" 
-                  : "bg-orange-50/80 border-orange-400"
+              className={`p-6 rounded-2xl border-l-4 ${
+                darkMode
+                  ? `${theme.onboardingBorder.replace('focus:', '')} bg-${themePreset}-900/20 border-${themePreset}-500/50`
+                  : `${theme.onboardingBorder.replace('focus:', '')} bg-${themePreset}-50/80`
               }`}
             >
               <div className="flex items-start gap-4">
                 <Brain
                   className={`w-6 h-6 mt-1 ${
-                    darkMode ? "text-orange-400" : "text-orange-500"
+                    darkMode ? theme.accentDark : theme.accent
                   }`}
                 />
                 <div>
@@ -220,7 +234,7 @@ const SetupPage = ({ darkMode }) => {
                     placeholder="Day"
                     min="1"
                     max="31"
-                    className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
+                    className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-${themePreset}-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
                       darkMode
                         ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
                         : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400"
@@ -237,7 +251,7 @@ const SetupPage = ({ darkMode }) => {
                   <select
                     value={birthMonth || ""}
                     onChange={(e) => handleBirthMonthChange(e.target.value)}
-                    className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
+                    className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-${themePreset}-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
                       darkMode
                         ? "bg-slate-700 border-slate-600 text-slate-200"
                         : "bg-slate-50 border-slate-200 text-slate-800"
@@ -273,7 +287,7 @@ const SetupPage = ({ darkMode }) => {
                     placeholder="1990"
                     min="1920"
                     max={new Date().getFullYear()}
-                    className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
+                    className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-${themePreset}-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
                       darkMode
                         ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
                         : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400"
@@ -298,7 +312,7 @@ const SetupPage = ({ darkMode }) => {
                 onChange={(e) => setLifeExpectancy(e.target.value)}
                 min="50"
                 max="110"
-                className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
+                className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-${themePreset}-500 focus:border-transparent text-center text-lg font-medium transition-all duration-200 ${
                   darkMode
                     ? "bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500"
                     : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400"
@@ -320,7 +334,7 @@ const SetupPage = ({ darkMode }) => {
               className={`w-full p-5 rounded-2xl font-semibold text-lg transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
                 isLoading
                   ? "bg-slate-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30"
+                  : `bg-gradient-to-r ${theme.onboarding} text-white hover:${theme.onboardingLight} shadow-lg ${theme.shadow} hover:shadow-xl`
               }`}
             >
               {isLoading ? (
@@ -344,10 +358,10 @@ const SetupPage = ({ darkMode }) => {
                 birthMonth ||
                 birthYear ||
                 lifeExpectancy !== "") && (
-                <div className={`text-red-500 text-sm p-4 rounded-2xl border-2 ${
-                  darkMode 
-                    ? "bg-red-900/20 border-red-500/30" 
-                    : "bg-red-50 border-red-200"
+                <div className={`${theme.errorText} text-sm p-4 rounded-2xl border-2 ${
+                  darkMode
+                    ? "bg-red-900/20 border-red-500/30"
+                    : `${theme.errorBg}`
                 }`}>
                   <p className="font-semibold mb-2">
                     Please check:

@@ -158,6 +158,16 @@ export const useAdvancedSelection = (maxWeeks = 4160) => {
     return previewSelectionRef.current.has(weekNum);
   }, []);
 
+  // Cleanup animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        cancelAnimationFrame(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   return {
     ...selection,
     selectionMode,

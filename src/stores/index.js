@@ -8,11 +8,8 @@ export { useMilestoneStore } from './useMilestoneStore';
 export { useSelectionStore } from './useSelectionStore';
 export { useUIStore } from './useUIStore';
 
-// Export optimized selectors
-export { useLifeSelectors } from './useLifeStore';
-export { useMilestoneSelectors } from './useMilestoneStore';
-export { useSelectionSelectors } from './useSelectionStore';
-export { useUISelectors } from './useUIStore';
+// Note: Selector wrapper functions removed for better performance
+// Use direct store subscriptions instead: useStore(state => state.property)
 
 /**
  * Store Documentation:
@@ -38,22 +35,5 @@ export { useUISelectors } from './useUIStore';
  * - Auto-detects system theme and device capabilities
  */
 
-// Convenience hook for commonly used store combinations
-import { useLifeStore } from './useLifeStore';
-import { useMilestoneStore } from './useMilestoneStore';
-import { useSelectionStore } from './useSelectionStore';
-import { useUIStore } from './useUIStore';
-
-export const useMainAppStores = () => {
-  const lifeStore = useLifeStore();
-  const milestoneStore = useMilestoneStore();
-  const selectionStore = useSelectionStore();
-  const uiStore = useUIStore();
-  
-  return {
-    life: lifeStore,
-    milestones: milestoneStore,
-    selection: selectionStore,
-    ui: uiStore
-  };
-};
+// For better performance, import stores directly and use individual selectors:
+// Example: const birthYear = useLifeStore(state => state.birthYear);

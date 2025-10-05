@@ -15,7 +15,16 @@ export const useMilestoneStore = create(
       goals: [],
       
       // Actions for milestones
-      setMilestones: (milestones) => set({ milestones }),
+      setMilestones: (milestones) => {
+        // Support both direct value and updater function
+        if (typeof milestones === 'function') {
+          const currentMilestones = get().milestones;
+          const newMilestones = milestones(currentMilestones);
+          set({ milestones: newMilestones });
+        } else {
+          set({ milestones });
+        }
+      },
       
       updateMilestone: (weekNumber, milestone) => {
         const { milestones } = get();
@@ -127,34 +136,6 @@ export const useMilestoneStore = create(
   )
 );
 
-// Optimized selectors to prevent unnecessary re-renders
-export const useMilestoneSelectors = () => {
-  const store = useMilestoneStore();
-
-  return {
-    // Core data selectors
-    milestones: store.milestones,
-    customCategories: store.customCategories,
-    goals: store.goals,
-
-    // Computed selectors
-    colorOptions: store.getColorOptions(),
-    allCategories: store.getAllCategories(),
-
-    // Actions
-    setMilestones: store.setMilestones,
-    updateMilestone: store.updateMilestone,
-    deleteMilestone: store.deleteMilestone,
-    clearMilestones: store.clearMilestones,
-    setCustomCategories: store.setCustomCategories,
-    addCustomCategory: store.addCustomCategory,
-    removeCustomCategory: store.removeCustomCategory,
-    setGoals: store.setGoals,
-    addGoal: store.addGoal,
-    updateGoal: store.updateGoal,
-    deleteGoal: store.deleteGoal,
-    getMilestoneByWeek: store.getMilestoneByWeek,
-    getMilestonesByCategory: store.getMilestonesByCategory,
-    getMilestonesInRange: store.getMilestonesInRange,
-  };
-};
+// Optimized individual selectors for fine-grained subscriptions
+// Use direct selectors instead of useMilestoneSelectors to prevent unnecessary re-renders
+// Example: const milestones = useMilestoneStore(state => state.milestones);

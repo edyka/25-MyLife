@@ -1,14 +1,20 @@
 import { motion } from "framer-motion";
+import { useUIStore } from "../stores/useUIStore";
+import { getTheme } from "../utils/themeConfig";
 
-const LoadingSpinner = ({ darkMode = false, message = "Loading...", size = "normal" }) => {
+const LoadingSpinner = ({ message = "Loading...", size = "normal" }) => {
+  // Get current theme state
+  const darkMode = useUIStore(state => state.darkMode);
+  const themePreset = useUIStore(state => state.themePreset);
+
+  // Get current theme configuration
+  const theme = getTheme(themePreset);
   // Small inline spinner
   if (size === "sm") {
     return (
       <motion.div
         className={`w-4 h-4 border-2 border-t-transparent rounded-full ${
-          darkMode 
-            ? "border-slate-400" 
-            : "border-slate-600"
+          theme.loadingSpinner
         }`}
         animate={{ rotate: 360 }}
         transition={{
@@ -23,7 +29,7 @@ const LoadingSpinner = ({ darkMode = false, message = "Loading...", size = "norm
     <div className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-300 ${
       darkMode
         ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-        : "bg-gradient-to-br from-orange-50 via-red-50 to-pink-50"
+        : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').trim()}`
     }`}>
       <motion.div
         className="flex flex-col items-center space-y-4"
@@ -34,9 +40,7 @@ const LoadingSpinner = ({ darkMode = false, message = "Loading...", size = "norm
         {/* Animated spinner */}
         <motion.div
           className={`w-8 h-8 border-3 border-t-transparent rounded-full ${
-            darkMode 
-              ? "border-orange-400" 
-              : "border-orange-500"
+            theme.loadingSpinner
           }`}
           animate={{ rotate: 360 }}
           transition={{

@@ -1,8 +1,6 @@
-import { useState, useMemo } from "react";
-import { X } from "lucide-react";
-import { getTotalWeeks } from "../utils/dateUtils";
+import { useMemo, useState } from "react";
+import { X, Plus, Check } from "lucide-react";
 import { getEmotionalCategories, getRelationshipCategories, getExperienceCategories } from "../utils/constants";
-import CustomMoodCreator from "./CustomMoodCreator";
 import { useUIStore } from "../stores/useUIStore";
 import { getTheme } from "../utils/themeConfig";
 
@@ -14,7 +12,7 @@ const MoodPalette = ({
   _setSelectedWeeks,
   pinnedWeeks = new Set(),
   _setPinnedWeeks = () => {},
-  lifeExpectancy,
+  _lifeExpectancy,
   darkMode,
   onAddCustomMood,
   customCategories = {},
@@ -25,6 +23,9 @@ const MoodPalette = ({
 }) => {
   const themePreset = useUIStore((state) => state.themePreset);
   const theme = getTheme(themePreset);
+
+  const [showAddNew, setShowAddNew] = useState(false);
+  const [newMoodLabel, setNewMoodLabel] = useState("");
 
   const handleColorSelect = (colorKey) => {
     resetRangeSelection();
@@ -43,8 +44,29 @@ const MoodPalette = ({
       ...experienceCategories,
       ...customCategories
     };
+
+    console.log('MoodPalette allCats:', Object.keys(combined).length, combined);
     return combined;
   }, [customCategories]);
+
+  const handleAddMood = () => {
+    if (!newMoodLabel.trim()) return;
+
+    const name = newMoodLabel.toLowerCase().replace(/\s+/g, '');
+    // Generate a random pastel color
+    const colors = ['bg-purple-400', 'bg-pink-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-orange-400', 'bg-red-400', 'bg-teal-400', 'bg-cyan-400', 'bg-indigo-400'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    onAddCustomMood(name, {
+      label: newMoodLabel,
+      color: randomColor,
+      icon: colorOptions?.happy?.icon || (() => null), // Use a default icon
+      name
+    });
+
+    setNewMoodLabel("");
+    setShowAddNew(false);
+  };
 
 
   const hasActiveSelection = selectedColor || pinnedWeeks.size > 0 || selectedWeeks.size > 0;
@@ -103,19 +125,16 @@ const MoodPalette = ({
               }`}
             />
           </div>
-          {/* Tooltip on hover */}
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <span className={`text-xs whitespace-nowrap px-2 py-1 rounded-md ${
-              darkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-900 text-white'
-            }`}>
-              Clear
-            </span>
-          </div>
         </button>
 
+        {/* All mood categories */}
         {Object.entries(allCats).map(([key, option]) => {
           const IconComponent = option?.icon;
-          if (!IconComponent) return null;
+          console.log('Mood:', key, 'icon:', IconComponent, 'type:', typeof IconComponent);
+          if (!IconComponent || typeof IconComponent !== 'function') {
+            console.log('Filtering out:', key);
+            return null;
+          }
           const isActive = selectedColor === key;
 
           return (
@@ -130,19 +149,70 @@ const MoodPalette = ({
               }}
             >
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                <IconComponent className="w-4 h-4 text-white drop-shadow-md" />
+                {IconComponent && <IconComponent className="w-4 h-4 text-white drop-shadow-md" />}
                 <span className="text-[10px] font-semibold text-white drop-shadow-md leading-none">{option.label}</span>
               </div>
             </button>
           );
         })}
-      </div>
 
-      {/* Custom Creator - Minimal */}
-      <CustomMoodCreator
-        darkMode={darkMode}
-        onAddCustomMood={onAddCustomMood}
-      />
+        {/* Add new mood - inline */}
+        {!showAddNew ? (
+          <button
+            onClick={() => setShowAddNew(true)}
+            className={`group relative aspect-square rounded-lg border-2 border-dashed transition-all duration-200 ${
+              darkMode
+                ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700/50 hover:border-slate-500'
+                : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400'
+            }`}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Plus className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+            </div>
+          </button>
+        ) : (
+          <div className={`col-span-full p-3 rounded-lg border-2 ${
+            darkMode ? 'border-slate-600 bg-slate-800' : 'border-slate-300 bg-white'
+          }`}>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Mood name..."
+                value={newMoodLabel}
+                onChange={(e) => setNewMoodLabel(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddMood()}
+                autoFocus
+                className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                  darkMode
+                    ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500'
+                } border focus:outline-none focus:ring-2 focus:ring-${themePreset}-500`}
+              />
+              <button
+                onClick={handleAddMood}
+                disabled={!newMoodLabel.trim()}
+                className={`p-2 rounded-lg transition-colors ${
+                  newMoodLabel.trim()
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => { setShowAddNew(false); setNewMoodLabel(""); }}
+                className={`p-2 rounded-lg transition-colors ${
+                  darkMode
+                    ? 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                    : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Selection Info - Only show when needed, ultra-subtle */}
       {hasActiveSelection && (
@@ -154,7 +224,7 @@ const MoodPalette = ({
           }`}
         >
           <div className="flex items-center gap-3">
-            {selectedColor && colorOptions?.[selectedColor]?.icon && (
+            {selectedColor && (
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{
@@ -164,7 +234,7 @@ const MoodPalette = ({
                 }}
               >
                 {(() => {
-                  const IconComponent = selectedColor === 'none' ? X : colorOptions[selectedColor].icon;
+                  const IconComponent = selectedColor === 'none' ? X : colorOptions?.[selectedColor]?.icon || X;
                   return <IconComponent
                     className="w-4 h-4"
                     style={{

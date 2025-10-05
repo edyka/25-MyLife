@@ -181,62 +181,9 @@ export const useUIStore = create(
   )
 );
 
-// Optimized selectors to prevent unnecessary re-renders
-export const useUISelectors = () => {
-  const store = useUIStore();
-
-  return {
-    // Theme selectors
-    darkMode: store.darkMode,
-    themeClasses: store.getThemeClasses(),
-
-    // Navigation selectors
-    currentTab: store.currentTab,
-    currentPage: store.currentPage,
-
-    // Layout selectors
-    showWeeks: store.showWeeks,
-    isMobile: store.isMobile,
-    layoutClasses: store.getLayoutClasses(),
-
-    // Modal selectors
-    showMobileColorSelection: store.showMobileColorSelection,
-    showLifeInsights: store.showLifeInsights,
-    showSettingsModal: store.showSettingsModal,
-    showGoalModal: store.showGoalModal,
-
-    // Performance selectors
-    enableAnimations: store.enableAnimations,
-    enableVirtualization: store.enableVirtualization,
-
-    // Grid selectors
-    gridLayout: store.gridLayout,
-    pastWeekStyle: store.pastWeekStyle,
-    showCurrentWeekIndicator: store.showCurrentWeekIndicator,
-    showMilestoneIndicators: store.showMilestoneIndicators,
-    showAgeLabels: store.showAgeLabels,
-
-    // Actions
-    setDarkMode: store.setDarkMode,
-    toggleDarkMode: store.toggleDarkMode,
-    setCurrentTab: store.setCurrentTab,
-    setCurrentPage: store.setCurrentPage,
-    setShowWeeks: store.setShowWeeks,
-    setIsMobile: store.setIsMobile,
-    setShowMobileColorSelection: store.setShowMobileColorSelection,
-    setShowLifeInsights: store.setShowLifeInsights,
-    setShowSettingsModal: store.setShowSettingsModal,
-    setShowGoalModal: store.setShowGoalModal,
-    setEnableAnimations: store.setEnableAnimations,
-    setEnableVirtualization: store.setEnableVirtualization,
-    setGridLayout: store.setGridLayout,
-    setShowCurrentWeekIndicator: store.setShowCurrentWeekIndicator,
-    setShowMilestoneIndicators: store.setShowMilestoneIndicators,
-    setShowAgeLabels: store.setShowAgeLabels,
-    setPastWeekStyle: store.setPastWeekStyle,
-    closeAllModals: store.closeAllModals,
-  };
-};
+// Optimized individual selectors for fine-grained subscriptions
+// Use direct selectors instead of useUISelectors to prevent unnecessary re-renders
+// Example: const darkMode = useUIStore(state => state.darkMode);
 
 // Initialize theme and device detection on store creation
 if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !/jsdom/i.test(navigator.userAgent || '')) {

@@ -1,7 +1,5 @@
 import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
 import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
-import { useLifeSelectors, useMilestoneSelectors, useSelectionSelectors, useUISelectors } from "../stores";
 import { useRenderPerformance } from "../utils/performanceMonitor";
 
 const WeekBox = memo(({
@@ -14,25 +12,24 @@ const WeekBox = memo(({
   handleTouchEnd,
   isSelected,
   isInPreview,
+  // Performance optimization: pass store data as props to avoid 54,000+ subscriptions
+  currentWeek,
+  milestones = {},
+  allCategories = {},
+  selectedWeek,
+  selectedColor,
+  selectedWeeks = new Set(),
+  isDragging,
+  draggedWeeks = new Set(),
+  selectionMode = "single",
+  isMobile = false,
+  darkMode = false
 }) => {
   // Performance monitoring (only in development for performance-critical component)
   const isDev = process.env.NODE_ENV === 'development';
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   if (isDev) useRenderPerformance(`WeekBox-${weekNum}`);
-
-  // Get state from optimized Zustand selectors
-  const { currentWeek } = useLifeSelectors();
-  const { milestones, allCategories } = useMilestoneSelectors();
-  const {
-    selectedWeek,
-    selectedColor,
-    selectedWeeks,
-    isDragging,
-    draggedWeeks,
-    selectionMode
-  } = useSelectionSelectors();
-  const { isMobile, darkMode } = useUISelectors();
 
   // Memoize expensive calculations
   const weekState = useMemo(() => {
@@ -113,7 +110,7 @@ const WeekBox = memo(({
   const sizeClass = "w-full h-full rounded-sm";
 
   return (
-    <motion.div
+    <div
       className={`${sizeClass} week-square cursor-pointer relative select-none ${bgColor} ${
         selectedWeek === weekNum ? "ring-2 ring-blue-500" : ""
       } ${isBeingDragged ? "ring-2 ring-yellow-400 shadow-lg" : ""} ${
@@ -122,14 +119,8 @@ const WeekBox = memo(({
           : ""
       } ${isWeekInPreview ? "ring-2 ring-blue-400 ring-opacity-60" : ""} ${
         isInMultiSelectMode ? "ring-1 ring-gray-400 ring-opacity-50" : ""
-      } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200`}
-      whileHover={shouldShowHoverEffect ? { scale: 1.03 } : {}}
-      whileTap={{
-        scale: 0.95,
-        transition: { type: "spring", stiffness: 650, damping: 22 },
-      }}
-      initial={false}
-      animate={false}
+      } ${shouldShowHoverEffect ? "hover:scale-103" : ""
+      } active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200`}
       onMouseDown={(e) => {
         e.preventDefault();
         handleWeekMouseDown(weekNum, e);
@@ -190,30 +181,13 @@ const WeekBox = memo(({
       {content}
 
       {isWeekSelected && !isBeingDragged && (
-        <motion.div
-          className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg"
-          initial={{ scale: 0, opacity: 0, rotate: -90 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          exit={{ scale: 0, opacity: 0, rotate: 90 }}
-          transition={{
-            type: "spring",
-            stiffness: 600,
-            damping: 20,
-            delay: 0.05,
-          }}
-        />
+        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg animate-in fade-in zoom-in duration-200" />
       )}
 
       {isBeingDragged && (
-        <motion.div
-          className="absolute inset-0 bg-yellow-400 bg-opacity-30 rounded-sm border-2 border-yellow-400 border-opacity-70"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ type: "spring", stiffness: 800, damping: 25 }}
-        />
+        <div className="absolute inset-0 bg-yellow-400 bg-opacity-30 rounded-sm border-2 border-yellow-400 border-opacity-70 animate-in fade-in zoom-in-95 duration-150" />
       )}
-    </motion.div>
+    </div>
   );
 });
 

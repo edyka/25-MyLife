@@ -3,11 +3,11 @@ import ClearWeekBox from "./ClearWeekBox";
 
 const ClearLifeGrid = memo(({
   lifeExpectancy,
-  currentWeek: _currentWeek,
-  milestones: _milestones,
-  selectedWeek: _selectedWeek,
-  selectedColor: _selectedColor,
-  selectedWeeks: _selectedWeeks,
+  currentWeek,
+  milestones,
+  _selectedWeek,
+  selectedColor,
+  selectedWeeks,
   handleWeekClick,
   handleWeekMouseDown,
   handleWeekMouseEnter,
@@ -16,10 +16,12 @@ const ClearLifeGrid = memo(({
   handleTouchMove,
   handleTouchEnd,
   isDragging,
+  draggedWeeks,
   isMobile,
   darkMode,
-  allCategories: _allCategories,
-  selectionMode: _selectionMode,
+  allCategories,
+  _selectionMode,
+  pastWeekStyle,
   showWeeks = true
 }) => {
   const totalYears = parseInt(lifeExpectancy) || 80;
@@ -59,6 +61,15 @@ const ClearLifeGrid = memo(({
                   handleTouchMove={handleTouchMove}
                   handleTouchEnd={handleTouchEnd}
                   isDragging={isDragging}
+                  currentWeek={currentWeek}
+                  milestones={milestones}
+                  allCategories={allCategories}
+                  selectedWeeks={selectedWeeks}
+                  draggedWeeks={draggedWeeks}
+                  selectedColor={selectedColor}
+                  isMobile={isMobile}
+                  darkMode={darkMode}
+                  pastWeekStyle={pastWeekStyle}
                 />
               </div>
             ))}

@@ -1,27 +1,22 @@
-import { useEffect, useMemo, useCallback, memo } from "react";
+import { useEffect, useCallback, memo, useMemo } from "react";
 import { getStats } from "../utils/dateUtils";
 import TabNavigation from "./TabNavigation";
 import Footer from "./Footer";
 import ClearLifeGrid from "./ClearLifeGrid";
-import MoodPalette from "./MoodPalette";
+import ModernMoodPalette from "./ModernMoodPalette";
 
 // Import all components directly for optimal modern performance
 import GoalTracker from "./GoalTracker";
 import StatsSection from "./StatsSection";
-import LifeInsights from "./LifeInsights";
-import MobileColorSelection from "./MobileColorSelection";
-import { useWeekInteractions } from "../hooks/useWeekInteractions";
+import { useWeekInteractionsZustand } from "../hooks/useWeekInteractionsZustand";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import { useTouchGestures } from "../hooks/useTouchGestures";
+import { useModernTouchGestures } from "../hooks/useModernTouchGestures";
 
-// Import optimized Zustand selectors
-import { useLifeSelectors } from "../stores/useLifeStore";
-import { useUISelectors } from "../stores/useUIStore";
-import { useMilestoneSelectors } from "../stores/useMilestoneStore";
-import { useSelectionSelectors } from "../stores/useSelectionStore";
-
-// Import UI store directly for actions
+// Import optimized Zustand stores
+import { useLifeStore } from "../stores/useLifeStore";
 import { useUIStore } from "../stores/useUIStore";
+import { useMilestoneStore } from "../stores/useMilestoneStore";
+import { useSelectionStore } from "../stores/useSelectionStore";
 
 // Import performance monitoring
 import { useRenderPerformance } from "../utils/performanceMonitor";
@@ -33,57 +28,84 @@ const MainApp = memo(() => {
   // Performance monitoring for render time
   useRenderPerformance("MainApp");
 
-  // Use optimized Zustand selectors to prevent unnecessary re-renders
-  const { birthDay, birthMonth, birthYear, lifeExpectancy, currentWeek } = useLifeSelectors();
-  const {
-    darkMode,
-    currentTab,
-    setCurrentTab,
-    showWeeks,
-    setShowWeeks,
-    setCurrentPage,
-    isMobile,
-    setIsMobile,
-    gridLayout,
-    setDarkMode,
-    setGridLayout,
-    pastWeekStyle,
-    setPastWeekStyle
-  } = useUISelectors();
+  // Optimized Zustand selectors - use individual selectors to prevent unnecessary re-renders
+  const birthDay = useLifeStore(state => state.birthDay);
+  const birthMonth = useLifeStore(state => state.birthMonth);
+  const birthYear = useLifeStore(state => state.birthYear);
+  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy);
+  const currentWeek = useLifeStore(state => state.currentWeek);
 
-  // Get UI store for actions
-  const uiStore = useUIStore();
-  const {
-    milestones,
-    setMilestones,
-    updateMilestone,
-    deleteMilestone,
-    customCategories,
-    setCustomCategories,
-    addCustomCategory,
-    goals,
-    setGoals,
-    colorOptions: storeColorOptions
-  } = useMilestoneSelectors();
-  const { selectedColor, setSelectedColor, selectedWeeks, setSelectedWeeks } = useSelectionSelectors();
+  const darkMode = useUIStore(state => state.darkMode);
+  const currentTab = useUIStore(state => state.currentTab);
+  const showWeeks = useUIStore(state => state.showWeeks);
+  const isMobile = useUIStore(state => state.isMobile);
+  const gridLayout = useUIStore(state => state.gridLayout);
+  const pastWeekStyle = useUIStore(state => state.pastWeekStyle);
+  const themePreset = useUIStore(state => state.themePreset);
+  const setCurrentTab = useUIStore(state => state.setCurrentTab);
+  const setShowWeeks = useUIStore(state => state.setShowWeeks);
+  const setCurrentPage = useUIStore(state => state.setCurrentPage);
+  const setIsMobile = useUIStore(state => state.setIsMobile);
+  const setDarkMode = useUIStore(state => state.setDarkMode);
+  const setGridLayout = useUIStore(state => state.setGridLayout);
+  const setPastWeekStyle = useUIStore(state => state.setPastWeekStyle);
+  const setThemePreset = useUIStore(state => state.setThemePreset);
 
-  // Use color options from optimized store selector
-  const colorOptions = storeColorOptions;
+  const milestones = useMilestoneStore(state => state.milestones);
+  const customCategories = useMilestoneStore(state => state.customCategories);
+  const goals = useMilestoneStore(state => state.goals);
+  const setMilestones = useMilestoneStore(state => state.setMilestones);
+  const addCustomCategory = useMilestoneStore(state => state.addCustomCategory);
+  const setGoals = useMilestoneStore(state => state.setGoals);
+  const getColorOptions = useMilestoneStore(state => state.getColorOptions);
+  const getAllCategories = useMilestoneStore(state => state.getAllCategories);
 
-  // Memoize week interactions hook dependencies to prevent unnecessary re-creations
-  const selectionSelectors = useSelectionSelectors();
-  const weekInteractionsDeps = useMemo(() => ({
-    lifeExpectancy,
-    milestones,
-    setMilestones,
-    updateMilestone,
-    deleteMilestone,
-    customCategories,
-    selectionStore: selectionSelectors,
-  }), [lifeExpectancy, milestones, setMilestones, updateMilestone, deleteMilestone, customCategories, selectionSelectors]);
+  const selectedColor = useSelectionStore(state => state.selectedColor);
+  const selectedWeeks = useSelectionStore(state => state.selectedWeeks);
+  const setSelectedColor = useSelectionStore(state => state.setSelectedColor);
+  const setSelectedWeeks = useSelectionStore(state => state.setSelectedWeeks);
+
+  // Memoize expensive getter functions to prevent recalculation on every render
+  const colorOptions = useMemo(() => getColorOptions(), [getColorOptions]);
+  const allCategories = useMemo(() => getAllCategories(), [getAllCategories]);
+
+  // Get theme for UI rendering
+  const theme = useMemo(() => getTheme(themePreset), [themePreset]);
+
 
   // Use custom hook for week interactions
-  const weekInteractions = useWeekInteractions(weekInteractionsDeps) || {};
+  const weekInteractions = useWeekInteractionsZustand() || {};
+
+  // Profile update function
+  const handleUpdateProfile = useCallback(async () => {
+    try {
+      // Get current state before update
+      const lifeStore = useLifeStore.getState();
+      const currentState = {
+        currentWeek: lifeStore.currentWeek,
+        birthYear: lifeStore.birthYear,
+        birthMonth: lifeStore.birthMonth,
+        birthDay: lifeStore.birthDay
+      };
+
+      // Check if birth data is available
+      if (!currentState.birthYear || !currentState.birthMonth || !currentState.birthDay) {
+        alert('Please set your birth information first in the Setup page.');
+        return;
+      }
+
+      // Re-initialize the life store to recalculate current week and derived values
+      lifeStore.initialize();
+
+      // Show success feedback (can be replaced with toast notification in future)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Profile data refreshed successfully');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('An error occurred while refreshing data. Please try again.');
+    }
+  }, []);
 
   const {
     selectedWeek,
@@ -95,10 +117,7 @@ const MainApp = memo(() => {
     pinnedWeeks,
     setPinnedWeeks,
     selectionMode,
-    setSelectionMode,
     // selectionPreview,
-    allCategories,
-    getWeeksInSelection,
     handleWeekClick,
     handleWeekMouseDown,
     handleWeekMouseEnter,
@@ -117,9 +136,6 @@ const MainApp = memo(() => {
     pinnedWeeks: new Set(),
     setPinnedWeeks: () => {},
     selectionMode: 'single',
-    setSelectionMode: () => {},
-    allCategories: {},
-    getWeeksInSelection: () => new Set(),
     handleWeekClick: () => {},
     handleWeekMouseDown: () => {},
     handleWeekMouseEnter: () => {},
@@ -185,32 +201,14 @@ const MainApp = memo(() => {
 
   // Removed unused resetZoom and zoom/pan code
 
-  // Memoize touch gestures dependencies
-  const touchGestureDeps = useMemo(() => ({
-    selectedWeeks: selectedWeeks || new Set(),
-    getWeeksInSelection: getWeeksInSelection || (() => new Set()),
-    paintWeeks: weekInteractions?.paintWeeks || (() => {}),
-    setSelectedWeeks: setSelectedWeeks || (() => {}),
-    handleWeekMouseDown: handleWeekMouseDown || (() => {}),
-    isDragging: isDragging || false,
-    handleWeekMouseEnter: handleWeekMouseEnter || (() => {}),
-    handleMouseUp: handleMouseUp || (() => {}),
-    setSelectionMode: setSelectionMode || (() => {}),
-  }), [
-    selectedWeeks,
-    getWeeksInSelection,
-    weekInteractions?.paintWeeks,
-    setSelectedWeeks,
-    handleWeekMouseDown,
-    isDragging,
-    handleWeekMouseEnter,
-    handleMouseUp,
-    setSelectionMode,
-  ]);
-
-  // Use touch gestures hook
+  // Use modern touch gestures hook
   const { handleTouchStart, handleTouchMove, handleTouchEnd } =
-    useTouchGestures(touchGestureDeps);
+    useModernTouchGestures({
+      paintWeeks: weekInteractions?.paintWeeks || (() => {}),
+      handleWeekMouseDown: handleWeekMouseDown || (() => {}),
+      handleWeekMouseEnter: handleWeekMouseEnter || (() => {}),
+      handleMouseUp: handleMouseUp || (() => {}),
+    });
 
   // Handle custom mood creation - memoized to prevent unnecessary re-renders
   const handleAddCustomMood = useCallback((moodName, moodData) => {
@@ -245,20 +243,13 @@ const MainApp = memo(() => {
                 {/* Tabbed Navigation Content */}
         {currentTab === "grid" && (
           <div className={`relative mt-8 overflow-visible space-y-8`}>
-            {/* Mood/Colors card */}
+            {/* Modern Mood Palette */}
             <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element` }>
-              <MoodPalette
-                colorOptions={colorOptions}
+              <ModernMoodPalette
                 selectedColor={selectedColor}
                 setSelectedColor={setSelectedColor}
                 selectedWeeks={selectedWeeks}
-                setSelectedWeeks={setSelectedWeeks}
                 pinnedWeeks={pinnedWeeks}
-                setPinnedWeeks={setPinnedWeeks}
-                lifeExpectancy={lifeExpectancy}
-                darkMode={darkMode}
-                onAddCustomMood={handleAddCustomMood}
-                customCategories={customCategories}
                 rangeStart={rangeStart}
                 isInRangeMode={isInRangeMode}
                 resetRangeSelection={resetRangeSelection}
@@ -314,7 +305,7 @@ const MainApp = memo(() => {
             <div className="space-y-8">
               {/* Header */}
               <div className="text-center mb-8">
-                <h2 className={`text-3xl font-black bg-gradient-to-r ${uiStore.themePreset ? getTheme(uiStore.themePreset).primary : 'from-emerald-500 to-teal-600'} bg-clip-text text-transparent mb-2`}>
+                <h2 className={`text-3xl font-black bg-gradient-to-r ${themePreset ? theme.primary : 'from-emerald-500 to-teal-600'} bg-clip-text text-transparent mb-2`}>
                   Settings & Preferences
                 </h2>
                 <p className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
@@ -326,7 +317,7 @@ const MainApp = memo(() => {
                 {/* Profile Settings */}
                 <div className={`p-6 rounded-2xl ${darkMode ? 'premium-card-dark' : 'premium-card'}`}>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className={`p-2 rounded-xl bg-gradient-to-br ${getTheme(uiStore.themePreset).iconBg} shadow-lg`}>
+                    <div className={`p-2 rounded-xl bg-gradient-to-br ${theme.iconBg} shadow-lg`}>
                       <span className="text-2xl">👤</span>
                     </div>
                     <h3 className={`text-xl font-bold ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
@@ -340,7 +331,7 @@ const MainApp = memo(() => {
                         <span className={`block text-xs font-medium mb-1 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
                           Current Age
                         </span>
-                        <span className={`text-2xl font-bold bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                        <span className={`text-2xl font-bold bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                           {Math.floor((currentWeek - 1) / 52)}y
                         </span>
                       </div>
@@ -348,25 +339,33 @@ const MainApp = memo(() => {
                         <span className={`block text-xs font-medium mb-1 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
                           Current Week
                         </span>
-                        <span className={`text-2xl font-bold bg-gradient-to-r ${getTheme(uiStore.themePreset).secondary} bg-clip-text text-transparent`}>
+                        <span className={`text-2xl font-bold bg-gradient-to-r ${theme.secondary} bg-clip-text text-transparent`}>
                           {currentWeek}
                         </span>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setCurrentPage("setup")}
-                      className={`w-full py-3 px-6 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} text-white font-semibold rounded-xl hover:scale-105 transition-all duration-300 shadow-lg ${getTheme(uiStore.themePreset).shadow}`}
-                    >
-                      Update Profile
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setCurrentPage("setup")}
+                        className={`flex-1 py-3 px-6 bg-gradient-to-r ${theme.secondary} text-white font-semibold rounded-xl hover:scale-105 transition-all duration-300 shadow-lg`}
+                      >
+                        Edit Profile
+                      </button>
+                      <button
+                        onClick={handleUpdateProfile}
+                        className={`flex-1 py-3 px-6 bg-gradient-to-r ${theme.primary} text-white font-semibold rounded-xl hover:scale-105 transition-all duration-300 shadow-lg ${theme.shadow}`}
+                      >
+                        Refresh Data
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Appearance Settings */}
                 <div className={`p-6 rounded-2xl ${darkMode ? 'premium-card-dark' : 'premium-card'}`}>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className={`p-2 rounded-xl bg-gradient-to-br ${getTheme(uiStore.themePreset).tertiary} shadow-lg`}>
+                    <div className={`p-2 rounded-xl bg-gradient-to-br ${theme.tertiary} shadow-lg`}>
                       <span className="text-2xl">🎨</span>
                     </div>
                     <h3 className={`text-xl font-bold ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
@@ -390,7 +389,7 @@ const MainApp = memo(() => {
                             onClick={() => setGridLayout(layout.key)}
                             className={`p-3 rounded-xl transition-all duration-200 ${
                               gridLayout === layout.key
-                                ? `bg-gradient-to-br ${getTheme(uiStore.themePreset).primary} text-white shadow-lg`
+                                ? `bg-gradient-to-br ${theme.primary} text-white shadow-lg`
                                 : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                           >
@@ -416,7 +415,7 @@ const MainApp = memo(() => {
                             onClick={() => setPastWeekStyle(opt.key)}
                             className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                               pastWeekStyle === opt.key
-                                ? `bg-gradient-to-r ${getTheme(uiStore.themePreset).tertiary} text-white shadow-lg`
+                                ? `bg-gradient-to-r ${theme.tertiary} text-white shadow-lg`
                                 : darkMode ? "bg-slate-800/50 text-slate-300" : "bg-slate-100 text-slate-700"
                             }`}
                           >
@@ -431,7 +430,7 @@ const MainApp = memo(() => {
                 {/* Theme Color */}
                 <div className={`p-6 rounded-2xl ${darkMode ? 'premium-card-dark' : 'premium-card'}`}>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className={`p-2 rounded-xl bg-gradient-to-br ${getTheme(uiStore.themePreset).quaternary} shadow-lg`}>
+                    <div className={`p-2 rounded-xl bg-gradient-to-br ${theme.quaternary} shadow-lg`}>
                       <span className="text-2xl">🎨</span>
                     </div>
                     <h3 className={`text-xl font-bold ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
@@ -453,14 +452,14 @@ const MainApp = memo(() => {
                         ].map((t) => (
                           <button
                             key={t.key}
-                            onClick={() => uiStore.setThemePreset(t.key)}
+                            onClick={() => setThemePreset(t.key)}
                             className={`p-4 rounded-xl transition-all duration-200 ${
-                              uiStore.themePreset === t.key
+                              themePreset === t.key
                                 ? `bg-gradient-to-br ${t.preview} text-white shadow-lg scale-105`
                                 : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                             }`}
                           >
-                            <div className={`h-8 rounded-lg bg-gradient-to-r ${t.preview} mb-2 ${uiStore.themePreset === t.key ? 'ring-2 ring-white/50' : ''}`} />
+                            <div className={`h-8 rounded-lg bg-gradient-to-r ${t.preview} mb-2 ${themePreset === t.key ? 'ring-2 ring-white/50' : ''}`} />
                             <div className="text-xs font-semibold">{t.label}</div>
                           </button>
                         ))}
@@ -478,13 +477,13 @@ const MainApp = memo(() => {
               {/* Header */}
               <div className="mb-12">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className={`p-3 rounded-2xl bg-gradient-to-br ${getTheme(uiStore.themePreset || 'emerald').iconBg} shadow-lg`}>
+                  <div className={`p-3 rounded-2xl bg-gradient-to-br ${getTheme(themePreset || 'emerald').iconBg} shadow-lg`}>
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
                   <div>
-                    <h1 className={`text-4xl font-black bg-gradient-to-r ${getTheme(uiStore.themePreset || 'emerald').primary} bg-clip-text text-transparent`}>
+                    <h1 className={`text-4xl font-black bg-gradient-to-r ${getTheme(themePreset || 'emerald').primary} bg-clip-text text-transparent`}>
                       Privacy Policy
                     </h1>
                     <p className={`text-sm mt-1 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
@@ -498,7 +497,7 @@ const MainApp = memo(() => {
               <div className={`space-y-10 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
                 {/* Introduction */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Introduction
                   </h2>
                   <p className="leading-relaxed mb-4">
@@ -513,7 +512,7 @@ const MainApp = memo(() => {
 
                 {/* Information Collection */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Information We Collect
                   </h2>
                   <div className={`p-6 rounded-xl mb-6 ${darkMode ? "bg-slate-800/50 border border-slate-700" : "bg-slate-50 border border-slate-200"}`}>
@@ -560,7 +559,7 @@ const MainApp = memo(() => {
 
                 {/* How We Use Information */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     How We Use Your Information
                   </h2>
                   <p className="leading-relaxed mb-4">
@@ -596,7 +595,7 @@ const MainApp = memo(() => {
 
                 {/* Data Storage */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Data Storage & Security
                   </h2>
                   <div className={`p-6 rounded-xl mb-4 ${darkMode ? "bg-slate-800/50 border border-slate-700" : "bg-slate-50 border border-slate-200"}`}>
@@ -633,7 +632,7 @@ const MainApp = memo(() => {
 
                 {/* Third-Party Services */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Third-Party Services
                   </h2>
                   <p className="leading-relaxed mb-4">
@@ -649,7 +648,7 @@ const MainApp = memo(() => {
 
                 {/* Your Rights */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Your Rights & Control
                   </h2>
                   <p className="leading-relaxed mb-4">
@@ -682,7 +681,7 @@ const MainApp = memo(() => {
 
                 {/* Changes to Policy */}
                 <section>
-                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                  <h2 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Changes to This Policy
                   </h2>
                   <p className="leading-relaxed">
@@ -693,8 +692,8 @@ const MainApp = memo(() => {
                 </section>
 
                 {/* Contact */}
-                <section className={`p-8 rounded-2xl border-2 ${darkMode ? `border-${getTheme(uiStore.themePreset).primary.split('-')[1]}-500/30 bg-gradient-to-br ${getTheme(uiStore.themePreset).primary.replace('from-', 'from-').replace(' to-', '/5 to-')}/5` : `border-${getTheme(uiStore.themePreset).primary.split('-')[1]}-300 bg-gradient-to-br ${getTheme(uiStore.themePreset).primary.replace('from-', 'from-').replace(' to-', '-50 to-')}-50`}`}>
-                  <h2 className={`text-xl font-bold mb-4 bg-gradient-to-r ${getTheme(uiStore.themePreset).primary} bg-clip-text text-transparent`}>
+                <section className={`p-8 rounded-2xl border-2 ${darkMode ? `border-${theme.primary.split('-')[1]}-500/30 bg-gradient-to-br ${theme.primary.replace('from-', 'from-').replace(' to-', '/5 to-')}/5` : `border-${theme.primary.split('-')[1]}-300 bg-gradient-to-br ${theme.primary.replace('from-', 'from-').replace(' to-', '-50 to-')}-50`}`}>
+                  <h2 className={`text-xl font-bold mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
                     Contact Us
                   </h2>
                   <p className="leading-relaxed mb-4">

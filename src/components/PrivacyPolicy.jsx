@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield, Eye, Lock, Server, Users, Cookie, Mail } from "lucide-react";
+import { useUIStore } from "../stores/useUIStore";
+import { getTheme } from "../utils/themeConfig";
 
 const PrivacyPolicy = ({ darkMode, onBack }) => {
+  // Get current theme state
+  const themePreset = useUIStore(state => state.themePreset);
+
+  // Get current theme configuration
+  const theme = getTheme(themePreset);
   const lastUpdated = "January 2025";
 
   const sections = [
@@ -67,9 +74,9 @@ const PrivacyPolicy = ({ darkMode, onBack }) => {
 
   return (
     <div className={`min-h-screen transition-all duration-300 ${
-      darkMode 
-        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white" 
-        : "bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900"
+      darkMode
+        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+        : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').replace('from-', 'from-').replace(' to-', '-50 to-')}-50 text-gray-900`
     }`}>
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Header */}

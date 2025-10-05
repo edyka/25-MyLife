@@ -6,7 +6,6 @@ import VirtualizedWeekGrid from "./VirtualizedWeekGrid";
 import MoodPalette from "./MoodPalette";
 import LoadingSpinner from "./LoadingSpinner";
 import { useState } from "react";
-import { toPng } from "html-to-image";
 
 // Lazy load heavy components that are not immediately visible
 const GoalTracker = lazy(() => import("./GoalTracker"));
@@ -36,6 +35,8 @@ const ModernMainApp = () => {
   const handleSavePng = useCallback(async () => {
     if (!gridRef.current) return;
     try {
+      // Dynamically import html-to-image only when needed (saves ~15KB from initial bundle)
+      const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(gridRef.current, {
         cacheBust: true,
         pixelRatio: Math.min(2, window.devicePixelRatio || 1),
@@ -45,9 +46,9 @@ const ModernMainApp = () => {
       link.download = "life-grid.png";
       link.href = dataUrl;
       link.click();
-    } catch (err) {
-      // noop: optionally surface a toast in future
-      // console.error(err);
+    } catch (error) {
+      console.error('Failed to export PNG:', error);
+      alert('Failed to export image. Please try again.');
     }
   }, []);
 
