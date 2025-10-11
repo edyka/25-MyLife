@@ -21,27 +21,40 @@
     linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
 }
 
-/* Enhanced Glass Morphism Cards */
+/* Enhanced Glass Morphism Cards with fallback */
 .glass-card {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.25); /* Fallback for non-supporting browsers */
   border: 1px solid rgba(255, 255, 255, 0.20);
   border-radius: 1.5rem;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .glass-card-dark {
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(15, 23, 42, 0.55); /* Fallback for non-supporting browsers */
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1.5rem;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Only apply backdrop-filter if supported and user prefers animations */
+@supports (backdrop-filter: blur(16px)) {
+  @media (prefers-reduced-motion: no-preference) {
+    .glass-card {
+      background: rgba(255, 255, 255, 0.12);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+    }
+
+    .glass-card-dark {
+      background: rgba(15, 23, 42, 0.35);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+    }
+  }
 }
 
 /* Premium Card Variants */
@@ -103,23 +116,36 @@
 
 /* Modern Tab Navigation */
 .tab-nav-bg {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(226, 232, 240, 0.6);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .tab-nav-bg-dark {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.95);
   border: 1px solid rgba(51, 65, 85, 0.6);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.3),
     0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Apply backdrop-filter to navigation only if supported and preferred */
+@supports (backdrop-filter: blur(20px)) {
+  @media (prefers-reduced-motion: no-preference) {
+    .tab-nav-bg {
+      background: rgba(255, 255, 255, 0.85);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+
+    .tab-nav-bg-dark {
+      background: rgba(15, 23, 42, 0.85);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+  }
 }
 
 body {

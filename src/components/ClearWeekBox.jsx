@@ -79,8 +79,17 @@ const ClearWeekBox = memo(({
       onTouchStart={(e) => { if (isMobile && handleTouchStart) handleTouchStart(weekNum, e); }}
       onTouchMove={(e) => { if (isMobile && handleTouchMove && isDragging) { e.preventDefault(); handleTouchMove(weekNum); } }}
       onTouchEnd={(e) => { if (isMobile && handleTouchEnd) { e.preventDefault(); handleTouchEnd(); } }}
+      onKeyDown={(e) => {
+        // Keyboard navigation support
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (!isDragging) handleWeekClick(weekNum);
+        }
+      }}
       title={`Week ${weekNum} - Age ${getYearFromWeek(weekNum)} years, ${getQuarterFromWeek(weekNum)}`}
       role="button"
+      aria-label={`Week ${weekNum}, Age ${getYearFromWeek(weekNum)}, ${hasMilestone ? `marked as ${hasMilestone.category}` : 'unmarked'}`}
+      aria-pressed={isWeekSelected}
       tabIndex={0}
     >
       {/* Enhanced past week indicators (only when not colored) */}

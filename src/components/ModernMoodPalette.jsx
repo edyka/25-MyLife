@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import {
-  Smile, Heart, Frown, Target, Sparkles, Wind, Zap, Flower2,
-  X, Check, ArrowRight, MoreVertical, Edit2,
-  Sun, Moon, Star, Coffee, Music, Book, Dumbbell, Palette, Eraser
-} from "lucide-react";
+import * as Icons from './icons';
 
 // Available icons for mood selection
 const AVAILABLE_ICONS = [
-  { name: 'Smile', component: Smile },
-  { name: 'Heart', component: Heart },
-  { name: 'Frown', component: Frown },
-  { name: 'Target', component: Target },
-  { name: 'Sparkles', component: Sparkles },
-  { name: 'Wind', component: Wind },
-  { name: 'Zap', component: Zap },
-  { name: 'Flower', component: Flower2 },
-  { name: 'Sun', component: Sun },
-  { name: 'Moon', component: Moon },
-  { name: 'Star', component: Star },
-  { name: 'Coffee', component: Coffee },
-  { name: 'Music', component: Music },
-  { name: 'Book', component: Book },
-  { name: 'Dumbbell', component: Dumbbell },
-  { name: 'Palette', component: Palette }
+  { name: 'Smile', component: Icons.Smile },
+  { name: 'Heart', component: Icons.Heart },
+  { name: 'Frown', component: Icons.Frown },
+  { name: 'Target', component: Icons.Target },
+  { name: 'Sparkles', component: Icons.Sparkles },
+  { name: 'Wind', component: Icons.Wind },
+  { name: 'Zap', component: Icons.Zap },
+  { name: 'Flower', component: Icons.Flower2 },
+  { name: 'Sun', component: Icons.Sun },
+  { name: 'Moon', component: Icons.Moon },
+  { name: 'Star', component: Icons.Star },
+  { name: 'Coffee', component: Icons.Coffee },
+  { name: 'Music', component: Icons.Music },
+  { name: 'Book', component: Icons.Book },
+  { name: 'Dumbbell', component: Icons.Dumbbell },
+  { name: 'Palette', component: Icons.Palette }
 ];
 
 // Available colors for moods
@@ -286,7 +282,7 @@ const ModernMoodPalette = ({
           }`}>
             {selectedColor === 'none' ? (
               <>
-                <Eraser className={`w-4 h-4 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`} />
+                <Icons.Eraser className={`w-4 h-4 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`} />
                 <span className={`text-sm font-medium ${
                   darkMode ? 'text-white' : 'text-slate-900'
                 }`}>
@@ -447,7 +443,7 @@ const ModernMoodPalette = ({
                       : 'bg-white hover:bg-slate-100'
                   }`}
                 >
-                  <MoreVertical className={`w-3 h-3 ${
+                  <Icons.MoreVertical className={`w-3 h-3 ${
                     darkMode ? 'text-slate-400' : 'text-slate-600'
                   }`} />
                 </button>
@@ -470,7 +466,7 @@ const ModernMoodPalette = ({
                           : 'hover:bg-slate-100 text-slate-900'
                       }`}
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Icons.Edit2 className="w-4 h-4" />
                       Rename
                     </button>
                   </div>
@@ -483,7 +479,7 @@ const ModernMoodPalette = ({
                       className="w-5 h-5 rounded-full flex items-center justify-center"
                       style={{ backgroundColor: mood.color }}
                     >
-                      <Check className="w-3 h-3 text-white" />
+                      <Icons.Check className="w-3 h-3 text-white" />
                     </div>
                   </div>
                 )}
@@ -508,7 +504,7 @@ const ModernMoodPalette = ({
                 if (selectedColor === 'none') {
                   return (
                     <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
-                      <X className="w-5 h-5 text-red-500" />
+                      <Icons.X className="w-5 h-5 text-red-500" />
                     </div>
                   );
                 }
@@ -541,7 +537,7 @@ const ModernMoodPalette = ({
                   {isInRangeMode
                     ? "Click to select end week"
                     : "Click start week → Click end week"}
-                  <ArrowRight className="w-3 h-3" />
+                  <Icons.ArrowRight className="w-3 h-3" />
                 </p>
               </div>
             </div>
@@ -611,7 +607,7 @@ const ModernMoodPalette = ({
                     darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
                   }`}
                 >
-                  <X className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
+                  <Icons.X className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
                 </button>
               </div>
             </div>
@@ -680,7 +676,7 @@ const ModernMoodPalette = ({
                       title={color.name}
                     >
                       {editForm.color?.hex === color.hex && (
-                        <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
+                        <Icons.Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                       )}
                     </button>
                   ))}

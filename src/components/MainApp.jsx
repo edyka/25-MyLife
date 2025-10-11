@@ -322,7 +322,7 @@ const MainApp = memo(() => {
                  showWeeks={showWeeks}
                  rangeStart={rangeStart}
                  isInRangeMode={isInRangeMode}
-                 enableVirtualization={false}
+                 enableVirtualization={true}
                />
             </div>
           </div>
