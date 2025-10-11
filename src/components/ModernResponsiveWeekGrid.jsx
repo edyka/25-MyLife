@@ -5,7 +5,7 @@ import WeekBox from "./WeekBox";
 import { useRenderPerformance } from "../utils/performanceMonitor";
 
 /**
- * Modern Responsive Week Grid - A comprehensive solution for displaying life weeks
+ * Modern Responsive Week Grid - A comprehensive solution for displaying your timeline
  * Features multiple layout modes, responsive design, and smooth performance
  */
 const ModernResponsiveWeekGrid = memo(

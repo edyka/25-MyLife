@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Smile, Heart, Frown, Target, Sparkles, Wind, Zap, Flower2,
-  X, Check, ArrowRight, MoreVertical, Edit2, Trash2,
-  Sun, Moon, Star, Coffee, Music, Book, Dumbbell, Palette
+  X, Check, ArrowRight, MoreVertical, Edit2,
+  Sun, Moon, Star, Coffee, Music, Book, Dumbbell, Palette, Eraser
 } from "lucide-react";
 
 // Available icons for mood selection
@@ -41,6 +42,7 @@ const AVAILABLE_COLORS = [
   { name: 'Cyan', hex: '#06b6d4', bg: 'bg-cyan-500', light: 'bg-cyan-50', dark: 'bg-cyan-950' }
 ];
 import { useUIStore } from "../stores/useUIStore";
+import { useMilestoneStore } from "../stores/useMilestoneStore";
 import { getTheme } from "../utils/themeConfig";
 
 // Initial predefined core moods
@@ -141,7 +143,30 @@ const ModernMoodPalette = ({
   const themePreset = useUIStore((state) => state.themePreset);
   const theme = getTheme(themePreset);
 
-  const [moods, setMoods] = useState(INITIAL_MOODS);
+  // Get custom moods from store
+  const customMoods = useMilestoneStore((state) => state.customMoods);
+  const setCustomMoods = useMilestoneStore((state) => state.setCustomMoods);
+  const updateCustomMood = useMilestoneStore((state) => state.updateCustomMood);
+
+  // Merge INITIAL_MOODS with customMoods from store
+  const moods = INITIAL_MOODS.map(mood => {
+    const customMood = customMoods[mood.key];
+    if (customMood) {
+      // Find the icon component from AVAILABLE_ICONS
+      const iconMatch = AVAILABLE_ICONS.find(i => i.name === customMood.iconName);
+      return {
+        ...mood,
+        label: customMood.label,
+        description: customMood.description,
+        color: customMood.color,
+        bg: customMood.bg,
+        lightBg: customMood.lightBg,
+        darkBg: customMood.darkBg,
+        icon: iconMatch ? iconMatch.component : mood.icon
+      };
+    }
+    return mood;
+  });
   const [hoveredMood, setHoveredMood] = useState(null);
   const [editingMood, setEditingMood] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
@@ -168,38 +193,35 @@ const ModernMoodPalette = ({
   };
 
   const handleEditClick = (mood, e) => {
+    e.preventDefault();
     e.stopPropagation();
-    setEditingMood(mood.key);
-    setEditForm({
-      label: mood.label,
-      description: mood.description,
-      color: AVAILABLE_COLORS.find(c => c.hex === mood.color) || AVAILABLE_COLORS[0],
-      icon: AVAILABLE_ICONS.find(i => i.component === mood.icon) || AVAILABLE_ICONS[0]
-    });
     setShowMenu(null);
+    // Use setTimeout to ensure menu closes before modal opens
+    setTimeout(() => {
+      setEditingMood(mood.key);
+      setEditForm({
+        label: mood.label,
+        description: mood.description,
+        color: AVAILABLE_COLORS.find(c => c.hex === mood.color) || AVAILABLE_COLORS[0],
+        icon: AVAILABLE_ICONS.find(i => i.component === mood.icon) || AVAILABLE_ICONS[0]
+      });
+    }, 0);
   };
 
   const handleSaveEdit = (e) => {
     if (e) e.stopPropagation();
     if (!editForm.label.trim()) return;
 
-    // Update the mood
-    setMoods(prevMoods =>
-      prevMoods.map(m =>
-        m.key === editingMood
-          ? {
-              ...m,
-              label: editForm.label.trim(),
-              description: editForm.description.trim(),
-              color: editForm.color.hex,
-              bg: editForm.color.bg,
-              lightBg: editForm.color.light,
-              darkBg: editForm.color.dark,
-              icon: editForm.icon.component
-            }
-          : m
-      )
-    );
+    // Save to store (which persists to localStorage and will sync to Supabase)
+    updateCustomMood(editingMood, {
+      label: editForm.label.trim(),
+      description: editForm.description.trim(),
+      color: editForm.color.hex,
+      bg: editForm.color.bg,
+      lightBg: editForm.color.light,
+      darkBg: editForm.color.dark,
+      iconName: editForm.icon.name
+    });
 
     setEditingMood(null);
     setEditForm({ label: '', description: '', color: '', icon: null });
@@ -226,6 +248,20 @@ const ModernMoodPalette = ({
     }
   }, [showMenu]);
 
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleEscKey = (e) => {
+      if (e.key === 'Escape' && editingMood) {
+        handleCancelEdit();
+      }
+    };
+
+    if (editingMood) {
+      document.addEventListener('keydown', handleEscKey);
+      return () => document.removeEventListener('keydown', handleEscKey);
+    }
+  }, [editingMood]);
+
   return (
     <div className="space-y-6">
       {/* Modern Header */}
@@ -244,11 +280,20 @@ const ModernMoodPalette = ({
         </div>
 
         {/* Active Selection Badge */}
-        {selectedColor && selectedColor !== 'none' && (
+        {selectedColor && (
           <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${
             darkMode ? 'bg-white/10' : 'bg-slate-100'
           }`}>
-            {(() => {
+            {selectedColor === 'none' ? (
+              <>
+                <Eraser className={`w-4 h-4 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`} />
+                <span className={`text-sm font-medium ${
+                  darkMode ? 'text-white' : 'text-slate-900'
+                }`}>
+                  Eraser Active
+                </span>
+              </>
+            ) : (() => {
               const mood = moods.find(m => m.key === selectedColor);
               if (!mood) return null;
               const Icon = mood.icon;
@@ -271,17 +316,66 @@ const ModernMoodPalette = ({
       </div>
 
       {/* Modern Mood Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+        {/* Clear/Eraser Tool */}
+        <div
+          className={`group relative p-3 rounded-xl transition-all duration-300 overflow-visible cursor-pointer ${
+            selectedColor === 'none'
+              ? 'scale-105 shadow-xl ring-2 ring-slate-500'
+              : 'hover:scale-105 hover:shadow-lg'
+          } ${
+            darkMode
+              ? 'bg-slate-800/50 hover:bg-slate-700/50'
+              : 'bg-slate-100 hover:bg-slate-200'
+          }`}
+          style={{
+            borderWidth: '1px',
+            borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+          }}
+          onClick={() => handleMoodSelect('none')}
+        >
+          {/* Content */}
+          <div className="relative flex flex-col items-center gap-2">
+            {/* Icon Container */}
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                selectedColor === 'none' ? 'scale-110' : ''
+              } ${
+                darkMode ? 'bg-slate-700' : 'bg-white'
+              }`}
+            >
+              <Eraser
+                className={`w-4 h-4 ${
+                  darkMode ? 'text-slate-300' : 'text-slate-600'
+                }`}
+              />
+            </div>
+
+            {/* Label */}
+            <div className="text-center">
+              <p className={`text-xs font-semibold ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}>
+                Clear
+              </p>
+              <p className={`text-[10px] mt-0.5 ${
+                darkMode ? 'text-slate-500' : 'text-slate-500'
+              }`}>
+                Remove mood
+              </p>
+            </div>
+          </div>
+        </div>
+
         {moods.map((mood) => {
           const Icon = mood.icon;
           const isActive = selectedColor === mood.key;
           const isHovered = hoveredMood === mood.key;
-          const isEditing = editingMood === mood.key;
 
           return (
             <div
               key={mood.key}
-              className={`group relative p-5 rounded-2xl transition-all duration-300 overflow-visible ${
+              className={`group relative p-3 rounded-xl transition-all duration-300 overflow-visible ${
                 isActive
                   ? 'scale-105 shadow-xl ring-2'
                   : 'hover:scale-105 hover:shadow-lg'
@@ -297,7 +391,7 @@ const ModernMoodPalette = ({
                   ? isActive ? mood.color : 'rgba(255,255,255,0.1)'
                   : isActive ? mood.color : 'rgba(0,0,0,0.05)'
               }}
-              onClick={() => !isEditing && handleMoodSelect(mood.key)}
+              onClick={() => handleMoodSelect(mood.key)}
               onMouseEnter={() => setHoveredMood(mood.key)}
               onMouseLeave={() => setHoveredMood(null)}
             >
@@ -310,10 +404,10 @@ const ModernMoodPalette = ({
               />
 
               {/* Content */}
-              <div className="relative flex flex-col items-center gap-3">
+              <div className="relative flex flex-col items-center gap-2">
                 {/* Icon Container */}
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
                     isActive || isHovered ? 'scale-110' : ''
                   }`}
                   style={{
@@ -321,7 +415,7 @@ const ModernMoodPalette = ({
                   }}
                 >
                   <Icon
-                    className={`w-6 h-6 transition-colors duration-300 ${
+                    className={`w-4 h-4 transition-colors duration-300 ${
                       isActive ? 'text-white' : ''
                     }`}
                     style={{
@@ -330,79 +424,36 @@ const ModernMoodPalette = ({
                   />
                 </div>
 
-                {/* Label or Edit Input */}
+                {/* Label and Description */}
                 <div className="text-center">
-                  {isEditing ? (
-                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="text"
-                        value={editLabel}
-                        onChange={(e) => setEditLabel(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit(e);
-                          if (e.key === 'Escape') handleCancelEdit(e);
-                        }}
-                        className={`w-full px-2 py-1 text-sm font-semibold text-center rounded ${
-                          darkMode
-                            ? 'bg-slate-700 text-white border border-slate-600'
-                            : 'bg-white text-slate-900 border border-slate-300'
-                        } focus:outline-none focus:ring-2`}
-                        style={{ focusRingColor: mood.color }}
-                        autoFocus
-                      />
-                      <div className="flex gap-1 justify-center">
-                        <button
-                          onClick={handleSaveEdit}
-                          className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className={`px-2 py-1 text-xs rounded ${
-                            darkMode
-                              ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                          }`}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <p className={`text-sm font-semibold ${
-                        darkMode ? 'text-white' : 'text-slate-900'
-                      }`}>
-                        {mood.label}
-                      </p>
-                      <p className={`text-xs mt-0.5 ${
-                        darkMode ? 'text-slate-500' : 'text-slate-500'
-                      }`}>
-                        {mood.description}
-                      </p>
-                    </>
-                  )}
+                  <p className={`text-xs font-semibold ${
+                    darkMode ? 'text-white' : 'text-slate-900'
+                  }`}>
+                    {mood.label}
+                  </p>
+                  <p className={`text-[10px] mt-0.5 ${
+                    darkMode ? 'text-slate-500' : 'text-slate-500'
+                  }`}>
+                    {mood.description}
+                  </p>
                 </div>
 
                 {/* Three-dot Menu Button */}
-                {!isEditing && (
-                  <button
-                    onClick={(e) => handleMenuToggle(mood.key, e)}
-                    className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
-                      darkMode
-                        ? 'bg-slate-800 hover:bg-slate-700'
-                        : 'bg-white hover:bg-slate-100'
-                    }`}
-                  >
-                    <MoreVertical className={`w-4 h-4 ${
-                      darkMode ? 'text-slate-400' : 'text-slate-600'
-                    }`} />
-                  </button>
-                )}
+                <button
+                  onClick={(e) => handleMenuToggle(mood.key, e)}
+                  className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                    darkMode
+                      ? 'bg-slate-800 hover:bg-slate-700'
+                      : 'bg-white hover:bg-slate-100'
+                  }`}
+                >
+                  <MoreVertical className={`w-3 h-3 ${
+                    darkMode ? 'text-slate-400' : 'text-slate-600'
+                  }`} />
+                </button>
 
                 {/* Dropdown Menu */}
-                {showMenu === mood.key && !isEditing && (
+                {showMenu === mood.key && (
                   <div
                     className={`absolute top-10 right-2 z-50 rounded-lg shadow-xl border ${
                       darkMode
@@ -426,7 +477,7 @@ const ModernMoodPalette = ({
                 )}
 
                 {/* Active Indicator */}
-                {isActive && !isEditing && (
+                {isActive && (
                   <div className="absolute top-2 left-2">
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center"
@@ -527,41 +578,49 @@ const ModernMoodPalette = ({
         </div>
       )}
 
-      {/* Edit Modal */}
-      {editingMood && (
+      {/* Edit Modal - Rendered via Portal */}
+      {editingMood && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          onClick={handleCancelEdit}
+          className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 99999
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCancelEdit(e);
+            }
+          }}
         >
           <div
-            className={`relative w-full max-w-2xl rounded-2xl shadow-2xl ${
+            className={`relative w-full max-w-lg my-8 rounded-xl shadow-2xl ${
               darkMode ? 'bg-slate-800' : 'bg-white'
             }`}
+            style={{ zIndex: 100000 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className={`p-6 border-b ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+            <div className={`p-4 border-b ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
               <div className="flex items-center justify-between">
-                <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                   Edit Mood
                 </h3>
                 <button
                   onClick={handleCancelEdit}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1.5 rounded-lg transition-colors ${
                     darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
                   }`}
                 >
-                  <X className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
+                  <X className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 space-y-4">
               {/* Name */}
               <div>
-                <label className={`block text-sm font-medium mb-2 ${
+                <label className={`block text-xs font-medium mb-1.5 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}>
                   Mood Name
@@ -570,7 +629,7 @@ const ModernMoodPalette = ({
                   type="text"
                   value={editForm.label}
                   onChange={(e) => setEditForm({...editForm, label: e.target.value})}
-                  className={`w-full px-4 py-3 rounded-lg text-lg font-semibold ${
+                  className={`w-full px-3 py-2 rounded-lg text-sm font-semibold ${
                     darkMode
                       ? 'bg-slate-700 text-white border-slate-600'
                       : 'bg-slate-50 text-slate-900 border-slate-300'
@@ -581,7 +640,7 @@ const ModernMoodPalette = ({
 
               {/* Description */}
               <div>
-                <label className={`block text-sm font-medium mb-2 ${
+                <label className={`block text-xs font-medium mb-1.5 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}>
                   Description
@@ -590,38 +649,38 @@ const ModernMoodPalette = ({
                   type="text"
                   value={editForm.description}
                   onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                  className={`w-full px-4 py-3 rounded-lg ${
+                  className={`w-full px-3 py-2 rounded-lg text-sm ${
                     darkMode
                       ? 'bg-slate-700 text-white border-slate-600'
                       : 'bg-slate-50 text-slate-900 border-slate-300'
                   } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="e.g., Joyful moments, Deep concentration..."
+                  placeholder="e.g., Joyful moments..."
                 />
               </div>
 
               {/* Color Picker */}
               <div>
-                <label className={`block text-sm font-medium mb-3 ${
+                <label className={`block text-xs font-medium mb-2 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}>
                   Color
                 </label>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-8 gap-1.5">
                   {AVAILABLE_COLORS.map((color) => (
                     <button
                       key={color.hex}
                       onClick={() => setEditForm({...editForm, color})}
-                      className={`relative w-full aspect-square rounded-lg transition-all ${
+                      className={`relative w-full aspect-square rounded-md transition-all ${
                         color.bg
                       } ${
                         editForm.color?.hex === color.hex
-                          ? 'ring-2 ring-offset-2 ring-blue-500 scale-110'
+                          ? 'ring-2 ring-offset-1 ring-blue-500'
                           : 'hover:scale-105'
                       } ${darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'}`}
                       title={color.name}
                     >
                       {editForm.color?.hex === color.hex && (
-                        <Check className="w-5 h-5 text-white absolute inset-0 m-auto" />
+                        <Check className="w-3 h-3 text-white absolute inset-0 m-auto" />
                       )}
                     </button>
                   ))}
@@ -630,28 +689,28 @@ const ModernMoodPalette = ({
 
               {/* Icon Picker */}
               <div>
-                <label className={`block text-sm font-medium mb-3 ${
+                <label className={`block text-xs font-medium mb-2 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}>
                   Icon
                 </label>
-                <div className="grid grid-cols-8 gap-2">
+                <div className="grid grid-cols-10 gap-1.5">
                   {AVAILABLE_ICONS.map((iconItem) => {
                     const IconComp = iconItem.component;
                     return (
                       <button
                         key={iconItem.name}
                         onClick={() => setEditForm({...editForm, icon: iconItem})}
-                        className={`relative w-full aspect-square rounded-lg transition-all flex items-center justify-center ${
+                        className={`relative w-full aspect-square rounded-md transition-all flex items-center justify-center ${
                           darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200'
                         } ${
                           editForm.icon?.name === iconItem.name
-                            ? 'ring-2 ring-blue-500 scale-110'
+                            ? 'ring-2 ring-blue-500'
                             : 'hover:scale-105'
                         }`}
                         title={iconItem.name}
                       >
-                        <IconComp className={`w-5 h-5 ${
+                        <IconComp className={`w-3.5 h-3.5 ${
                           editForm.icon?.name === iconItem.name
                             ? 'text-blue-500'
                             : darkMode ? 'text-slate-300' : 'text-slate-700'
@@ -664,37 +723,37 @@ const ModernMoodPalette = ({
 
               {/* Preview */}
               <div>
-                <label className={`block text-sm font-medium mb-3 ${
+                <label className={`block text-xs font-medium mb-2 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}>
                   Preview
                 </label>
                 <div
-                  className={`p-6 rounded-xl ${
+                  className={`p-3 rounded-lg ${
                     darkMode
                       ? editForm.color?.dark + '/20'
                       : editForm.color?.light
                   }`}
                   style={{ borderWidth: '2px', borderColor: editForm.color?.hex }}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div
-                      className="w-16 h-16 rounded-xl flex items-center justify-center"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: editForm.color?.hex }}
                     >
                       {editForm.icon && (
                         React.createElement(editForm.icon.component, {
-                          className: 'w-8 h-8 text-white'
+                          className: 'w-5 h-5 text-white'
                         })
                       )}
                     </div>
-                    <div>
-                      <p className={`text-lg font-semibold ${
+                    <div className="min-w-0">
+                      <p className={`text-sm font-semibold truncate ${
                         darkMode ? 'text-white' : 'text-slate-900'
                       }`}>
                         {editForm.label || 'Mood Name'}
                       </p>
-                      <p className={`text-sm ${
+                      <p className={`text-xs truncate ${
                         darkMode ? 'text-slate-400' : 'text-slate-600'
                       }`}>
                         {editForm.description || 'Description'}
@@ -706,12 +765,12 @@ const ModernMoodPalette = ({
             </div>
 
             {/* Modal Footer */}
-            <div className={`p-6 border-t flex gap-3 justify-end ${
+            <div className={`p-3 border-t flex gap-2 justify-end ${
               darkMode ? 'border-slate-700' : 'border-slate-200'
             }`}>
               <button
                 onClick={handleCancelEdit}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   darkMode
                     ? 'bg-slate-700 hover:bg-slate-600 text-white'
                     : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
@@ -722,17 +781,18 @@ const ModernMoodPalette = ({
               <button
                 onClick={handleSaveEdit}
                 disabled={!editForm.label.trim()}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   editForm.label.trim()
                     ? 'bg-blue-500 hover:bg-blue-600 text-white'
                     : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                 }`}
               >
-                Save Changes
+                Save
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

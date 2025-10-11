@@ -62,7 +62,7 @@ const LoadingSpinner = ({ message = "Loading...", size = "normal" }) => {
           {message}
         </motion.p>
         
-        {/* Life weeks concept hint */}
+        {/* Concept hint */}
         <motion.div
           className={`text-xs text-center max-w-xs ${
             darkMode ? "text-slate-400" : "text-slate-600"
@@ -71,7 +71,7 @@ const LoadingSpinner = ({ message = "Loading...", size = "normal" }) => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <p>💎 Preparing your life weeks visualization...</p>
+          <p>💎 Preparing your vivid journey...</p>
         </motion.div>
       </motion.div>
     </div>

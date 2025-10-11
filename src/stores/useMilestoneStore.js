@@ -12,6 +12,7 @@ export const useMilestoneStore = create(
       // Core milestone data
       milestones: {},
       customCategories: {},
+      customMoods: {}, // Store customized mood configurations
       goals: [],
       
       // Actions for milestones
@@ -47,6 +48,19 @@ export const useMilestoneStore = create(
       
       // Actions for custom categories
       setCustomCategories: (categories) => set({ customCategories: categories }),
+
+      // Actions for custom moods
+      setCustomMoods: (moods) => set({ customMoods: moods }),
+
+      updateCustomMood: (moodKey, moodData) => {
+        const { customMoods } = get();
+        set({
+          customMoods: {
+            ...customMoods,
+            [moodKey]: moodData
+          }
+        });
+      },
       
       addCustomCategory: (key, category) => {
         const { customCategories } = get();
@@ -130,6 +144,7 @@ export const useMilestoneStore = create(
       partialize: (state) => ({
         milestones: state.milestones,
         customCategories: state.customCategories,
+        customMoods: state.customMoods,
         goals: state.goals
       })
     }

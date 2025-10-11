@@ -8,6 +8,8 @@ import ModernMoodPalette from "./ModernMoodPalette";
 // Import all components directly for optimal modern performance
 import GoalTracker from "./GoalTracker";
 import StatsSection from "./StatsSection";
+import Dashboard from "./Dashboard";
+import PricingPage from "./PricingPage";
 import { useWeekInteractionsZustand } from "../hooks/useWeekInteractionsZustand";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useModernTouchGestures } from "../hooks/useModernTouchGestures";
@@ -75,6 +77,40 @@ const MainApp = memo(() => {
 
   // Use custom hook for week interactions
   const weekInteractions = useWeekInteractionsZustand() || {};
+
+  // Auto-sync milestones to Supabase when they change
+  useEffect(() => {
+    const syncMilestones = async () => {
+      try {
+        // Check if user is authenticated
+        const authStatus = localStorage.getItem('viventiva_authenticated');
+        if (authStatus !== 'true') return;
+
+        // Dynamically import Supabase
+        const { auth, database } = await import('../lib/supabase');
+        const { user } = await auth.getCurrentUser();
+
+        if (user && milestones) {
+          // Debounce the save - only save after user stops editing for 1 second
+          const timeoutId = setTimeout(async () => {
+            console.log('[Viventiva Sync] Saving milestones to Supabase:', Object.keys(milestones).length, 'weeks');
+            const { error } = await database.saveMilestones(user.id, milestones);
+            if (error) {
+              console.error('[Viventiva Sync] Error saving milestones:', error);
+            } else {
+              console.log('[Viventiva Sync] Milestones saved successfully');
+            }
+          }, 1000);
+
+          return () => clearTimeout(timeoutId);
+        }
+      } catch (error) {
+        console.error('[Viventiva Sync] Error syncing milestones:', error);
+      }
+    };
+
+    syncMilestones();
+  }, [milestones]);
 
   // Profile update function
   const handleUpdateProfile = useCallback(async () => {
@@ -241,6 +277,10 @@ const MainApp = memo(() => {
       />
       <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 pt-20 sm:pt-24 overflow-hidden">
                 {/* Tabbed Navigation Content */}
+        {currentTab === "home" && (
+          <Dashboard stats={stats} darkMode={darkMode} />
+        )}
+
         {currentTab === "grid" && (
           <div className={`relative mt-8 overflow-visible space-y-8`}>
             {/* Modern Mood Palette */}
@@ -287,11 +327,6 @@ const MainApp = memo(() => {
             </div>
           </div>
         )}
-        {currentTab === "stats" && (
-          <div className="mt-8 mx-auto w-full max-w-6xl px-4">
-            <StatsSection stats={stats} darkMode={darkMode} />
-          </div>
-        )}
 
         {currentTab === "goals" && (
           <div className="mt-8">
@@ -300,6 +335,11 @@ const MainApp = memo(() => {
             </div>
           </div>
         )}
+
+        {currentTab === "pricing" && (
+          <PricingPage darkMode={darkMode} />
+        )}
+
         {currentTab === "settings" && (
           <div className="mt-8 mx-auto w-full max-w-6xl px-4">
             <div className="space-y-8">
@@ -525,7 +565,7 @@ const MainApp = memo(() => {
                     <ul className="space-y-2 ml-6">
                       <li className="flex items-start">
                         <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
-                        <span><strong>Birth Information:</strong> Your birth date (day, month, year) used to calculate your current age and life weeks</span>
+                        <span><strong>Birth Information:</strong> Your birth date (day, month, year) used to calculate your current age and journey timeline</span>
                       </li>
                       <li className="flex items-start">
                         <span className={`mr-3 mt-1 w-1.5 h-1.5 rounded-full ${darkMode ? "bg-emerald-400" : "bg-emerald-600"}`}></span>
@@ -569,7 +609,7 @@ const MainApp = memo(() => {
                     <div className="flex items-start">
                       <span className={`mr-3 mt-1 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`}>•</span>
                       <div>
-                        <strong>Visualize your life:</strong> Display your life weeks, calculate statistics, and show your progress through time
+                        <strong>Visualize your life:</strong> Display your timeline, calculate statistics, and show your progress through time
                       </div>
                     </div>
                     <div className="flex items-start">

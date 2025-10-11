@@ -1,0 +1,1 @@
+- add all my imputs to memory in certain form alwyas lear and stori it under viventiva project

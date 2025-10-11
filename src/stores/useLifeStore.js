@@ -10,21 +10,24 @@ export const useLifeStore = create(
     (set, get) => ({
       // Birth data
       birthDay: null,
-      birthMonth: null, 
+      birthMonth: null,
       birthYear: null,
       lifeExpectancy: 80,
-      
+      userName: '',
+
       // Computed current week
       currentWeek: 1,
-      
+
       // Actions
       setBirthData: (day, month, year) => {
         set({ birthDay: day, birthMonth: month, birthYear: year });
         // Automatically recalculate current week when birth data changes
         get().calculateCurrentWeek();
       },
-      
+
       setLifeExpectancy: (expectancy) => set({ lifeExpectancy: expectancy }),
+
+      setUserName: (name) => set({ userName: name }),
       
       calculateCurrentWeek: () => {
         const { birthYear, birthMonth, birthDay } = get();

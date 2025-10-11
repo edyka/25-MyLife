@@ -1,5 +1,5 @@
 // import { useState } from "react";
-import { BarChart3, Grid, Target, Settings, Shield, Moon, Sun } from "lucide-react";
+import { Grid, Target, Moon, Sun, Home, Sparkles, LogOut } from "lucide-react";
 import { Switch } from "@headlessui/react";
 
 // Import optimized life selectors
@@ -8,11 +8,10 @@ import { useUIStore } from "../stores/useUIStore";
 import { getTheme } from "../utils/themeConfig";
 
 const TABS = [
+  { key: "home", label: "Home", icon: Home },
   { key: "grid", label: "Life Grid", icon: Grid },
-  { key: "stats", label: "Stats", icon: BarChart3 },
   { key: "goals", label: "Goals", icon: Target },
-  { key: "settings", label: "Settings", icon: Settings },
-  { key: "policy", label: "Policy", icon: Shield },
+  { key: "pricing", label: "Pricing", icon: Sparkles, badge: true },
 ];
 
 const TabNavigation = ({
@@ -29,6 +28,36 @@ const TabNavigation = ({
 
   const themePreset = useUIStore((state) => state.themePreset);
   const theme = getTheme(themePreset);
+
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      // Preserve UI preferences before clearing
+      const uiPreferences = localStorage.getItem('memento-vivere-ui');
+
+      // Clear authentication
+      localStorage.removeItem('viventiva_authenticated');
+
+      // Clear all user-specific data from localStorage to prevent data leakage between users
+      localStorage.removeItem('memento-vivere-life');
+      localStorage.removeItem('memento-vivere-milestones');
+      localStorage.removeItem('memento-vivere-selection');
+
+      // Restore UI preferences (theme, dark mode, etc.)
+      if (uiPreferences) {
+        localStorage.setItem('memento-vivere-ui', uiPreferences);
+      }
+
+      // Sign out from Supabase
+      try {
+        const { auth } = await import('../lib/supabase');
+        await auth.signOut();
+      } catch (error) {
+        console.error('Error signing out:', error);
+      }
+
+      window.location.reload();
+    }
+  };
 
   return (
     <nav className={`w-full flex flex-col items-center border-b-2 transition-all duration-500 sticky top-0 z-30 ${
@@ -122,6 +151,19 @@ const TabNavigation = ({
           >
             {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span className="text-[10px] sm:text-xs font-semibold hidden sm:inline">{darkMode ? "Light" : "Dark"}</span>
+          </button>
+          {/* Logout button */}
+          <button
+            aria-label="Logout"
+            onClick={handleLogout}
+            className={`px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md ${
+              darkMode
+                ? "bg-red-900/50 text-red-300 hover:bg-red-800/50"
+                : "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+            }`}
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-[10px] sm:text-xs font-semibold hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>

@@ -12,7 +12,7 @@ export const useUIStore = create(
       darkMode: false,
       
       // Layout and navigation
-      currentTab: 'grid',
+      currentTab: 'home',
       currentPage: 'main',
       showWeeks: true,
       

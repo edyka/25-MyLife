@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   Heart,
   Mail,
@@ -8,7 +9,6 @@ import {
   X,
   AtSign,
   Shield,
-  FileText,
   Info,
 } from "lucide-react";
 import { useUIStore } from "../stores/useUIStore";
@@ -16,8 +16,17 @@ import { getTheme } from "../utils/themeConfig";
 
 const Footer = ({ darkMode, onNavigate }) => {
   const themePreset = useUIStore((state) => state.themePreset);
+  const setThemePreset = useUIStore((state) => state.setThemePreset);
   const theme = getTheme(themePreset);
   const currentYear = new Date().getFullYear();
+  const [hoveredTheme, setHoveredTheme] = useState(null);
+
+  const themes = [
+    { key: 'emerald', color: '#10b981', name: 'Emerald' },
+    { key: 'ocean', color: '#3b82f6', name: 'Ocean' },
+    { key: 'sunset', color: '#f97316', name: 'Sunset' },
+    { key: 'purple', color: '#a855f7', name: 'Purple' },
+  ];
 
   const socialLinks = [
     {
@@ -57,7 +66,6 @@ const Footer = ({ darkMode, onNavigate }) => {
     { icon: Info, label: "About", action: () => onNavigate('about') },
     { icon: Mail, label: "Contact", href: "mailto:contact@viventiva.com" },
     { icon: Shield, label: "Privacy Policy", action: () => onNavigate('privacy') },
-    { icon: FileText, label: "Terms of Service", action: () => onNavigate('terms') },
   ];
 
   return (
@@ -93,7 +101,7 @@ const Footer = ({ darkMode, onNavigate }) => {
                   Viventiva
                 </h3>
                 <p className={`text-caption font-medium ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-                  Life Week Visualization
+                  Live Vividly
                 </p>
               </div>
             </div>
@@ -209,19 +217,49 @@ const Footer = ({ darkMode, onNavigate }) => {
               © {currentYear} Viventiva. All rights reserved.
             </div>
 
-            {/* Enhanced Tech Stack Credit */}
+            {/* Theme Selector with Dots */}
             <div
               className={`text-caption flex items-center gap-4 font-semibold px-4 py-2 rounded-2xl border ${
-                darkMode 
-                  ? "text-slate-400 bg-slate-800/40 border-slate-700/50" 
+                darkMode
+                  ? "text-slate-400 bg-slate-800/40 border-slate-700/50"
                   : "text-slate-600 bg-slate-100/60 border-slate-200/50"
               }`}
             >
-              <span>Built with React, Tailwind CSS & Framer Motion</span>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse delay-150"></div>
-                <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-pulse delay-300"></div>
+              <span>Theme Colors</span>
+              <div className="flex items-center gap-2 relative">
+                {themes.map((themeItem) => (
+                  <button
+                    key={themeItem.key}
+                    onClick={() => setThemePreset(themeItem.key)}
+                    onMouseEnter={() => setHoveredTheme(themeItem.key)}
+                    onMouseLeave={() => setHoveredTheme(null)}
+                    className={`relative w-3 h-3 rounded-full transition-all duration-300 ${
+                      themePreset === themeItem.key
+                        ? 'ring-2 ring-offset-2 scale-125'
+                        : 'hover:scale-125'
+                    } ${
+                      darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'
+                    }`}
+                    style={{
+                      backgroundColor: themeItem.color,
+                      ringColor: themeItem.color
+                    }}
+                    aria-label={`Switch to ${themeItem.name} theme`}
+                  />
+                ))}
+
+                {/* Tooltip */}
+                {hoveredTheme && (
+                  <div
+                    className={`absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                      darkMode
+                        ? 'bg-slate-700 text-white'
+                        : 'bg-slate-900 text-white'
+                    } shadow-lg z-50`}
+                  >
+                    {themes.find(t => t.key === hoveredTheme)?.name}
+                  </div>
+                )}
               </div>
             </div>
           </div>
