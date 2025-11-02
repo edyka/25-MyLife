@@ -1,18 +1,44 @@
 {
-  "name": "Viventiva",
+  "name": "Viventiva - Visualize Your Life in Weeks",
   "short_name": "Viventiva",
-  "description": "Remember to Live - visualize your finite weeks with intention",
+  "description": "A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#111827",
   "theme_color": "#111827",
+  "categories": ["lifestyle", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "View Life Grid",
+      "short_name": "Life Grid",
+      "description": "View your life visualized in weeks",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": []
 }
 
 
