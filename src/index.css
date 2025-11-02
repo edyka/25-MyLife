@@ -327,3 +327,19 @@ code {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* 3D Perspective for Weeks Grid */
+.perspective-1000 {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/* 3D Cube Effects */
+.cube-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.cube-3d:hover {
+  transform: scale(1.1) translateZ(10px);
+}

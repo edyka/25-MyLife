@@ -3,9 +3,9 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy load page components for code splitting
 const SettingsPage = lazy(() => import("./components/SettingsPage"));
-import MainApp from "./components/MainApp";
-import HomePage from "./components/HomePage";
-import CompleteProfile from "./components/CompleteProfile";
+const MainApp = lazy(() => import("./components/MainApp"));
+const HomePage = lazy(() => import("./components/HomePage"));
+const CompleteProfile = lazy(() => import("./components/CompleteProfile"));
 const About = lazy(() => import("./components/About"));
 const AppPolicy = lazy(() => import("./components/AppPolicy"));
 const TermsOfService = lazy(() => import("./components/TermsOfService"));
@@ -160,6 +160,20 @@ const App = () => {
 
     loadUserData();
     handleOAuthCallback();
+
+    // Idle prefetch of secondary routes/components to speed up navigation
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 500));
+    idle(() => {
+      // Prefetch lightweight info pages
+      import('./components/About');
+      import('./components/AppPolicy');
+      import('./components/TermsOfService');
+      // If unauthenticated, prefetch onboarding and main app for snappier login flow
+      if (!localStorage.getItem('viventiva_authenticated')) {
+        import('./components/CompleteProfile');
+        import('./components/MainApp');
+      }
+    });
   }, []);
 
   const handleLogin = async () => {
@@ -268,9 +282,13 @@ const App = () => {
       <BrowserCompatibility darkMode={darkMode} />
       <div className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500`}>
         {!isAuthenticated ? (
-          <HomePage darkMode={darkMode} onLogin={handleLogin} />
+          <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+            <HomePage darkMode={darkMode} onLogin={handleLogin} />
+          </Suspense>
         ) : needsProfileSetup ? (
-          <CompleteProfile darkMode={darkMode} onComplete={handleProfileComplete} />
+          <Suspense fallback={<LoadingSpinner message="Preparing setup..." />}>
+            <CompleteProfile darkMode={darkMode} onComplete={handleProfileComplete} />
+          </Suspense>
         ) : (
           <Suspense fallback={<LoadingSpinner message="Loading your journey..." />}>
             <MainApp />
