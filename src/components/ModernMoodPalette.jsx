@@ -46,7 +46,7 @@ const INITIAL_MOODS = [
   {
     key: 'happy',
     label: 'Happy',
-    icon: Smile,
+    icon: Icons.Smile,
     color: '#10b981', // emerald-500
     bg: 'bg-emerald-500',
     lightBg: 'bg-emerald-50',
@@ -56,7 +56,7 @@ const INITIAL_MOODS = [
   {
     key: 'inlove',
     label: 'In Love',
-    icon: Heart,
+    icon: Icons.Heart,
     color: '#ec4899', // pink-500
     bg: 'bg-pink-500',
     lightBg: 'bg-pink-50',
@@ -66,7 +66,7 @@ const INITIAL_MOODS = [
   {
     key: 'focused',
     label: 'Focused',
-    icon: Target,
+    icon: Icons.Target,
     color: '#3b82f6', // blue-500
     bg: 'bg-blue-500',
     lightBg: 'bg-blue-50',
@@ -76,7 +76,7 @@ const INITIAL_MOODS = [
   {
     key: 'sad',
     label: 'Sad',
-    icon: Frown,
+    icon: Icons.Frown,
     color: '#6366f1', // indigo-500
     bg: 'bg-indigo-500',
     lightBg: 'bg-indigo-50',
@@ -86,7 +86,7 @@ const INITIAL_MOODS = [
   {
     key: 'peaceful',
     label: 'Peaceful',
-    icon: Flower2,
+    icon: Icons.Flower2,
     color: '#14b8a6', // teal-500
     bg: 'bg-teal-500',
     lightBg: 'bg-teal-50',
@@ -96,7 +96,7 @@ const INITIAL_MOODS = [
   {
     key: 'energetic',
     label: 'Energetic',
-    icon: Zap,
+    icon: Icons.Zap,
     color: '#f59e0b', // amber-500
     bg: 'bg-amber-500',
     lightBg: 'bg-amber-50',
@@ -106,7 +106,7 @@ const INITIAL_MOODS = [
   {
     key: 'creative',
     label: 'Creative',
-    icon: Sparkles,
+    icon: Icons.Sparkles,
     color: '#a855f7', // purple-500
     bg: 'bg-purple-500',
     lightBg: 'bg-purple-50',
@@ -116,7 +116,7 @@ const INITIAL_MOODS = [
   {
     key: 'grateful',
     label: 'Grateful',
-    icon: Wind,
+    icon: Icons.Wind,
     color: '#f97316', // orange-500
     bg: 'bg-orange-500',
     lightBg: 'bg-orange-50',
@@ -340,7 +340,7 @@ const ModernMoodPalette = ({
                 darkMode ? 'bg-slate-700' : 'bg-white'
               }`}
             >
-              <Eraser
+              <Icons.Eraser
                 className={`w-4 h-4 ${
                   darkMode ? 'text-slate-300' : 'text-slate-600'
                 }`}
