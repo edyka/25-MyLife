@@ -1,0 +1,422 @@
+/**
+ * Grid Performance Optimizations
+ *
+ * These CSS rules optimize rendering performance for the life grid
+ * Apply these to improve paint time and animation smoothness
+ */
+
+/* ===== GRID CONTAINER OPTIMIZATIONS ===== */
+
+.week-grid-container {
+  /* GPU acceleration for smooth scrolling */
+  transform: translateZ(0);
+  will-change: scroll-position;
+
+  /* Prevent layout shifts */
+  contain: layout style paint;
+
+  /* Smooth scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+.week-grid-virtualized {
+  /* Isolate rendering context */
+  isolation: isolate;
+
+  /* GPU layer for smooth animations */
+  transform: translateZ(0);
+
+  /* Optimize rendering performance */
+  contain: strict;
+}
+
+.week-grid-scroll {
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.week-grid-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.week-grid-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.week-grid-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+.week-grid-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark .week-grid-scroll {
+  scrollbar-color: rgba(71, 85, 105, 0.3) transparent;
+}
+
+.dark .week-grid-scroll::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.3);
+}
+
+.dark .week-grid-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.5);
+}
+
+/* ===== WEEK SQUARE OPTIMIZATIONS ===== */
+
+.week-square {
+  /* Optimize transform and opacity animations */
+  will-change: transform, opacity;
+
+  /* GPU acceleration */
+  transform: translateZ(0);
+
+  /* Prevent subpixel rendering */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  /* Optimize paint */
+  contain: layout style paint;
+
+  /* Smooth transitions */
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize hover state */
+.week-square:hover {
+  /* Only transform, no layout changes */
+  transform: scale(1.25) translateZ(0);
+}
+
+/* Active state optimization */
+.week-square:active {
+  transform: scale(1.1) translateZ(0);
+  transition-duration: 0.1s;
+}
+
+/* Focus state for keyboard navigation */
+.week-square:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+/* Remove will-change after animation */
+.week-square:not(:hover):not(:focus) {
+  will-change: auto;
+}
+
+/* ===== YEAR ROW OPTIMIZATIONS ===== */
+
+.year-row {
+  /* Optimize row rendering */
+  contain: layout style;
+
+  /* GPU acceleration */
+  transform: translateZ(0);
+}
+
+/* ===== ANIMATION OPTIMIZATIONS ===== */
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .week-square,
+  .year-row,
+  .week-grid-container {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .week-square:hover {
+    transform: none;
+  }
+}
+
+/* ===== MOBILE OPTIMIZATIONS ===== */
+
+@media (max-width: 768px) {
+  .week-grid-container {
+    /* Optimize mobile scrolling */
+    -webkit-overflow-scrolling: touch;
+
+    /* Prevent zoom on double tap */
+    touch-action: pan-x pan-y;
+  }
+
+  .week-square {
+    /* Larger touch target */
+    min-width: 44px;
+    min-height: 44px;
+
+    /* Faster transitions on mobile */
+    transition-duration: 0.15s;
+  }
+
+  /* Disable hover effects on touch devices */
+  @media (hover: none) {
+    .week-square:hover {
+      transform: translateZ(0);
+    }
+  }
+}
+
+/* ===== LOADING STATE ===== */
+
+.week-square-skeleton {
+  /* Skeleton loading animation */
+  background: linear-gradient(
+    90deg,
+    rgba(203, 213, 225, 0.1) 25%,
+    rgba(203, 213, 225, 0.3) 50%,
+    rgba(203, 213, 225, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ===== PERFORMANCE HINTS ===== */
+
+/* Hint browser about upcoming animations */
+.week-grid-container:hover .week-square {
+  will-change: transform;
+}
+
+/* Remove hints after interaction */
+.week-grid-container:not(:hover) .week-square {
+  will-change: auto;
+}
+
+/* ===== ACCESSIBILITY IMPROVEMENTS ===== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .week-square {
+    border: 1px solid currentColor;
+  }
+
+  .week-square:focus {
+    outline-width: 3px;
+  }
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .week-grid-container {
+    /* Optimize for printing */
+    contain: none;
+    transform: none;
+  }
+
+  .week-square {
+    /* Remove interactive styles */
+    transition: none;
+    transform: none;
+  }
+
+  /* Prevent page breaks in grid */
+  .year-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* ===== DARK MODE OPTIMIZATIONS ===== */
+
+.dark .week-square {
+  /* Slightly different transitions for dark mode */
+  transition-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* ===== FOCUS VISIBLE (Modern browsers) ===== */
+
+.week-square:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.week-square:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ===== GRID GAP OPTIMIZATION ===== */
+
+/* Use flexbox gap instead of margins for better performance */
+.week-row {
+  display: flex;
+  gap: 0.25rem; /* 4px */
+  contain: layout;
+}
+
+.year-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* 4px */
+  contain: layout;
+}
+
+/* ===== PAINT OPTIMIZATION ===== */
+
+/* Isolate painted weeks for better compositing */
+.week-square[data-painted="true"] {
+  isolation: isolate;
+  z-index: 1;
+}
+
+/* Current week optimization */
+.week-square[data-current="true"] {
+  /* Ensure current week is on top */
+  z-index: 2;
+
+  /* Optimize ring rendering */
+  contain: layout paint;
+}
+
+/* ===== BROWSER-SPECIFIC OPTIMIZATIONS ===== */
+
+/* Safari optimizations */
+@supports (-webkit-touch-callout: none) {
+  .week-square {
+    /* Force GPU acceleration on Safari */
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Firefox optimizations */
+@-moz-document url-prefix() {
+  .week-square {
+    /* Firefox-specific rendering hints */
+    transform-style: preserve-3d;
+  }
+}
+
+/* ===== PERFORMANCE MONITORING ===== */
+
+/* Visual indicator for debugging (remove in production) */
+.debug-paint .week-square {
+  outline: 1px solid rgba(255, 0, 0, 0.1);
+}
+
+.debug-paint .week-square:hover {
+  outline-color: rgba(255, 0, 0, 0.5);
+}
+
+/* ===== RESPONSIVE GRID DENSITY ===== */
+
+/* Compact view for smaller screens */
+@media (max-width: 640px) {
+  .week-square {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+}
+
+/* Standard view */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .week-square {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+}
+
+/* Spacious view for large screens */
+@media (min-width: 1025px) {
+  .week-square {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Disable animations globally */
+.no-animations * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Enable GPU acceleration globally */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize for touch */
+.touch-optimized {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* ===== LOADING PLACEHOLDER ===== */
+
+.grid-loading-placeholder {
+  width: 100%;
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.05) 0%,
+    rgba(148, 163, 184, 0.1) 50%,
+    rgba(148, 163, 184, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: loading-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ===== ERROR STATE ===== */
+
+.grid-error {
+  border: 2px dashed rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.week-square-error {
+  background: rgba(239, 68, 68, 0.1);
+  cursor: not-allowed;
+}

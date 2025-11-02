@@ -1,0 +1,15 @@
+# Robots.txt for Viventiva
+# https://viventiva.com/robots.txt
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://viventiva.com/sitemap.xml
+
+# Disallow specific paths (if any)
+# Disallow: /api/
+# Disallow: /admin/
+
+# Crawl-delay (optional, for rate limiting)
+Crawl-delay: 1
