@@ -26,7 +26,7 @@ import { useRenderPerformance } from "../utils/performanceMonitor";
 // Import theme utilities
 import { getTheme } from "../utils/themeConfig";
 
-const MainApp = memo(() => {
+const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   // Performance monitoring for render time
   useRenderPerformance("MainApp");
 
@@ -767,6 +767,32 @@ const MainApp = memo(() => {
           </div>
         )}
       </main>
+
+      {/* Guest Mode - Floating Save Button */}
+      {isGuestMode && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={onGuestSaveAttempt}
+            className={`group px-8 py-4 bg-gradient-to-r ${theme.primary} text-white font-bold text-lg rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center gap-3 animate-pulse`}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            <span>Save Your Life</span>
+            <span className="absolute -top-2 -right-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full animate-bounce">
+              Free!
+            </span>
+          </button>
+
+          {/* Hint */}
+          <div className={`mt-2 text-xs text-center ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className="bg-white/90 dark:bg-slate-800/90 px-3 py-1 rounded-lg shadow-lg backdrop-blur-sm">
+              💡 You're in demo mode. Save to keep your changes!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Removed duplicate bottom grid to avoid duplicate week testids */}
       <Footer darkMode={darkMode} onNavigate={setCurrentPage} />
     </div>

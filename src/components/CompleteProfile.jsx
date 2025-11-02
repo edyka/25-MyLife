@@ -75,6 +75,34 @@ const CompleteProfile = ({ darkMode, onComplete }) => {
         lifeExpectancy: parseInt(lifeExpectancy)
       });
 
+      // Migrate anonymous painted weeks to Supabase
+      const anonymousWeeks = localStorage.getItem('viventiva_anonymous_weeks');
+      if (anonymousWeeks) {
+        try {
+          const parsed = JSON.parse(anonymousWeeks);
+          console.log('[Viventiva] Migrating anonymous weeks to Supabase:', Object.keys(parsed).length, 'weeks');
+
+          // Save milestones to Supabase
+          await database.saveMilestones(user.id, parsed);
+
+          // Also update Zustand store so MainApp shows them immediately
+          const { useMilestoneStore } = await import('../stores/useMilestoneStore');
+          const milestoneStore = useMilestoneStore.getState();
+          milestoneStore.setMilestones(parsed);
+
+          // Clean up anonymous storage
+          localStorage.removeItem('viventiva_anonymous_weeks');
+          localStorage.removeItem('viventiva_extended_limit');
+          localStorage.removeItem('viventiva_soft_prompt_shown');
+          sessionStorage.removeItem('viventiva_modal_dismissed');
+
+          console.log('[Viventiva] Successfully migrated anonymous weeks');
+        } catch (e) {
+          console.error('[Viventiva] Failed to migrate anonymous weeks:', e);
+          // Don't fail the whole signup if migration fails
+        }
+      }
+
       // Mark profile as complete
       localStorage.setItem('viventiva_profile_complete', 'true');
 
