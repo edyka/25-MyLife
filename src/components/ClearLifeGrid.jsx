@@ -37,17 +37,41 @@ const ClearLifeGrid = memo(({
   }, [totalYears, columns]);
 
   return (
-    <div className="w-full" onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchEnd={handleTouchEnd}>
+    <div 
+      className="w-full overflow-x-auto" 
+      onMouseUp={handleMouseUp} 
+      onMouseLeave={handleMouseUp} 
+      onTouchEnd={handleTouchEnd}
+      style={{ display: 'block' }}
+    >
       {rows.map((rowItems, yearIndex) => (
-        <div key={yearIndex} className="flex items-center w-full justify-start sm:justify-center" style={{ marginBottom: `${rowGap}px` }}>
-          <div className="text-xs w-8 text-center" style={{ color: darkMode ? '#94a3b8' : '#475569' }}>
+        <div 
+          key={yearIndex} 
+          className="flex items-center w-full justify-start sm:justify-center mb-1.5" 
+          style={{ 
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
+            minHeight: `${weekSize + 4}px`
+          }}
+        >
+          <div 
+            className="text-xs flex-shrink-0 text-center mr-2" 
+            style={{ 
+              color: darkMode ? '#94a3b8' : '#475569',
+              width: '32px',
+              minWidth: '32px'
+            }}
+          >
             {yearIndex % 5 === 0 ? yearIndex : ''}
           </div>
           <div
+            className="flex-shrink-0"
             style={{
               display: 'grid',
               gridTemplateColumns: `repeat(${columns}, ${weekSize}px)`,
               gap: `${colGap}px`,
+              minWidth: `${columns * (weekSize + colGap)}px`
             }}
           >
             {rowItems.map((weekNum) => (

@@ -55,8 +55,11 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
   const milestones = useMilestoneStore(state => state.milestones);
   const customCategories = useMilestoneStore(state => state.customCategories);
+  const customMoods = useMilestoneStore(state => state.customMoods);
   const goals = useMilestoneStore(state => state.goals);
   const setMilestones = useMilestoneStore(state => state.setMilestones);
+  const setCustomCategories = useMilestoneStore(state => state.setCustomCategories);
+  const setCustomMoods = useMilestoneStore(state => state.setCustomMoods);
   const addCustomCategory = useMilestoneStore(state => state.addCustomCategory);
   const setGoals = useMilestoneStore(state => state.setGoals);
   const getColorOptions = useMilestoneStore(state => state.getColorOptions);
@@ -64,6 +67,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
   const selectedColor = useSelectionStore(state => state.selectedColor);
   const selectedWeeks = useSelectionStore(state => state.selectedWeeks);
+  const pinnedWeeksFromStore = useSelectionStore(state => state.pinnedWeeks);  // For sync useEffect only
   const setSelectedColor = useSelectionStore(state => state.setSelectedColor);
   const setSelectedWeeks = useSelectionStore(state => state.setSelectedWeeks);
 
@@ -78,7 +82,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   // Use custom hook for week interactions
   const weekInteractions = useWeekInteractionsZustand() || {};
 
-  // Auto-sync milestones to Supabase when they change
+  // Auto-sync milestones, customMoods, and customCategories to Supabase when they change
   useEffect(() => {
     const syncMilestones = async () => {
       try {
@@ -90,15 +94,29 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
         const { auth, database } = await import('../lib/supabase');
         const { user } = await auth.getCurrentUser();
 
-        if (user && milestones) {
+        if (user) {
           // Debounce the save - only save after user stops editing for 1 second
           const timeoutId = setTimeout(async () => {
-            console.log('[Viventiva Sync] Saving milestones to Supabase:', Object.keys(milestones).length, 'weeks');
-            const { error } = await database.saveMilestones(user.id, milestones);
+            // Save milestones along with customMoods and customCategories
+            // Always save, even if milestones is empty (creates/updates the record)
+            const milestoneData = {
+              milestones: milestones || {},
+              customMoods: customMoods || {},
+              customCategories: customCategories || {}
+            };
+            const weekCount = Object.keys(milestones || {}).length;
+            console.log('[Viventiva Sync] Saving milestones to Supabase:', weekCount, 'weeks');
+            console.log('[Viventiva Sync] Data structure:', { 
+              milestones: weekCount, 
+              customMoods: Object.keys(customMoods || {}).length,
+              customCategories: Object.keys(customCategories || {}).length 
+            });
+            
+            const { error } = await database.saveMilestones(user.id, milestoneData);
             if (error) {
               console.error('[Viventiva Sync] Error saving milestones:', error);
             } else {
-              console.log('[Viventiva Sync] Milestones saved successfully');
+              console.log('[Viventiva Sync] Milestones saved successfully to Supabase');
             }
           }, 1000);
 
@@ -110,7 +128,49 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
     };
 
     syncMilestones();
-  }, [milestones]);
+  }, [milestones, customMoods, customCategories]);
+
+  // Auto-sync selections (selectedWeeks, pinnedWeeks, selectedColor) to Supabase when they change
+  useEffect(() => {
+    const syncSelections = async () => {
+      try {
+        // Check if user is authenticated
+        const authStatus = localStorage.getItem('viventiva_authenticated');
+        if (authStatus !== 'true') return;
+
+        // Dynamically import Supabase
+        const { auth, database } = await import('../lib/supabase');
+        const { user } = await auth.getCurrentUser();
+
+        if (user) {
+          // Debounce the save - only save after user stops editing for 1 second
+          const timeoutId = setTimeout(async () => {
+            // Convert Sets to Arrays for JSON serialization
+            const selectionsData = {
+              selectedWeeks: Array.from(selectedWeeks || new Set()),
+              pinnedWeeks: Array.from(pinnedWeeksFromStore || new Set()),
+              selectedColor: selectedColor
+            };
+
+            console.log('[Viventiva Sync] Saving selections to Supabase:', selectionsData);
+
+            const { error } = await database.saveSelections(user.id, selectionsData);
+            if (error) {
+              console.error('[Viventiva Sync] Error saving selections:', error);
+            } else {
+              console.log('[Viventiva Sync] Selections saved successfully to Supabase');
+            }
+          }, 1000);
+
+          return () => clearTimeout(timeoutId);
+        }
+      } catch (error) {
+        console.error('[Viventiva Sync] Error syncing selections:', error);
+      }
+    };
+
+    syncSelections();
+  }, [selectedWeeks, pinnedWeeksFromStore, selectedColor]);
 
   // Profile update function
   const handleUpdateProfile = useCallback(async () => {

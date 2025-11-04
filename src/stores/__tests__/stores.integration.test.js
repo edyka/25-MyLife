@@ -115,7 +115,7 @@ describe('Stores Integration', () => {
 
   it('should provide color options with custom categories', () => {
     const { result } = renderHook(() => useMilestoneStore());
-    
+
     act(() => {
       result.current.addCustomCategory('custom1', {
         color: 'bg-purple-500',
@@ -128,5 +128,47 @@ describe('Stores Integration', () => {
     expect(colorOptions.custom1).toBeDefined();
     expect(colorOptions.custom1.label).toBe('Custom Mood');
     expect(colorOptions.happy).toBeDefined(); // Default categories should still be there
+  });
+
+  it('should persist selectedWeeks and pinnedWeeks to localStorage', () => {
+    // Clear localStorage before test
+    localStorage.clear();
+
+    const { result, rerender } = renderHook(() => useSelectionStore());
+
+    // Add selections
+    act(() => {
+      result.current.setSelectedColor('happy');
+      result.current.addToSelectedWeeks(100);
+      result.current.addToSelectedWeeks(200);
+      result.current.addToPinnedWeeks(300);
+    });
+
+    // Verify selections are set
+    expect(result.current.selectedWeeks.has(100)).toBe(true);
+    expect(result.current.selectedWeeks.has(200)).toBe(true);
+    expect(result.current.pinnedWeeks.has(300)).toBe(true);
+    expect(result.current.selectedColor).toBe('happy');
+
+    // Check localStorage has the data
+    const stored = localStorage.getItem('memento-vivere-selections');
+    expect(stored).toBeTruthy();
+
+    const parsedData = JSON.parse(stored);
+    expect(parsedData.state.selectedColor).toBe('happy');
+    expect(Array.isArray(parsedData.state.selectedWeeks)).toBe(true);
+    expect(parsedData.state.selectedWeeks).toContain(100);
+    expect(parsedData.state.selectedWeeks).toContain(200);
+    expect(Array.isArray(parsedData.state.pinnedWeeks)).toBe(true);
+    expect(parsedData.state.pinnedWeeks).toContain(300);
+
+    // Simulate a fresh page load by getting a new instance of the store
+    const { result: newResult } = renderHook(() => useSelectionStore());
+
+    // Verify the data was restored from localStorage
+    expect(newResult.current.selectedWeeks.has(100)).toBe(true);
+    expect(newResult.current.selectedWeeks.has(200)).toBe(true);
+    expect(newResult.current.pinnedWeeks.has(300)).toBe(true);
+    expect(newResult.current.selectedColor).toBe('happy');
   });
 });

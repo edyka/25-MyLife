@@ -1,10 +1,14 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 /**
  * Selection Store - Manages week selection and painting interactions
  * Handles all selection-related state including dragging, range selection, and painting
+ * Persists selectedWeeks and pinnedWeeks to localStorage
  */
-export const useSelectionStore = create((set, get) => ({
+export const useSelectionStore = create(
+  persist(
+    (set, get) => ({
   // Selection state
   selectedWeek: null,
   selectedColor: null,
@@ -190,7 +194,34 @@ export const useSelectionStore = create((set, get) => ({
       dragStartWeek: null
     });
   }
-}));
+    }),
+    {
+      name: 'memento-vivere-selections',
+      storage: createJSONStorage(() => localStorage, {
+        // Custom replacer to convert Set to Array when storing
+        replacer: (key, value) => {
+          if (value instanceof Set) {
+            return Array.from(value);
+          }
+          return value;
+        },
+        // Custom reviver to convert Array back to Set when loading
+        reviver: (key, value) => {
+          if (key === 'selectedWeeks' || key === 'pinnedWeeks') {
+            return new Set(value);
+          }
+          return value;
+        }
+      }),
+      // Only persist the essential selection state
+      partialize: (state) => ({
+        selectedWeeks: state.selectedWeeks,
+        pinnedWeeks: state.pinnedWeeks,
+        selectedColor: state.selectedColor
+      })
+    }
+  )
+);
 
 // Optimized individual selectors for fine-grained subscriptions
 // Use direct selectors instead of useSelectionSelectors to prevent unnecessary re-renders

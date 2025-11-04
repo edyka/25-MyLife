@@ -30,33 +30,45 @@ const TabNavigation = ({
   const theme = getTheme(themePreset);
 
   const handleLogout = async () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      // Preserve UI preferences before clearing
-      const uiPreferences = localStorage.getItem('memento-vivere-ui');
+    // Preserve UI preferences and selections before clearing
+    const uiPreferences = localStorage.getItem('memento-vivere-ui');
+    const selections = localStorage.getItem('memento-vivere-selections');
 
-      // Clear authentication
-      localStorage.removeItem('viventiva_authenticated');
+    // Clear authentication
+    localStorage.removeItem('viventiva_authenticated');
 
-      // Clear all user-specific data from localStorage to prevent data leakage between users
-      localStorage.removeItem('memento-vivere-life');
-      localStorage.removeItem('memento-vivere-milestones');
-      localStorage.removeItem('memento-vivere-selection');
+    // Clear all user-specific data from localStorage to prevent data leakage between users
+    localStorage.removeItem('memento-vivere-life');
+    localStorage.removeItem('memento-vivere-milestones');
 
-      // Restore UI preferences (theme, dark mode, etc.)
-      if (uiPreferences) {
-        localStorage.setItem('memento-vivere-ui', uiPreferences);
+    // Clear user name from store
+    try {
+      const { useLifeStore } = await import('../stores/useLifeStore');
+      const store = useLifeStore.getState();
+      if (store.setUserName) {
+        store.setUserName('');
       }
-
-      // Sign out from Supabase
-      try {
-        const { auth } = await import('../lib/supabase');
-        await auth.signOut();
-      } catch (error) {
-        console.error('Error signing out:', error);
-      }
-
-      window.location.reload();
+    } catch (error) {
+      console.error('Error clearing username:', error);
     }
+
+    // Restore UI preferences and selections (keep them across logout)
+    if (uiPreferences) {
+      localStorage.setItem('memento-vivere-ui', uiPreferences);
+    }
+    if (selections) {
+      localStorage.setItem('memento-vivere-selections', selections);
+    }
+
+    // Sign out from Supabase
+    try {
+      const { auth } = await import('../lib/supabase');
+      await auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+
+    window.location.reload();
   };
 
   return (

@@ -20,7 +20,10 @@ export const auth = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`
+        redirectTo: `${window.location.origin}/`,
+        queryParams: {
+          prompt: 'select_account' // Force Google to show account selector
+        }
       }
     });
     return { data, error };
@@ -75,10 +78,10 @@ export const auth = {
     return { error };
   },
 
-  // Get current user
+  // Get current user - use getSession for reliable session restoration on refresh
   getCurrentUser: async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    return { user, error };
+    const { data: { session }, error } = await supabase.auth.getSession();
+    return { user: session?.user || null, error };
   },
 
   // Listen to auth changes
@@ -101,6 +104,8 @@ export const database = {
         birth_year: profileData.birthYear,
         life_expectancy: profileData.lifeExpectancy,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
       });
     return { data, error };
   },
@@ -123,6 +128,8 @@ export const database = {
         user_id: userId,
         milestones_data: milestones,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
       });
     return { data, error };
   },
@@ -145,6 +152,8 @@ export const database = {
         user_id: userId,
         goals_data: goals,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
       });
     return { data, error };
   },
@@ -153,6 +162,30 @@ export const database = {
   getGoals: async (userId) => {
     const { data, error } = await supabase
       .from('user_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    return { data, error };
+  },
+
+  // Save selections (selectedWeeks, pinnedWeeks)
+  saveSelections: async (userId, selections) => {
+    const { data, error } = await supabase
+      .from('user_selections')
+      .upsert({
+        user_id: userId,
+        selections_data: selections,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+    return { data, error };
+  },
+
+  // Get selections
+  getSelections: async (userId) => {
+    const { data, error } = await supabase
+      .from('user_selections')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -176,9 +209,14 @@ export const database = {
       .delete()
       .eq('user_id', userId);
 
+    const { error: selectionsError } = await supabase
+      .from('user_selections')
+      .delete()
+      .eq('user_id', userId);
+
     return {
-      success: !profileError && !milestonesError && !goalsError,
-      errors: { profileError, milestonesError, goalsError }
+      success: !profileError && !milestonesError && !goalsError && !selectionsError,
+      errors: { profileError, milestonesError, goalsError, selectionsError }
     };
   },
 
@@ -202,10 +240,17 @@ export const database = {
       .eq('user_id', userId)
       .single();
 
+    const { data: selections } = await supabase
+      .from('user_selections')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
     return {
       profile,
       milestones,
       goals,
+      selections,
       exportDate: new Date().toISOString()
     };
   }
