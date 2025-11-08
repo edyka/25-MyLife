@@ -30,12 +30,32 @@ const TabNavigation = ({
   const theme = getTheme(themePreset);
 
   const handleLogout = async () => {
+    console.log('[Viventiva] Logout initiated');
+    
+    // Clear session timeout
+    try {
+      const { destroySessionTimeout } = await import('../utils/sessionTimeout');
+      destroySessionTimeout();
+    } catch (error) {
+      console.error('[Viventiva] Error destroying session timeout:', error);
+    }
+    
+    // Clear rate limits on logout
+    try {
+      const { clearAllRateLimits } = await import('../utils/rateLimiter');
+      clearAllRateLimits();
+    } catch (error) {
+      console.error('[Viventiva] Error clearing rate limits:', error);
+    }
+    
     // Preserve UI preferences and selections before clearing
     const uiPreferences = localStorage.getItem('memento-vivere-ui');
     const selections = localStorage.getItem('memento-vivere-selections');
 
-    // Clear authentication
+    // Clear authentication flags
     localStorage.removeItem('viventiva_authenticated');
+    localStorage.removeItem('viventiva_profile_complete');
+    localStorage.removeItem('viventiva_just_logged_in');
 
     // Clear all user-specific data from localStorage to prevent data leakage between users
     localStorage.removeItem('memento-vivere-life');
@@ -60,15 +80,57 @@ const TabNavigation = ({
       localStorage.setItem('memento-vivere-selections', selections);
     }
 
-    // Sign out from Supabase
+    // Sign out from Supabase - wait for it to complete
     try {
       const { auth } = await import('../lib/supabase');
-      await auth.signOut();
+      
+      // Clear Supabase session from localStorage directly (keys start with 'sb-')
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      if (supabaseUrl) {
+        const projectRef = supabaseUrl.split('//')[1]?.split('.')[0] || '';
+        if (projectRef) {
+          // Clear all Supabase auth-related localStorage keys
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith(`sb-${projectRef}-auth-token`) || 
+                key.startsWith(`sb-${projectRef}-auth-token-code-verifier`)) {
+              localStorage.removeItem(key);
+              console.log(`[Viventiva] Cleared Supabase localStorage key: ${key}`);
+            }
+          });
+        }
+      }
+      
+      // Also clear any keys that might match Supabase patterns
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('supabase') || key.includes('sb-')) {
+          // Don't clear our own keys, just Supabase's
+          if (!key.startsWith('viventiva') && !key.startsWith('memento-vivere')) {
+            localStorage.removeItem(key);
+            console.log(`[Viventiva] Cleared potential Supabase key: ${key}`);
+          }
+        }
+      });
+      
+      // Sign out from Supabase
+      const { error } = await auth.signOut();
+      if (error) {
+        console.error('[Viventiva] Error signing out:', error);
+      } else {
+        console.log('[Viventiva] Successfully signed out from Supabase');
+      }
+      
+      // Wait longer to ensure signOut completes and SIGNED_OUT event fires
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('[Viventiva] Error signing out:', error);
     }
 
-    window.location.reload();
+    // Set a flag to prevent re-authentication on reload
+    sessionStorage.setItem('viventiva_logging_out', 'true');
+
+    // Reload page to reset app state
+    console.log('[Viventiva] Reloading page after logout');
+    window.location.href = '/'; // Use href instead of reload to ensure clean state
   };
 
   return (
@@ -139,8 +201,8 @@ const TabNavigation = ({
                 showWeeks
                   ? `bg-gradient-to-r ${theme.primary}`
                   : darkMode
-                  ? "bg-slate-600"
-                  : "bg-slate-300"
+                  ? "bg-slate-700/50"
+                  : "bg-slate-200"
               } relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none shadow-lg`}
             >
               <span className="sr-only">Toggle weeks/months</span>
@@ -170,8 +232,8 @@ const TabNavigation = ({
             onClick={handleLogout}
             className={`px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md ${
               darkMode
-                ? "bg-red-900/50 text-red-300 hover:bg-red-800/50"
-                : "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                ? `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90`
+                : `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90 border border-transparent`
             }`}
           >
             <LogOut className="w-4 h-4" />

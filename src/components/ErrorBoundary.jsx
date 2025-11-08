@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { getTheme } from '../utils/themeConfig';
+import * as Sentry from '@sentry/react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -24,6 +25,18 @@ class ErrorBoundary extends React.Component {
     });
     
     console.error('Error caught by boundary:', error, errorInfo);
+    
+    // Report to Sentry
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+      tags: {
+        errorBoundary: true,
+      },
+    });
     
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -84,8 +97,20 @@ class ErrorBoundary extends React.Component {
               <p className={`text-sm leading-relaxed ${
                 darkMode ? 'text-gray-300' : 'text-gray-600'
               }`}>
-                We encountered an unexpected error. Don't worry - your data is safe. 
-                Try refreshing the page or contact support if the problem persists.
+                {this.state.error ? (
+                  <>
+                    {(() => {
+                      try {
+                        const { getUserFriendlyError } = require('../utils/errorMessages');
+                        return getUserFriendlyError(this.state.error);
+                      } catch {
+                        return 'We encountered an unexpected error. Don\'t worry - your data is safe. Try refreshing the page or contact support if the problem persists.';
+                      }
+                    })()}
+                  </>
+                ) : (
+                  'We encountered an unexpected error. Don\'t worry - your data is safe. Try refreshing the page or contact support if the problem persists.'
+                )}
               </p>
             </div>
 

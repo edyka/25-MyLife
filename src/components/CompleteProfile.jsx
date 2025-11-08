@@ -106,11 +106,40 @@ const CompleteProfile = ({ darkMode, onComplete }) => {
       // Mark profile as complete
       localStorage.setItem('viventiva_profile_complete', 'true');
 
+      // Track profile completion
+      try {
+        const { trackUserAction } = await import('../utils/analytics');
+        trackUserAction('profile_completed', {
+          hasName: !!name,
+          lifeExpectancy: parseInt(lifeExpectancy),
+        });
+      } catch (err) {
+        // Analytics not critical, continue silently
+      }
+
       setLoading(false);
+      
+      // Show success toast
+      try {
+        const { toast } = await import('../utils/toast');
+        toast.success('Profile saved successfully!');
+      } catch (err) {
+        // Toast not critical, continue silently
+      }
+      
       onComplete();
     } catch (err) {
       console.error("Error saving user data:", err);
-      alert("Error saving profile. Please try again.");
+      
+      // Show user-friendly error
+      try {
+        const { toast } = await import('../utils/toast');
+        const { getUserFriendlyError } = await import('../utils/errorMessages');
+        toast.error(getUserFriendlyError(err));
+      } catch {
+        alert("Error saving profile. Please try again.");
+      }
+      
       setLoading(false);
     }
   };

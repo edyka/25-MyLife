@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 /**
+ * Debounce utility for Supabase syncs
+ */
+let syncTimeoutId = null;
+const debouncedSync = (fn, delay = 2000) => {
+  if (syncTimeoutId) clearTimeout(syncTimeoutId);
+  syncTimeoutId = setTimeout(fn, delay);
+};
+
+/**
  * UI Store - Manages user interface state
  * Handles theme, layout, navigation, and device-specific settings
  */
@@ -41,10 +50,17 @@ export const useUIStore = create(
       showAgeLabels: true,
       
       // Actions for theme
-      setDarkMode: (darkMode) => set({ darkMode }),
+      setDarkMode: (darkMode) => {
+        set({ darkMode });
+        // Debounced sync to Supabase if user is logged in
+        debouncedSync(() => get().syncSettingsToSupabase());
+      },
       toggleDarkMode: () => {
         const { darkMode } = get();
-        set({ darkMode: !darkMode });
+        const newDarkMode = !darkMode;
+        set({ darkMode: newDarkMode });
+        // Debounced sync to Supabase if user is logged in
+        debouncedSync(() => get().syncSettingsToSupabase());
       },
       
       // Actions for navigation
@@ -71,7 +87,11 @@ export const useUIStore = create(
       setShowMilestoneIndicators: (show) => set({ showMilestoneIndicators: show }),
       setShowAgeLabels: (show) => set({ showAgeLabels: show }),
       setPastWeekStyle: (style) => set({ pastWeekStyle: style }),
-      setThemePreset: (preset) => set({ themePreset: preset }),
+      setThemePreset: (preset) => {
+        set({ themePreset: preset });
+        // Debounced sync to Supabase if user is logged in
+        debouncedSync(() => get().syncSettingsToSupabase());
+      },
       
       // Computed getters
       getThemeClasses: () => {
@@ -158,6 +178,67 @@ export const useUIStore = create(
           showSettingsModal: false,
           showGoalModal: false
         });
+      },
+
+      // Sync settings to Supabase
+      syncSettingsToSupabase: async () => {
+        try {
+          const { auth, database } = await import('../lib/supabase');
+          const { user } = await auth.getCurrentUser();
+          
+          if (user) {
+            const state = get();
+            const settings = {
+              darkMode: state.darkMode,
+              themePreset: state.themePreset,
+              gridLayout: state.gridLayout,
+              pastWeekStyle: state.pastWeekStyle,
+              showCurrentWeekIndicator: state.showCurrentWeekIndicator,
+              showMilestoneIndicators: state.showMilestoneIndicators,
+              showAgeLabels: state.showAgeLabels,
+              enableAnimations: state.enableAnimations,
+              enableVirtualization: state.enableVirtualization
+            };
+            
+            await database.saveUserSettings(user.id, settings);
+            console.log('[Viventiva] Settings synced to Supabase');
+          }
+        } catch (error) {
+          console.error('[Viventiva] Error syncing settings to Supabase:', error);
+        }
+      },
+
+      // Load settings from Supabase
+      loadSettingsFromSupabase: async () => {
+        try {
+          const { auth, database } = await import('../lib/supabase');
+          const { user } = await auth.getCurrentUser();
+          
+          if (user) {
+            const { data, error } = await database.getUserSettings(user.id);
+            
+            if (data && data.settings_data && !error) {
+              const settings = data.settings_data;
+              
+              // Update store with settings from Supabase
+              set({
+                darkMode: settings.darkMode ?? get().darkMode,
+                themePreset: settings.themePreset ?? get().themePreset,
+                gridLayout: settings.gridLayout ?? get().gridLayout,
+                pastWeekStyle: settings.pastWeekStyle ?? get().pastWeekStyle,
+                showCurrentWeekIndicator: settings.showCurrentWeekIndicator ?? get().showCurrentWeekIndicator,
+                showMilestoneIndicators: settings.showMilestoneIndicators ?? get().showMilestoneIndicators,
+                showAgeLabels: settings.showAgeLabels ?? get().showAgeLabels,
+                enableAnimations: settings.enableAnimations ?? get().enableAnimations,
+                enableVirtualization: settings.enableVirtualization ?? get().enableVirtualization
+              });
+              
+              console.log('[Viventiva] Settings loaded from Supabase');
+            }
+          }
+        } catch (error) {
+          console.error('[Viventiva] Error loading settings from Supabase:', error);
+        }
       }
     }),
     {

@@ -5,6 +5,25 @@ import { useUIStore } from "../stores/useUIStore";
 import { useState } from "react";
 import LoginModal from "./LoginModal";
 
+// Features array moved outside component to prevent recreation on every render
+const FEATURES = [
+  {
+    icon: Calendar,
+    title: "Visualize Your Life",
+    description: "See your entire life laid out week by week. Each box represents one week of your journey."
+  },
+  {
+    icon: Heart,
+    title: "Paint Your Moods",
+    description: "Color-code your weeks with emotions and experiences. Track patterns and celebrate moments."
+  },
+  {
+    icon: Target,
+    title: "Set Meaningful Goals",
+    description: "Define what matters most and track your progress towards living intentionally."
+  }
+];
+
 const HomePage = ({ darkMode, onLogin }) => {
   const themePreset = useUIStore((state) => state.themePreset);
   const theme = getTheme(themePreset);
@@ -27,34 +46,25 @@ const HomePage = ({ darkMode, onLogin }) => {
     onLogin();
   };
 
-  const features = [
-    {
-      icon: Calendar,
-      title: "Visualize Your Life",
-      description: "See your entire life laid out week by week. Each box represents one week of your journey."
-    },
-    {
-      icon: Heart,
-      title: "Paint Your Moods",
-      description: "Color-code your weeks with emotions and experiences. Track patterns and celebrate moments."
-    },
-    {
-      icon: Target,
-      title: "Set Meaningful Goals",
-      description: "Define what matters most and track your progress towards living intentionally."
-    }
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12">
+    <main 
+      id="main-content"
+      role="main"
+      aria-label="Viventiva homepage"
+      className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12"
+    >
       {/* Auth Buttons - Top Right */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed top-6 right-6 z-50 flex gap-3"
+        className="fixed top-6 right-6 z-[60] flex gap-3"
       >
         <button
-          onClick={handleLoginClick}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleLoginClick();
+          }}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
             darkMode
               ? "bg-slate-800/80 backdrop-blur-xl text-white hover:bg-slate-700 border border-slate-700"
@@ -65,7 +75,11 @@ const HomePage = ({ darkMode, onLogin }) => {
           Log In
         </button>
         <button
-          onClick={handleSignUpClick}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSignUpClick();
+          }}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}
         >
           <UserPlus className="w-4 h-4" />
@@ -113,7 +127,7 @@ const HomePage = ({ darkMode, onLogin }) => {
         transition={{ delay: 0.3 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mb-16"
       >
-        {features.map((feature, index) => {
+        {FEATURES.map((feature, index) => {
           const Icon = feature.icon;
           return (
             <motion.div
@@ -227,7 +241,7 @@ const HomePage = ({ darkMode, onLogin }) => {
         onLogin={handleLoginComplete}
         initialMode={isSignUpMode ? 'signup' : 'login'}
       />
-    </div>
+    </main>
   );
 };
 

@@ -10,6 +10,8 @@ import {
   AtSign,
   Shield,
   Info,
+  FileText,
+  Cookie,
 } from "lucide-react";
 import { useUIStore } from "../stores/useUIStore";
 import { getTheme } from "../utils/themeConfig";
@@ -66,6 +68,13 @@ const Footer = ({ darkMode, onNavigate }) => {
     { icon: Info, label: "About", action: () => onNavigate('about') },
     { icon: Mail, label: "Contact", href: "mailto:contact@viventiva.com" },
     { icon: Shield, label: "Privacy Policy", action: () => onNavigate('privacy') },
+    { icon: FileText, label: "Terms of Service", action: () => onNavigate('terms') },
+    { icon: Cookie, label: "Cookie Settings", action: () => {
+      // Navigate to settings page and show cookie preferences
+      const event = new CustomEvent('showCookieSettings');
+      window.dispatchEvent(event);
+      onNavigate('settings');
+    }},
   ];
 
   return (

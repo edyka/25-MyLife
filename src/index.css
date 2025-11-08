@@ -2,6 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Accessibility utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only:focus,
+.sr-only:focus-visible {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus visible styles */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Skip link styles */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #3b82f6;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 /* Enhanced Modern Design System */
 
 /* Premium Background Gradients */
@@ -277,7 +336,44 @@ code {
   line-height: 1.5;
 }
 
-/* Enhanced Scrollbar Styling */
+/* Enhanced Scrollbar Styling - Uses CSS variables for theme colors */
+:root {
+  /* Default emerald theme scrollbar colors */
+  --scrollbar-thumb-start: #10b981;
+  --scrollbar-thumb-end: #059669;
+  --scrollbar-thumb-hover-start: #059669;
+  --scrollbar-thumb-hover-end: #047857;
+}
+
+/* Theme-specific scrollbar colors */
+[data-theme="emerald"] {
+  --scrollbar-thumb-start: #10b981;
+  --scrollbar-thumb-end: #059669;
+  --scrollbar-thumb-hover-start: #059669;
+  --scrollbar-thumb-hover-end: #047857;
+}
+
+[data-theme="ocean"] {
+  --scrollbar-thumb-start: #3b82f6;
+  --scrollbar-thumb-end: #2563eb;
+  --scrollbar-thumb-hover-start: #2563eb;
+  --scrollbar-thumb-hover-end: #1d4ed8;
+}
+
+[data-theme="purple"] {
+  --scrollbar-thumb-start: #a855f7;
+  --scrollbar-thumb-end: #7c3aed;
+  --scrollbar-thumb-hover-start: #7c3aed;
+  --scrollbar-thumb-hover-end: #6d28d9;
+}
+
+[data-theme="sunset"] {
+  --scrollbar-thumb-start: #f97316;
+  --scrollbar-thumb-end: #dc2626;
+  --scrollbar-thumb-hover-start: #dc2626;
+  --scrollbar-thumb-hover-end: #b91c1c;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -289,13 +385,13 @@ code {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-end));
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #059669, #047857);
+  background: linear-gradient(135deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
 }
 
 .dark ::-webkit-scrollbar-track {
@@ -303,12 +399,22 @@ code {
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-end));
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-start) rgba(241, 245, 249, 0.5);
+}
+
+.dark * {
+  scrollbar-color: var(--scrollbar-thumb-start) rgba(30, 41, 59, 0.5);
 }
 
 /* Accessibility Enhancements */

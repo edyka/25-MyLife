@@ -1,7 +1,8 @@
 # Viventiva Project Memory & Context
 
-**Last Updated:** October 11, 2025
+**Last Updated:** November 8, 2025
 **Project:** MyLife / Viventiva - Life Week Visualization App
+**Status:** Pre-Launch (95% Complete, Authentication Issues Blocking)
 
 ---
 
@@ -73,15 +74,20 @@ A life visualization app that displays your life as a grid of weeks (52 weeks ×
 
 ---
 
-## Current State
+## Current State (November 8, 2025)
+
+### Strategic Review Completed
+- **STRATEGIC_REVIEW.md:** Comprehensive 60-page analysis created
+- **ACTION_PLAN.md:** 17-day launch roadmap created
+- **Status:** 95% ready for launch, blocked by authentication issues
 
 ### Git Status
 - Branch: `main`
-- Commits ahead of origin: 3
+- Uncommitted changes: 455 lines across 8 files (authentication fixes)
 - Latest commits:
-  1. `bba2b25` - Performance optimizations
-  2. `e021cb0` - Authentication system
-  3. `b5a1c7f` - ModernMoodPalette implementation
+  1. `0140df2` - fix: improve authentication flow and data synchronization
+  2. `040c96d` - docs: add comprehensive documentation and test tools
+  3. `499a919` - feat: add optimized components, hooks, and assets
 
 ### Build Status
 - ✅ Production build successful
@@ -91,16 +97,50 @@ A life visualization app that displays your life as a grid of weeks (52 weeks ×
 
 ### Deployment Status
 - Netlify CLI: Installed and authenticated (edo.prasnikar@gmail.com)
-- Site: **Deployment skipped per user request**
-- Build ready: `dist/` folder contains production files
-- Status: All code complete and optimized, ready to deploy when needed
+- Production: Not yet deployed (blocked by authentication issues)
+- Build Status: Passing (3.96s build time, 706KB bundle)
+- Target Launch: November 25, 2025 (17 days)
 
 ---
 
+## Critical Blockers (November 8, 2025)
+
+### BLOCKER: Authentication Issues
+**Status:** 455 lines of uncommitted fixes across 8 files
+**Documents:** FIX_LOGIN_ISSUES.md created with detailed analysis
+
+**Issues:**
+1. OAuth callback not setting authentication state properly
+2. Missing error handling in OAuth flow
+3. handleLogin setting localStorage before verifying user exists
+4. loadUserDataFromSession missing state updates (infinite loading spinner)
+5. Session restoration unreliable after page refresh
+
+**Next Steps:**
+1. Test uncommitted authentication fixes
+2. Verify OAuth flow works (Google, Facebook, Apple)
+3. Test session persistence across refreshes
+4. Add E2E tests for authentication
+5. Commit and deploy fixes
+
+### BLOCKER: Missing Database Tables
+**Issue:** Code references tables not in schema
+- user_selections table (referenced in App.jsx but not in supabase-setup.sql)
+- user_settings table (separate file, should be merged into main schema)
+
+**Fix:** Add tables to supabase-setup.sql and deploy
+
 ## Outstanding Tasks
 
-### Immediate
-- [x] Skip Netlify deployment (per user request)
+### Phase 0: Pre-Launch Blockers (CRITICAL)
+- [ ] Fix authentication issues (test + commit FIX_LOGIN_ISSUES.md changes)
+- [ ] Add user_selections table to database schema
+- [ ] Merge user_settings into main schema
+- [ ] Write Privacy Policy and Terms of Service
+- [ ] Set up Sentry error monitoring
+- [ ] Complete QA testing (all browsers, devices)
+
+### Immediate (Week 1)
 
 ### Testing (Before Full Launch)
 - [ ] Test on real mobile devices (iOS, Android)
@@ -135,11 +175,13 @@ A life visualization app that displays your life as a grid of weeks (52 weeks ×
 ### Documentation
 - `README.md` - Project overview
 - `SETUP-GUIDE.md` - Deployment instructions
+- `STRATEGIC_REVIEW.md` - Comprehensive product/technical analysis (NEW)
+- `ACTION_PLAN.md` - 17-day launch roadmap (NEW)
+- `FIX_LOGIN_ISSUES.md` - Authentication bug analysis (NEW)
+- `PROJECT_MEMORY.md` - Session continuity (this file)
 - `FIXES_SUMMARY.md` - Data persistence fixes
 - `PERFORMANCE_ANALYSIS.md` - Detailed performance audit
-- `PERFORMANCE_FIXES.md` - Quick optimization guide
 - `PERFORMANCE_IMPROVEMENTS_SUMMARY.md` - Latest optimizations
-- `DEPLOYMENT_INSTRUCTIONS.md` - Netlify deployment steps
 
 ### Key Components
 - `src/App.jsx` - Main app entry with auth routing
@@ -212,10 +254,38 @@ git push origin main                # Push to GitHub
 
 When resuming work:
 1. ✅ Read this PROJECT_MEMORY.md file
-2. ✅ Check git status for any uncommitted changes
-3. ✅ Review latest commits to understand recent work
-4. ✅ Check if deployment is complete
-5. ✅ Ask user for next priority tasks
+2. ✅ Read STRATEGIC_REVIEW.md for full context
+3. ✅ Read ACTION_PLAN.md for immediate next steps
+4. ✅ Check git status (currently 455 lines uncommitted)
+5. ✅ Review FIX_LOGIN_ISSUES.md before testing auth
+6. ✅ Ask user which Phase 0 blocker to tackle first
+
+## Key Insights from Strategic Review
+
+### What's Going Well
+- Modern, well-architected codebase (20,762 lines)
+- Excellent documentation (13 MD files)
+- Strong performance (706KB bundle, 6.7x faster rendering)
+- Comprehensive authentication (Google, Facebook, Apple, Email)
+- GDPR-compliant (data export/delete implemented)
+- Free infrastructure (Supabase + Netlify)
+
+### Critical Issues
+1. **Authentication broken** - Users can't log in reliably
+2. **Missing database tables** - Code references non-existent tables
+3. **No error monitoring** - Can't diagnose production issues
+4. **Legal docs incomplete** - Privacy Policy and Terms needed
+5. **No tests for auth** - Critical path untested
+
+### Launch Readiness: 95%
+**Remaining 5%:**
+- Fix authentication (2-3 days)
+- Complete database schema (1 day)
+- Write legal docs (1-2 days)
+- Set up Sentry (1 day)
+- QA testing (2-3 days)
+
+**Total time to launch:** 7-10 days of focused work
 
 ---
 

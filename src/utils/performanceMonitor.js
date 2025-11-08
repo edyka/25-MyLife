@@ -1,235 +1,206 @@
-// Performance monitoring utilities for the week selection system
-import React from "react";
+/**
+ * Performance monitoring utility
+ * Tracks key performance metrics and reports to analytics
+ */
 
 class PerformanceMonitor {
   constructor() {
-    this.metrics = new Map();
-    this.isEnabled = process.env.NODE_ENV === "development";
-  }
-
-  startTimer(operationName) {
-    if (!this.isEnabled) return null;
-
-    const startTime = performance.now();
-    return {
-      operationName,
-      startTime,
-      end: () => this.endTimer(operationName, startTime),
+    this.metrics = {
+      pageLoad: null,
+      firstContentfulPaint: null,
+      largestContentfulPaint: null,
+      timeToInteractive: null,
+      apiResponseTimes: [],
     };
+    this.observers = [];
   }
 
-  endTimer(operationName, startTime) {
-    if (!this.isEnabled) return;
+  /**
+   * Initialize performance monitoring
+   */
+  init() {
+    if (typeof window === 'undefined' || !window.performance) return;
 
-    const endTime = performance.now();
-    const duration = endTime - startTime;
+    // Track page load time
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        this.measurePageLoad();
+        this.measureWebVitals();
+      }, 0);
+    });
 
-    if (!this.metrics.has(operationName)) {
-      this.metrics.set(operationName, {
-        count: 0,
-        totalTime: 0,
-        minTime: Infinity,
-        maxTime: 0,
-        averageTime: 0,
-      });
-    }
-
-    const metric = this.metrics.get(operationName);
-    metric.count++;
-    metric.totalTime += duration;
-    metric.minTime = Math.min(metric.minTime, duration);
-    metric.maxTime = Math.max(metric.maxTime, duration);
-    metric.averageTime = metric.totalTime / metric.count;
-
-    // Log slow operations (development only)
-    if (duration > 16 && process.env.NODE_ENV === "development") {
-       
-      console.warn(
-        `Slow operation detected: ${operationName} took ${duration.toFixed(
-          2
-        )}ms`
-      );
-    }
+    // Track API response times
+    this.setupAPIMonitoring();
   }
 
-  measureAsyncOperation(operationName, asyncFn) {
-    if (!this.isEnabled) return asyncFn();
+  /**
+   * Measure page load performance
+   */
+  measurePageLoad() {
+    if (!window.performance || !window.performance.timing) return;
 
-    const timer = this.startTimer(operationName);
-    const result = asyncFn();
+    const timing = window.performance.timing;
+    const navigation = window.performance.navigation;
 
-    if (result && typeof result.then === "function") {
-      return result.finally(() => timer.end());
-    } else {
-      timer.end();
-      return result;
+    const pageLoadTime = timing.loadEventEnd - timing.navigationStart;
+    const domContentLoaded = timing.domContentLoadedEventEnd - timing.navigationStart;
+    const domInteractive = timing.domInteractive - timing.navigationStart;
+
+    this.metrics.pageLoad = pageLoadTime;
+    this.metrics.domContentLoaded = domContentLoaded;
+    this.metrics.domInteractive = domInteractive;
+
+    // Log slow page loads
+    if (pageLoadTime > 3000) {
+      console.warn(`[Performance] Slow page load: ${pageLoadTime}ms`);
     }
+
+    // Report to analytics
+    this.reportMetric('page_load', pageLoadTime);
   }
 
-  measureFunction(operationName, fn) {
-    if (!this.isEnabled) return fn;
-
-    return (...args) => {
-      const timer = this.startTimer(operationName);
+  /**
+   * Measure Web Vitals
+   */
+  measureWebVitals() {
+    // Largest Contentful Paint (LCP)
+    if ('PerformanceObserver' in window) {
       try {
-        const result = fn(...args);
-        timer.end();
-        return result;
+        const lcpObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries();
+          const lastEntry = entries[entries.length - 1];
+          this.metrics.largestContentfulPaint = lastEntry.renderTime || lastEntry.loadTime;
+          this.reportMetric('lcp', this.metrics.largestContentfulPaint);
+        });
+        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+        this.observers.push(lcpObserver);
       } catch (error) {
-        timer.end();
+        console.warn('[Performance] LCP monitoring not supported:', error);
+      }
+
+      // First Input Delay (FID)
+      try {
+        const fidObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries();
+          entries.forEach((entry) => {
+            const fid = entry.processingStart - entry.startTime;
+            this.reportMetric('fid', fid);
+          });
+        });
+        fidObserver.observe({ entryTypes: ['first-input'] });
+        this.observers.push(fidObserver);
+      } catch (error) {
+        console.warn('[Performance] FID monitoring not supported:', error);
+      }
+    }
+  }
+
+  /**
+   * Monitor API response times
+   */
+  setupAPIMonitoring() {
+    if (typeof fetch === 'undefined') return;
+
+    const originalFetch = window.fetch;
+    const self = this;
+
+    window.fetch = async function (...args) {
+      const startTime = performance.now();
+      const url = args[0]?.toString() || '';
+
+      try {
+        const response = await originalFetch.apply(this, args);
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+
+        // Track Supabase API calls
+        if (url.includes('supabase.co')) {
+          self.metrics.apiResponseTimes.push({
+            url,
+            duration,
+            timestamp: Date.now(),
+          });
+
+          // Log slow API calls
+          if (duration > 1000) {
+            console.warn(`[Performance] Slow API call: ${url} took ${duration.toFixed(0)}ms`);
+          }
+
+          // Report to analytics
+          self.reportMetric('api_response_time', duration, { url });
+        }
+
+        return response;
+      } catch (error) {
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        console.error(`[Performance] API call failed: ${url} after ${duration.toFixed(0)}ms`, error);
         throw error;
       }
     };
   }
 
-  getMetrics() {
-    return Array.from(this.metrics.entries()).map(([name, data]) => ({
-      operation: name,
-      ...data,
-    }));
-  }
-
-  logMetrics() {
-    if (!this.isEnabled) return;
-    if (process.env.NODE_ENV === "development") {
-       
-      console.group("Performance Metrics");
-      this.getMetrics().forEach((metric) => {
-         
-        console.log(`${metric.operation}:`, {
-          count: metric.count,
-          avg: `${metric.averageTime.toFixed(2)}ms`,
-          min: `${metric.minTime.toFixed(2)}ms`,
-          max: `${metric.maxTime.toFixed(2)}ms`,
-          total: `${metric.totalTime.toFixed(2)}ms`,
-        });
+  /**
+   * Report metric to analytics
+   */
+  reportMetric(name, value, metadata = {}) {
+    try {
+      const { trackEvent } = require('./analytics');
+      trackEvent('performance_metric', {
+        metric: name,
+        value: Math.round(value),
+        ...metadata,
       });
-       
-      console.groupEnd();
+    } catch (error) {
+      // Analytics not critical, continue silently
     }
   }
 
-  clear() {
-    this.metrics.clear();
-  }
-}
+  /**
+   * Get performance summary
+   */
+  getSummary() {
+    const avgApiTime = this.metrics.apiResponseTimes.length > 0
+      ? this.metrics.apiResponseTimes.reduce((sum, m) => sum + m.duration, 0) / this.metrics.apiResponseTimes.length
+      : 0;
 
-// Memory usage monitoring
-export const memoryUsage = {
-  getCurrentUsage() {
-    if (performance.memory) {
-      return {
-        used: performance.memory.usedJSHeapSize,
-        total: performance.memory.totalJSHeapSize,
-        limit: performance.memory.jsHeapSizeLimit,
-      };
-    }
-    return null;
-  },
-
-  logUsage(label = "Memory Usage") {
-    const usage = this.getCurrentUsage();
-    if (usage) {
-      if (process.env.NODE_ENV === "development") {
-         
-        console.log(`${label}:`, {
-          used: `${(usage.used / 1024 / 1024).toFixed(2)} MB`,
-          total: `${(usage.total / 1024 / 1024).toFixed(2)} MB`,
-          limit: `${(usage.limit / 1024 / 1024).toFixed(2)} MB`,
-        });
-      }
-    }
-  },
-};
-
-// Frame rate monitoring
-export class FrameRateMonitor {
-  constructor() {
-    this.frames = [];
-    this.isMonitoring = false;
-    this.rafId = null;
-  }
-
-  start() {
-    if (this.isMonitoring) return;
-
-    this.isMonitoring = true;
-    this.frames = [];
-
-    const loop = (timestamp) => {
-      this.frames.push(timestamp);
-
-      // Keep only last 60 frames
-      if (this.frames.length > 60) {
-        this.frames.shift();
-      }
-
-      if (this.isMonitoring) {
-        this.rafId = requestAnimationFrame(loop);
-      }
+    return {
+      pageLoad: this.metrics.pageLoad,
+      lcp: this.metrics.largestContentfulPaint,
+      avgApiResponseTime: avgApiTime,
+      apiCallCount: this.metrics.apiResponseTimes.length,
     };
-
-    this.rafId = requestAnimationFrame(loop);
   }
 
-  stop() {
-    this.isMonitoring = false;
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
-      this.rafId = null;
-    }
-  }
-
-  getCurrentFPS() {
-    if (this.frames.length < 2) return 0;
-
-    const lastFrame = this.frames[this.frames.length - 1];
-    const firstFrame = this.frames[0];
-    const timeSpan = lastFrame - firstFrame;
-
-    return Math.round(((this.frames.length - 1) * 1000) / timeSpan);
-  }
-
-  getAverageFPS() {
-    if (this.frames.length < 10) return 0;
-
-    const intervals = [];
-    for (let i = 1; i < this.frames.length; i++) {
-      intervals.push(this.frames[i] - this.frames[i - 1]);
-    }
-
-    const averageInterval =
-      intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
-    return Math.round(1000 / averageInterval);
+  /**
+   * Cleanup observers
+   */
+  cleanup() {
+    this.observers.forEach(observer => {
+      try {
+        observer.disconnect();
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    });
+    this.observers = [];
   }
 }
 
-// Global performance monitor instance
-export const performanceMonitor = new PerformanceMonitor();
+const performanceMonitor = new PerformanceMonitor();
 
-// React hook for monitoring component render performance
-export const useRenderPerformance = (componentName) => {
-  if (process.env.NODE_ENV === "development") {
-    const renderStart = performance.now();
-
-    // Note: This should be moved to a proper React component context
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    React.useEffect(() => {
-      performanceMonitor.endTimer(`${componentName} render`, renderStart);
-    });
-
-    performanceMonitor.startTimer(`${componentName} render`);
-  }
+/**
+ * Initialize performance monitoring
+ */
+export const initPerformanceMonitoring = () => {
+  performanceMonitor.init();
 };
 
-// Selection performance tracking
-export const trackSelectionPerformance = (operation, count) => {
-  if (process.env.NODE_ENV === "development") {
-    if (process.env.NODE_ENV === "development") {
-       
-      console.log(
-        `Selection ${operation}: ${count} weeks processed in ${performance.now()}ms`
-      );
-    }
-  }
+/**
+ * Get performance summary
+ */
+export const getPerformanceSummary = () => {
+  return performanceMonitor.getSummary();
 };
+
+export default performanceMonitor;

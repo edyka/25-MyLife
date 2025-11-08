@@ -2,6 +2,7 @@ import { useEffect, useCallback, memo, useMemo } from "react";
 import { getStats } from "../utils/dateUtils";
 import TabNavigation from "./TabNavigation";
 import Footer from "./Footer";
+import OnboardingTour from "./OnboardingTour";
 import ClearLifeGrid from "./ClearLifeGrid";
 import ModernMoodPalette from "./ModernMoodPalette";
 
@@ -20,15 +21,13 @@ import { useUIStore } from "../stores/useUIStore";
 import { useMilestoneStore } from "../stores/useMilestoneStore";
 import { useSelectionStore } from "../stores/useSelectionStore";
 
-// Import performance monitoring
-import { useRenderPerformance } from "../utils/performanceMonitor";
+// Performance monitoring is initialized in main.jsx
 
 // Import theme utilities
 import { getTheme } from "../utils/themeConfig";
 
 const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
-  // Performance monitoring for render time
-  useRenderPerformance("MainApp");
+  // Performance monitoring is initialized globally in main.jsx
 
   // Optimized Zustand selectors - use individual selectors to prevent unnecessary re-renders
   const birthDay = useLifeStore(state => state.birthDay);
@@ -115,8 +114,24 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
             const { error } = await database.saveMilestones(user.id, milestoneData);
             if (error) {
               console.error('[Viventiva Sync] Error saving milestones:', error);
+              // Error is already handled with retry logic in saveMilestones
+              // Show user-friendly error toast
+              try {
+                const { toast } = await import('../utils/toast');
+                const { getUserFriendlyError } = await import('../utils/errorMessages');
+                toast.error(`Failed to save: ${getUserFriendlyError(error)}`);
+              } catch (err) {
+                // Toast not critical, continue silently
+              }
             } else {
               console.log('[Viventiva Sync] Milestones saved successfully to Supabase');
+              // Track successful sync
+              try {
+                const { trackEvent } = await import('../utils/analytics');
+                trackEvent('milestones_synced', { weekCount });
+              } catch (err) {
+                // Analytics not critical, continue silently
+              }
             }
           }, 1000);
 
@@ -157,6 +172,15 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
             const { error } = await database.saveSelections(user.id, selectionsData);
             if (error) {
               console.error('[Viventiva Sync] Error saving selections:', error);
+              // Error is already handled with retry logic in saveSelections
+              // Show user-friendly error toast
+              try {
+                const { toast } = await import('../utils/toast');
+                const { getUserFriendlyError } = await import('../utils/errorMessages');
+                toast.error(`Failed to save selections: ${getUserFriendlyError(error)}`);
+              } catch (err) {
+                // Toast not critical, continue silently
+              }
             } else {
               console.log('[Viventiva Sync] Selections saved successfully to Supabase');
             }
@@ -320,7 +344,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   );
 
   return (
-    <div
+    <main
+      id="main-content"
+      role="main"
+      aria-label="Life grid visualization"
       className={`min-h-screen flex flex-col transition-all duration-500 ${
         darkMode
           ? "modern-bg-dark"
@@ -855,7 +882,8 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
       {/* Removed duplicate bottom grid to avoid duplicate week testids */}
       <Footer darkMode={darkMode} onNavigate={setCurrentPage} />
-    </div>
+      <OnboardingTour />
+    </main>
   );
 });
 

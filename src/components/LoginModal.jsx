@@ -27,10 +27,34 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login' }) => {
     }
   }, [isOpen, initialMode]);
 
+  // Track component mounted state for async cleanup
+  useEffect(() => {
+    const mountedRef = { current: true };
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const handleSocialLogin = async (provider) => {
+    const mountedRef = { current: true };
+
     try {
       setLoading(true);
       setError("");
+
+      // Check rate limiting for OAuth
+      const { checkRateLimit } = await import('../utils/rateLimiter');
+      // Use a generic identifier for OAuth (could be IP-based in production)
+      const identifier = `oauth:${provider}`;
+      const rateLimitCheck = checkRateLimit('oauth', identifier);
+      
+      if (!rateLimitCheck.allowed) {
+        const minutesRemaining = Math.ceil((rateLimitCheck.resetAt - Date.now()) / 60000);
+        setError(`Too many OAuth attempts. Please try again in ${minutesRemaining} minute(s).`);
+        setLoading(false);
+        return;
+      }
 
       let result;
       if (provider === 'google') {
@@ -41,24 +65,59 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login' }) => {
         result = await auth.signInWithApple();
       }
 
+      if (!mountedRef.current) return;
+
       if (result.error) {
-        setError(result.error.message);
+        // Use user-friendly error messages
+        try {
+          const { getUserFriendlyError } = await import('../utils/errorMessages');
+          setError(getUserFriendlyError(result.error));
+        } catch {
+          setError(result.error.message || 'An error occurred during OAuth login');
+        }
         setLoading(false);
       } else {
         // OAuth will redirect, so we don't call onLogin() here
         // The redirect callback will handle it
+        // Rate limit reset happens in App.jsx OAuth callback handler
       }
     } catch (err) {
-      setError(err.message || "An error occurred during login");
+      if (!mountedRef.current) return;
+      try {
+        const { getUserFriendlyError } = await import('../utils/errorMessages');
+        setError(getUserFriendlyError(err));
+      } catch {
+        setError(err.message || "An error occurred during login");
+      }
       setLoading(false);
     }
   };
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
+    const mountedRef = { current: true };
+
     try {
       setLoading(true);
       setError("");
+
+      // Check rate limiting
+      const { checkRateLimit, resetRateLimit } = await import('../utils/rateLimiter');
+      const action = isSignUp ? 'signup' : 'login';
+      const identifier = email.toLowerCase();
+      
+      const rateLimitCheck = checkRateLimit(action, identifier);
+      
+      if (!rateLimitCheck.allowed) {
+        const minutesRemaining = Math.ceil((rateLimitCheck.resetAt - Date.now()) / 60000);
+        setError(
+          rateLimitCheck.reason === 'lockout'
+            ? `Too many attempts. Please try again in ${minutesRemaining} minute(s).`
+            : `Rate limit exceeded. Please try again in ${minutesRemaining} minute(s).`
+        );
+        setLoading(false);
+        return;
+      }
 
       let result;
       if (isSignUp) {
@@ -67,15 +126,51 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login' }) => {
         result = await auth.signInWithEmail(email, password);
       }
 
+      if (!mountedRef.current) return;
+
       if (result.error) {
         setError(result.error.message);
         setLoading(false);
       } else {
-        // Successfully authenticated
-        onLogin();
+        // Successfully authenticated - wait a moment for session to be established
+        console.log('[Viventiva LoginModal] Email login successful, waiting for session...');
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        if (!mountedRef.current) return;
+
+        // Verify user exists before calling onLogin
+        const { auth } = await import('../lib/supabase');
+        const { user, error: userError } = await auth.getCurrentUser();
+
+        if (!mountedRef.current) return;
+
+        if (user && !userError) {
+          console.log('[Viventiva LoginModal] User confirmed, calling onLogin');
+          
+          // Reset rate limit on successful login
+          const { resetRateLimit } = await import('../utils/rateLimiter');
+          resetRateLimit(action, identifier);
+          
+          // Track login event
+          const { trackUserAction } = await import('../utils/analytics');
+          trackUserAction(isSignUp ? 'user_signup' : 'user_login', {
+            method: 'email',
+          });
+          onLogin();
+        } else {
+          console.error('[Viventiva LoginModal] User not found after login:', userError);
+          setError('Login successful but session not established. Please try again.');
+          setLoading(false);
+        }
       }
     } catch (err) {
-      setError(err.message || "An error occurred during login");
+      if (!mountedRef.current) return;
+      try {
+        const { getUserFriendlyError } = await import('../utils/errorMessages');
+        setError(getUserFriendlyError(err));
+      } catch {
+        setError(err.message || "An error occurred during login");
+      }
       setLoading(false);
     }
   };

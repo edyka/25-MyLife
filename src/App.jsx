@@ -10,7 +10,9 @@ const About = lazy(() => import("./components/About"));
 const AppPolicy = lazy(() => import("./components/AppPolicy"));
 const TermsOfService = lazy(() => import("./components/TermsOfService"));
 import LoadingSpinner from "./components/LoadingSpinner";
+import LoadingProgress from "./components/LoadingProgress";
 import BrowserCompatibility from "./components/BrowserCompatibility";
+import CookieConsent from "./components/CookieConsent";
 
 // Import optimized Zustand selectors
 import { useUIStore } from "./stores/useUIStore";
@@ -22,10 +24,75 @@ const App = () => {
   const currentPage = useUIStore(state => state.currentPage);
   const setCurrentPage = useUIStore(state => state.setCurrentPage);
 
+  // Set theme data attribute for CSS variable-based scrollbar colors
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themePreset);
+  }, [themePreset]);
+
+  // Track page views for analytics and update SEO
+  useEffect(() => {
+    const trackPageView = async () => {
+      try {
+        const { trackPageView: track } = await import('./utils/analytics');
+        const path = window.location.pathname + window.location.hash;
+        track(path);
+      } catch (error) {
+        // Analytics not critical, continue silently
+      }
+    };
+    
+    const updateSEO = async () => {
+      try {
+        const { initSEO, generateOrganizationSchema, generateWebAppSchema, setStructuredData } = await import('./utils/seo');
+        
+        // Update SEO based on current page
+        if (currentPage === 'main' && isAuthenticated) {
+          initSEO({
+            title: 'My Life Grid',
+            description: 'Visualize your life journey, track milestones, and set goals with your personal life grid.',
+          });
+        } else if (currentPage === 'about') {
+          initSEO({
+            title: 'About Viventiva',
+            description: 'Learn about Viventiva - a tool to visualize your life as a grid of weeks and live intentionally.',
+          });
+        } else if (currentPage === 'privacy') {
+          initSEO({
+            title: 'Privacy Policy',
+            description: 'Viventiva Privacy Policy - How we collect, use, and protect your data.',
+          });
+        } else if (currentPage === 'terms') {
+          initSEO({
+            title: 'Terms of Service',
+            description: 'Viventiva Terms of Service - Terms and conditions for using our service.',
+          });
+        } else {
+          // Default/homepage SEO
+          initSEO({
+            title: 'Viventiva - Visualize Your Life',
+            description: 'Visualize your life as a grid of weeks. Track milestones, set goals, and live intentionally. Each square represents one week of your life.',
+          });
+        }
+        
+        // Add structured data for homepage
+        if (currentPage === 'main' && !isAuthenticated) {
+          setStructuredData(generateOrganizationSchema());
+          setStructuredData(generateWebAppSchema());
+        }
+      } catch (error) {
+        console.error('[Viventiva] Error updating SEO:', error);
+      }
+    };
+    
+    trackPageView();
+    updateSEO();
+  }, [currentPage, isAuthenticated]);
+
   // Authentication and onboarding state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Loading state while checking auth
+  const [loadingStage, setLoadingStage] = useState('auth'); // Loading stage for progress indicator
 
   // Check authentication on mount and handle OAuth callback
   useEffect(() => {
@@ -47,7 +114,13 @@ const App = () => {
         console.log('[Viventiva] Loading user data for user:', user.id);
 
         // Load user profile from Supabase
-        const { data: profile } = await database.getUserProfile(user.id);
+        const { data: profile, error: profileError } = await database.getUserProfile(user.id);
+        
+        // Check for Brave Shields blocking (406 errors)
+        if (profileError && profileError.status === 406) {
+          console.error('[Viventiva] Brave Shields is blocking Supabase requests. Please disable Shields for localhost.');
+          // The BrowserCompatibility component will show a warning
+        }
 
         if (profile && profile.birth_day) {
           // Profile is complete - load into Zustand store
@@ -168,16 +241,63 @@ const App = () => {
             console.log('[Viventiva] No selection data found in Supabase, starting fresh');
           }
 
+          setLoadingStage('ready');
           setIsAuthenticated(true);
           setNeedsProfileSetup(false);
+          setIsCheckingAuth(false);
           localStorage.setItem('viventiva_authenticated', 'true');
           localStorage.setItem('viventiva_profile_complete', 'true');
+
+          // Initialize session timeout
+          try {
+            const { initSessionTimeout } = await import('./utils/sessionTimeout');
+            initSessionTimeout({
+              inactivityTimeout: 30 * 60 * 1000,
+              warningTime: 5 * 60 * 1000,
+              onWarning: (info) => console.warn(`[SessionTimeout] Session expiring in ${info.minutesRemaining} minute(s)`),
+              onTimeout: async () => {
+                const { auth } = await import('./lib/supabase');
+                await auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+              },
+            });
+          } catch (error) {
+            console.error('[Viventiva] Error initializing session timeout:', error);
+          }
+          
+          // Load user settings from Supabase
+          try {
+            const { useUIStore } = await import('./stores/useUIStore');
+            await useUIStore.getState().loadSettingsFromSupabase();
+          } catch (error) {
+            console.error('[Viventiva] Error loading settings:', error);
+          }
         } else {
-          // Profile is NOT complete - user needs to complete onboarding
-          setIsAuthenticated(true);
-          setNeedsProfileSetup(true);
-          localStorage.setItem('viventiva_authenticated', 'true');
-          localStorage.removeItem('viventiva_profile_complete');
+          // Profile is NOT complete - check if this is a new session or stale one
+          // If user just logged in, show profile setup. Otherwise, clear session and show homepage.
+          const justLoggedIn = localStorage.getItem('viventiva_just_logged_in') === 'true';
+          
+          if (justLoggedIn) {
+            // User just logged in - show profile setup
+            localStorage.removeItem('viventiva_just_logged_in');
+            setIsAuthenticated(true);
+            setNeedsProfileSetup(true);
+            setIsCheckingAuth(false);
+            localStorage.setItem('viventiva_authenticated', 'true');
+            localStorage.removeItem('viventiva_profile_complete');
+          } else {
+            // Stale session without profile - clear it and show homepage
+            console.log('[Viventiva] Stale session detected (no profile), clearing and showing homepage');
+            const { auth } = await import('./lib/supabase');
+            await auth.signOut();
+            setIsAuthenticated(false);
+            setNeedsProfileSetup(false);
+            setIsCheckingAuth(false);
+            localStorage.removeItem('viventiva_authenticated');
+            localStorage.removeItem('viventiva_profile_complete');
+          }
         }
       } catch (error) {
         console.error('[Viventiva] Error loading user data:', error);
@@ -190,11 +310,33 @@ const App = () => {
     // Fallback session check if auth listener doesn't fire within timeout
     // This is a safety net, but the auth listener should handle most cases
     const checkExistingSessionFallback = async () => {
+      // Check if we're logging out - skip session check
+      if (sessionStorage.getItem('viventiva_logging_out') === 'true') {
+        console.log('[Viventiva] Logout in progress, skipping session check');
+        setIsAuthenticated(false);
+        setNeedsProfileSetup(false);
+        setIsCheckingAuth(false);
+        isInitialized = true;
+        sessionStorage.removeItem('viventiva_logging_out');
+        return;
+      }
+      
       // Wait a bit for the auth listener to fire first
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // If still not initialized, do a manual check
       if (!isInitialized) {
+        // Check again if logout happened during wait
+        if (sessionStorage.getItem('viventiva_logging_out') === 'true') {
+          console.log('[Viventiva] Logout detected during wait, skipping session check');
+          setIsAuthenticated(false);
+          setNeedsProfileSetup(false);
+          setIsCheckingAuth(false);
+          isInitialized = true;
+          sessionStorage.removeItem('viventiva_logging_out');
+          return;
+        }
+        
         try {
           const { auth } = await import('./lib/supabase');
           const { user, error } = await auth.getCurrentUser();
@@ -226,24 +368,65 @@ const App = () => {
     const handleOAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
+      const error = hashParams.get('error');
+      const errorDescription = hashParams.get('error_description');
+
+      if (error) {
+        console.error('[Viventiva OAuth] OAuth error:', error, errorDescription);
+        setIsCheckingAuth(false);
+        return;
+      }
 
       if (accessToken) {
         console.log('[Viventiva OAuth] OAuth callback detected');
+        setIsCheckingAuth(true);
+        
         const { auth } = await import('./lib/supabase');
 
         // Wait a bit for session to be fully established
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Get the authenticated user
-        const { user } = await auth.getCurrentUser();
+        const { user, error: userError } = await auth.getCurrentUser();
 
-        if (user) {
+        if (user && !userError) {
           console.log('[Viventiva OAuth] User authenticated, loading data');
+          // Mark that user just logged in
+          localStorage.setItem('viventiva_just_logged_in', 'true');
+          // Set authenticated state immediately
+          setIsAuthenticated(true);
+          
+          // Reset rate limit on successful OAuth login
+          try {
+            const { resetRateLimit } = await import('./utils/rateLimiter');
+            const provider = window.location.hash.includes('provider=google') ? 'google' :
+                           window.location.hash.includes('provider=facebook') ? 'facebook' :
+                           window.location.hash.includes('provider=apple') ? 'apple' : 'oauth';
+            resetRateLimit('oauth', `oauth:${provider}`);
+          } catch (error) {
+            console.error('[Viventiva] Error resetting rate limit:', error);
+          }
+          
+          // Track OAuth login
+          try {
+            const { trackUserAction } = await import('./utils/analytics');
+            const provider = window.location.hash.includes('provider=google') ? 'google' :
+                           window.location.hash.includes('provider=facebook') ? 'facebook' :
+                           window.location.hash.includes('provider=apple') ? 'apple' : 'oauth';
+            trackUserAction('user_login', { method: provider });
+          } catch (error) {
+            console.error('[Viventiva] Error tracking OAuth login:', error);
+          }
+          
           // Use the shared loadUserDataFromSession function
+          // It will set setIsCheckingAuth(false) when done
           await loadUserDataFromSession(user);
 
           // Clean up URL hash
           window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          console.error('[Viventiva OAuth] Failed to get user after OAuth:', userError);
+          setIsCheckingAuth(false);
         }
       }
     };
@@ -254,18 +437,86 @@ const App = () => {
       const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
         console.log('[Viventiva] Auth state changed:', event, session?.user?.id);
 
+        // Check if we're in the middle of logging out - ignore auth events
+        if (sessionStorage.getItem('viventiva_logging_out') === 'true') {
+          console.log('[Viventiva] Logout in progress, ignoring auth event:', event);
+          if (event === 'SIGNED_OUT') {
+            sessionStorage.removeItem('viventiva_logging_out');
+          }
+          return;
+        }
+
         // Handle INITIAL_SESSION or SIGNED_IN events - prioritize auth listener as source of truth
-        if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session?.user) {
-          // Session exists - load user data (even if checkExistingSession already ran)
-          console.log('[Viventiva] Session restored via listener, loading user data');
+        if (event === 'SIGNED_IN' && session?.user) {
+          // User just signed in (email or OAuth) - mark it
+          localStorage.setItem('viventiva_just_logged_in', 'true');
+          console.log('[Viventiva] User signed in via listener (email/OAuth), loading user data');
           setIsAuthenticated(true);
           setIsCheckingAuth(false);
+          
+          // Initialize session timeout
+          try {
+            const { initSessionTimeout } = await import('./utils/sessionTimeout');
+            initSessionTimeout({
+              inactivityTimeout: 30 * 60 * 1000,
+              warningTime: 5 * 60 * 1000,
+              onWarning: (info) => console.warn(`[SessionTimeout] Session expiring in ${info.minutesRemaining} minute(s)`),
+              onTimeout: async () => {
+                const { auth } = await import('./lib/supabase');
+                await auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+              },
+            });
+          } catch (error) {
+            console.error('[Viventiva] Error initializing session timeout:', error);
+          }
+          
+          await loadUserDataFromSession(session.user);
+          isInitialized = true;
+        } else if (event === 'INITIAL_SESSION' && session?.user) {
+          // Initial session on page load - check if user just logged in
+          console.log('[Viventiva] Initial session found via listener, loading user data');
+          setIsAuthenticated(true);
+          setIsCheckingAuth(false);
+          
+          // Initialize session timeout for existing sessions
+          try {
+            const { initSessionTimeout } = await import('./utils/sessionTimeout');
+            initSessionTimeout({
+              inactivityTimeout: 30 * 60 * 1000,
+              warningTime: 5 * 60 * 1000,
+              onWarning: (info) => console.warn(`[SessionTimeout] Session expiring in ${info.minutesRemaining} minute(s)`),
+              onTimeout: async () => {
+                const { auth } = await import('./lib/supabase');
+                await auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+              },
+            });
+          } catch (error) {
+            console.error('[Viventiva] Error initializing session timeout:', error);
+          }
+          
           await loadUserDataFromSession(session.user);
           isInitialized = true;
         } else if (event === 'SIGNED_OUT') {
-          // Clear everything
+          // Clear everything on sign out
+          console.log('[Viventiva] SIGNED_OUT event received, clearing state');
+          
+          // Destroy session timeout
+          try {
+            const { destroySessionTimeout } = await import('./utils/sessionTimeout');
+            destroySessionTimeout();
+          } catch (error) {
+            console.error('[Viventiva] Error destroying session timeout:', error);
+          }
+          
           localStorage.removeItem('viventiva_authenticated');
           localStorage.removeItem('viventiva_profile_complete');
+          localStorage.removeItem('viventiva_just_logged_in');
           setIsAuthenticated(false);
           setNeedsProfileSetup(false);
           setIsCheckingAuth(false);
@@ -317,13 +568,42 @@ const App = () => {
   }, []);
 
   const handleLogin = async () => {
-    localStorage.setItem('viventiva_authenticated', 'true');
-
+    console.log('[Viventiva handleLogin] Login handler called');
+    setIsCheckingAuth(true);
+    
+    // Wait a moment for session to be fully established (especially for email login)
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
     // Check if user has completed their profile
     const { auth, database } = await import('./lib/supabase');
-    const { user } = await auth.getCurrentUser();
+    
+    // Try multiple times to get user (session might take a moment)
+    let user = null;
+    let userError = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts && !user) {
+      const result = await auth.getCurrentUser();
+      user = result.user;
+      userError = result.error;
+      
+      if (user && !userError) {
+        break;
+      }
+      
+      attempts++;
+      if (attempts < maxAttempts) {
+        console.log(`[Viventiva handleLogin] Attempt ${attempts} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
 
-    if (user) {
+    if (user && !userError) {
+      console.log('[Viventiva handleLogin] User found:', user.id);
+      // Mark that user just logged in
+      localStorage.setItem('viventiva_just_logged_in', 'true');
+      localStorage.setItem('viventiva_authenticated', 'true');
       const { data: profile } = await database.getUserProfile(user.id);
 
       if (profile && profile.birth_day) {
@@ -443,15 +723,57 @@ const App = () => {
           console.log('[Viventiva handleLogin] No selection data found, starting fresh');
         }
 
+        setLoadingStage('ready');
         setIsAuthenticated(true);
         setNeedsProfileSetup(false);
+        setIsCheckingAuth(false);
         localStorage.setItem('viventiva_profile_complete', 'true');
+
+        // Initialize session timeout for authenticated users
+        try {
+          const { initSessionTimeout } = await import('./utils/sessionTimeout');
+          initSessionTimeout({
+            inactivityTimeout: 30 * 60 * 1000, // 30 minutes
+            warningTime: 5 * 60 * 1000, // 5 minutes warning
+            onWarning: (info) => {
+              // Show warning notification (could be enhanced with a toast/notification component)
+              console.warn(`[SessionTimeout] Session expiring in ${info.minutesRemaining} minute(s)`);
+            },
+            onTimeout: async () => {
+              // Handle session timeout - logout user
+              console.log('[SessionTimeout] Session expired, logging out');
+              const { auth } = await import('./lib/supabase');
+              await auth.signOut();
+              localStorage.clear();
+              sessionStorage.clear();
+              window.location.href = '/';
+            },
+          });
+        } catch (error) {
+          console.error('[Viventiva] Error initializing session timeout:', error);
+        }
+        
+        // Load user settings from Supabase
+        try {
+          const { useUIStore } = await import('./stores/useUIStore');
+          await useUIStore.getState().loadSettingsFromSupabase();
+        } catch (error) {
+          console.error('[Viventiva] Error loading settings:', error);
+        }
       } else {
         // New user - needs to complete profile
         setIsAuthenticated(true);
         setNeedsProfileSetup(true);
+        setIsCheckingAuth(false);
         localStorage.removeItem('viventiva_profile_complete');
       }
+    } else {
+      console.error('[Viventiva handleLogin] No user found after', maxAttempts, 'attempts. Error:', userError);
+      setIsCheckingAuth(false);
+      
+      // The auth listener should handle SIGNED_IN events, but if it hasn't fired yet,
+      // wait a bit more and let it handle the session restoration
+      console.log('[Viventiva handleLogin] Session may still be establishing. Auth listener will handle SIGNED_IN event.');
     }
   };
 
@@ -511,9 +833,10 @@ const App = () => {
   return (
       <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
         <BrowserCompatibility darkMode={darkMode} />
+        <CookieConsent />
         <div className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500`}>
           {isCheckingAuth ? (
-            <LoadingSpinner message="Checking authentication..." />
+            <LoadingProgress stage={loadingStage} />
           ) : !isAuthenticated ? (
             <Suspense fallback={<LoadingSpinner message="Loading..." />}>
               <HomePage darkMode={darkMode} onLogin={handleLogin} />

@@ -12,7 +12,19 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext js,jsx --fix"
+    "lint:fix": "eslint src --ext js,jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,json,css,md}\"",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "life-tracker",
@@ -25,6 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "@headlessui/react": "^2.2.7",
+    "@sentry/react": "^10.23.0",
     "@supabase/supabase-js": "^2.58.0",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
@@ -51,7 +64,9 @@
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
+    "husky": "^9.1.7",
     "jest-axe": "^10.0.0",
+    "lint-staged": "^16.2.6",
     "postcss": "^8.4.45",
     "tailwindcss": "^3.4.17",
     "vite": "^6.0.5"
