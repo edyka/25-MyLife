@@ -39,15 +39,16 @@ const ClearWeekBox = memo(({
 
   const { isPast, isCurrent, hasMilestone, isBeingDragged, isWeekSelected } = weekState;
 
-  let baseBg = darkMode ? "bg-slate-700/60" : "bg-white/90";
+  let baseBg = darkMode ? "bg-transparent" : "bg-transparent";
   let borderColor = darkMode ? "border-slate-600/50" : "border-slate-300/50";
   let shadowClass = "shadow-sm";
-  
+
   if (isPast) {
-    baseBg = darkMode ? "bg-slate-600/70" : "bg-slate-200/80";
+    // Past weeks are transparent with border, will show red X
+    baseBg = darkMode ? "bg-transparent" : "bg-transparent";
     borderColor = darkMode ? "border-slate-500/60" : "border-slate-400/60";
   }
-  
+
   if (hasMilestone) {
     const category = allCategories[hasMilestone.category];
     if (category) {
@@ -58,8 +59,9 @@ const ClearWeekBox = memo(({
   }
 
   if (isCurrent) {
-    borderColor = "border-2 border-red-400";
-    shadowClass = "shadow-lg shadow-red-400/30";
+    borderColor = "border-2 border-red-500";
+    shadowClass = "shadow-lg shadow-red-500/30";
+    baseBg = darkMode ? "bg-red-500/10" : "bg-red-500/10";
   } else {
     borderColor = `border ${borderColor}`;
   }
@@ -70,7 +72,7 @@ const ClearWeekBox = memo(({
       className={`week-square relative w-full h-full ${baseBg} ${borderColor} ${shadowClass} ${
         isWeekSelected ? "ring-2 ring-blue-400/60" : ""
       } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""
-      } rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${
+      } rounded-none overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${
         selectedColor ? "hover:shadow-xl" : ""
       } active:scale-95`}
       onMouseDown={(e) => { e.preventDefault(); handleWeekMouseDown(weekNum); }}
@@ -92,56 +94,41 @@ const ClearWeekBox = memo(({
       aria-pressed={isWeekSelected}
       tabIndex={0}
     >
-      {/* Enhanced past week indicators (only when not colored) */}
-      {isPast && !hasMilestone && pastWeekStyle !== 'none' && (
-        pastWeekStyle === 'hatch' ? (
-          <div className="absolute inset-0 pointer-events-none opacity-30">
-            <div
-              className="w-full h-full rounded-lg"
-              style={{
-                background: `repeating-linear-gradient(135deg, transparent, transparent 3px, ${darkMode ? '#64748b' : '#94a3b8'} 3px, ${darkMode ? '#64748b' : '#94a3b8'} 6px)`
-              }}
-            />
-          </div>
-        ) : (
-          <div
-            className="absolute top-1 right-1 w-0 h-0 border-transparent pointer-events-none"
-            style={{
-              borderTopWidth: '6px',
-              borderRightWidth: '6px',
-              borderRightColor: darkMode ? '#64748b' : '#94a3b8'
-            }}
-          />
-        )
+      {/* Red X for past weeks that have been lived (only when not colored with milestone) */}
+      {isPast && !hasMilestone && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div className={`w-full h-[2px] ${darkMode ? 'bg-red-400/70' : 'bg-red-500/70'} rotate-45 absolute`} />
+          <div className={`w-full h-[2px] ${darkMode ? 'bg-red-400/70' : 'bg-red-500/70'} -rotate-45 absolute`} />
+        </div>
       )}
 
       {/* Enhanced current week indicator */}
       {isCurrent && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 rounded-lg border-2 border-red-400 animate-pulse"></div>
-          <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-400 rounded-full animate-ping"></div>
+          <div className="absolute inset-0 rounded-none border-2 border-red-400 animate-pulse"></div>
+          <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-400 rounded-none animate-ping"></div>
         </div>
       )}
 
       {/* Enhanced X overlay for difficult weeks */}
       {hasMilestone && hasMilestone.category === 'difficult' && (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-          <div className={`w-2/3 h-[3px] ${darkMode ? 'bg-red-300' : 'bg-red-600'} rotate-45 absolute rounded-full shadow-sm`} />
-          <div className={`w-2/3 h-[3px] ${darkMode ? 'bg-red-300' : 'bg-red-600'} -rotate-45 absolute rounded-full shadow-sm`} />
+          <div className={`w-2/3 h-[3px] ${darkMode ? 'bg-red-300' : 'bg-red-600'} rotate-45 absolute rounded-none shadow-sm`} />
+          <div className={`w-2/3 h-[3px] ${darkMode ? 'bg-red-300' : 'bg-red-600'} -rotate-45 absolute rounded-none shadow-sm`} />
         </div>
       )}
 
       {/* Selection highlight */}
       {isWeekSelected && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 rounded-lg bg-blue-400/20 border-2 border-blue-400/60"></div>
+          <div className="absolute inset-0 rounded-none bg-blue-400/20 border-2 border-blue-400/60"></div>
         </div>
       )}
 
       {/* Drag highlight */}
       {isBeingDragged && (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 rounded-lg bg-yellow-400/20 border-2 border-yellow-400/60"></div>
+          <div className="absolute inset-0 rounded-none bg-yellow-400/20 border-2 border-yellow-400/60"></div>
         </div>
       )}
     </div>

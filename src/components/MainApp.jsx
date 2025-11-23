@@ -11,15 +11,20 @@ import GoalTracker from "./GoalTracker";
 import StatsSection from "./StatsSection";
 import Dashboard from "./Dashboard";
 import PricingPage from "./PricingPage";
-import { useWeekInteractionsZustand } from "../hooks/useWeekInteractionsZustand";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useModernTouchGestures } from "../hooks/useModernTouchGestures";
+import { useWeekInteractionsZustand } from "../hooks/useWeekInteractionsZustand";
 
 // Import optimized Zustand stores
 import { useLifeStore } from "../stores/useLifeStore";
 import { useUIStore } from "../stores/useUIStore";
 import { useMilestoneStore } from "../stores/useMilestoneStore";
 import { useSelectionStore } from "../stores/useSelectionStore";
+import { useEngagementStore } from "../stores/useEngagementStore";
+import StreakDisplay from "./StreakDisplay";
+import AchievementPopup from "./AchievementPopup";
+import AchievementsPanel from "./AchievementsPanel";
+import { useState } from "react";
 
 // Performance monitoring is initialized in main.jsx
 
@@ -57,7 +62,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   const customMoods = useMilestoneStore(state => state.customMoods);
   const goals = useMilestoneStore(state => state.goals);
   const setMilestones = useMilestoneStore(state => state.setMilestones);
-  const setCustomCategories = useMilestoneStore(state => state.setCustomCategories);
+  // const setCustomCategories = useMilestoneStore(state => state.setCustomCategories); // Unused
   const setCustomMoods = useMilestoneStore(state => state.setCustomMoods);
   const addCustomCategory = useMilestoneStore(state => state.addCustomCategory);
   const setGoals = useMilestoneStore(state => state.setGoals);
@@ -69,6 +74,15 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   const pinnedWeeksFromStore = useSelectionStore(state => state.pinnedWeeks);  // For sync useEffect only
   const setSelectedColor = useSelectionStore(state => state.setSelectedColor);
   const setSelectedWeeks = useSelectionStore(state => state.setSelectedWeeks);
+
+  // Engagement Store
+  const streak = useEngagementStore(state => state.streak);
+  const incrementStreak = useEngagementStore(state => state.incrementStreak);
+  const checkBadges = useEngagementStore(state => state.checkBadges);
+  const loadEngagementFromSupabase = useEngagementStore(state => state.loadFromSupabase);
+
+  const [newBadge, setNewBadge] = useState(null);
+  const [showAchievements, setShowAchievements] = useState(false);
 
   // Memoize expensive getter functions to prevent recalculation on every render
   const colorOptions = useMemo(() => getColorOptions(), [getColorOptions]);
@@ -95,6 +109,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
         if (user) {
           // Debounce the save - only save after user stops editing for 1 second
+          // Reduced from 1 second to 500ms for faster sync
           const timeoutId = setTimeout(async () => {
             // Save milestones along with customMoods and customCategories
             // Always save, even if milestones is empty (creates/updates the record)
@@ -105,15 +120,22 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
             };
             const weekCount = Object.keys(milestones || {}).length;
             console.log('[Viventiva Sync] Saving milestones to Supabase:', weekCount, 'weeks');
-            console.log('[Viventiva Sync] Data structure:', { 
-              milestones: weekCount, 
+            console.log('[Viventiva Sync] Data structure:', {
+              milestones: weekCount,
               customMoods: Object.keys(customMoods || {}).length,
-              customCategories: Object.keys(customCategories || {}).length 
+              customCategories: Object.keys(customCategories || {}).length,
+              sampleWeek: weekCount > 0 ? Object.keys(milestones)[0] : null
             });
-            
-            const { error } = await database.saveMilestones(user.id, milestoneData);
+
+            const { error, data } = await database.saveMilestones(user.id, milestoneData);
             if (error) {
               console.error('[Viventiva Sync] Error saving milestones:', error);
+              console.error('[Viventiva Sync] Error details:', {
+                message: error.message,
+                code: error.code,
+                status: error.status,
+                details: error.details
+              });
               // Error is already handled with retry logic in saveMilestones
               // Show user-friendly error toast
               try {
@@ -124,7 +146,27 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                 // Toast not critical, continue silently
               }
             } else {
-              console.log('[Viventiva Sync] Milestones saved successfully to Supabase');
+              console.log('[Viventiva Sync] Milestones saved successfully to Supabase:', weekCount, 'weeks');
+
+              // Verify the save by reading it back (only in development for debugging)
+              if (process.env.NODE_ENV === 'development' && weekCount > 0) {
+                try {
+                  const { data: verifyData, error: verifyError } = await database.getMilestones(user.id);
+                  if (!verifyError && verifyData?.milestones_data) {
+                    const savedCount = verifyData.milestones_data.milestones
+                      ? Object.keys(verifyData.milestones_data.milestones || {}).length
+                      : Object.keys(verifyData.milestones_data || {}).length;
+                    if (savedCount === weekCount) {
+                      console.log('[Viventiva Sync] Verified: All', weekCount, 'weeks saved correctly');
+                    } else {
+                      console.warn('[Viventiva Sync] WARNING: Week count mismatch! Expected:', weekCount, 'Got:', savedCount);
+                    }
+                  }
+                } catch (verifyErr) {
+                  console.warn('[Viventiva Sync] Could not verify save:', verifyErr);
+                }
+              }
+
               // Track successful sync
               try {
                 const { trackEvent } = await import('../utils/analytics');
@@ -133,7 +175,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                 // Analytics not critical, continue silently
               }
             }
-          }, 1000);
+          }, 500); // Reduced debounce from 1000ms to 500ms for faster sync
 
           return () => clearTimeout(timeoutId);
         }
@@ -143,7 +185,45 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
     };
 
     syncMilestones();
+    syncMilestones();
   }, [milestones, customMoods, customCategories]);
+
+  // Initialize Engagement Store & Check Badges
+  useEffect(() => {
+    const initEngagement = async () => {
+      const { auth } = await import('../lib/supabase');
+      const { user } = await auth.getCurrentUser();
+      if (user) {
+        await loadEngagementFromSupabase(user.id);
+
+        // Check for badges whenever relevant data changes
+        const unlocked = checkBadges(milestones, goals, selectedWeeks);
+        if (unlocked.length > 0) {
+          // Show the most recent unlocked badge
+          const lastBadgeId = unlocked[unlocked.length - 1];
+          // We need to import BADGES from AchievementsPanel or define them centrally
+          // For now, we'll just pass a simple object, but ideally we refactor badge data
+          // A quick hack to get the title/desc:
+          const badgeTitles = {
+            first_paint: { title: "First Steps", description: "Paint your first week on the grid." },
+            time_traveler: { title: "Time Traveler", description: "Fill in 10 weeks from the past." },
+            goal_setter: { title: "Goal Setter", description: "Set your first life goal." },
+            streak_master: { title: "Consistency is Key", description: "Reach a 4-week streak." },
+            rainbow_life: { title: "Rainbow Life", description: "Use 5 different colors on your grid." }
+          };
+          setNewBadge(badgeTitles[lastBadgeId]);
+        }
+      }
+    };
+    initEngagement();
+  }, [milestones, goals, selectedWeeks, loadEngagementFromSupabase, checkBadges]);
+
+  // Increment streak when painting weeks (if not already incremented today)
+  useEffect(() => {
+    if (Object.keys(milestones).length > 0) {
+      incrementStreak();
+    }
+  }, [milestones, incrementStreak]);
 
   // Auto-sync selections (selectedWeeks, pinnedWeeks, selectedColor) to Supabase when they change
   useEffect(() => {
@@ -158,7 +238,8 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
         const { user } = await auth.getCurrentUser();
 
         if (user) {
-          // Debounce the save - only save after user stops editing for 1 second
+          // Debounce the save - only save after user stops editing for 500ms
+          // Reduced from 1 second to 500ms for faster sync
           const timeoutId = setTimeout(async () => {
             // Convert Sets to Arrays for JSON serialization
             const selectionsData = {
@@ -167,7 +248,11 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
               selectedColor: selectedColor
             };
 
-            console.log('[Viventiva Sync] Saving selections to Supabase:', selectionsData);
+            console.log('[Viventiva Sync] Saving selections to Supabase:', {
+              selectedWeeks: selectionsData.selectedWeeks.length,
+              pinnedWeeks: selectionsData.pinnedWeeks.length,
+              selectedColor: selectionsData.selectedColor
+            });
 
             const { error } = await database.saveSelections(user.id, selectionsData);
             if (error) {
@@ -184,7 +269,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
             } else {
               console.log('[Viventiva Sync] Selections saved successfully to Supabase');
             }
-          }, 1000);
+          }, 500); // Reduced debounce from 1000ms to 500ms for faster sync
 
           return () => clearTimeout(timeoutId);
         }
@@ -195,6 +280,49 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
     syncSelections();
   }, [selectedWeeks, pinnedWeeksFromStore, selectedColor]);
+
+  // Auto-sync goals to Supabase when they change
+  useEffect(() => {
+    const syncGoals = async () => {
+      try {
+        // Check if user is authenticated
+        const authStatus = localStorage.getItem('viventiva_authenticated');
+        if (authStatus !== 'true') return;
+
+        // Dynamically import Supabase
+        const { auth, database } = await import('../lib/supabase');
+        const { user } = await auth.getCurrentUser();
+
+        if (user) {
+          // Debounce the save
+          const timeoutId = setTimeout(async () => {
+            console.log('[Viventiva Sync] Saving goals to Supabase:', goals.length);
+
+            const { error } = await database.saveGoals(user.id, goals);
+
+            if (error) {
+              console.error('[Viventiva Sync] Error saving goals:', error);
+              try {
+                const { toast } = await import('../utils/toast');
+                const { getUserFriendlyError } = await import('../utils/errorMessages');
+                toast.error(`Failed to save goals: ${getUserFriendlyError(error)}`);
+              } catch (err) {
+                // Toast not critical
+              }
+            } else {
+              console.log('[Viventiva Sync] Goals saved successfully to Supabase');
+            }
+          }, 500);
+
+          return () => clearTimeout(timeoutId);
+        }
+      } catch (error) {
+        console.error('[Viventiva Sync] Error syncing goals:', error);
+      }
+    };
+
+    syncGoals();
+  }, [goals]);
 
   // Profile update function
   const handleUpdateProfile = useCallback(async () => {
@@ -249,21 +377,21 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   } = weekInteractions || {
     selectedWeek: null,
     isDragging: false,
-    setIsDragging: () => {},
+    setIsDragging: () => { },
     draggedWeeks: new Set(),
-    setDraggedWeeks: () => {},
-    setDragStartWeek: () => {},
+    setDraggedWeeks: () => { },
+    setDragStartWeek: () => { },
     pinnedWeeks: new Set(),
-    setPinnedWeeks: () => {},
+    setPinnedWeeks: () => { },
     selectionMode: 'single',
-    handleWeekClick: () => {},
-    handleWeekMouseDown: () => {},
-    handleWeekMouseEnter: () => {},
-    handleMouseUp: () => {},
+    handleWeekClick: () => { },
+    handleWeekMouseDown: () => { },
+    handleWeekMouseEnter: () => { },
+    handleMouseUp: () => { },
     rangeStart: null,
     isInRangeMode: false,
-    resetRangeSelection: () => {},
-    clearPinnedWeeks: () => {},
+    resetRangeSelection: () => { },
+    clearPinnedWeeks: () => { },
   };
 
   // currentWeek is now provided by the lifeStore
@@ -273,7 +401,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
-    
+
     // Throttle resize events to prevent excessive re-renders
     let resizeTimeout;
     const throttledCheckMobile = () => {
@@ -283,7 +411,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
         resizeTimeout = null;
       }, 100); // 100ms throttle
     };
-    
+
     window.addEventListener("resize", throttledCheckMobile, { passive: true });
     return () => {
       window.removeEventListener("resize", throttledCheckMobile);
@@ -297,13 +425,13 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   const keyboardShortcutDeps = useMemo(() => ({
     selectedColor: selectedColor || null,
     selectedWeeks: selectedWeeks || new Set(),
-    setSelectedWeeks: setSelectedWeeks || (() => {}),
-    setSelectedColor: setSelectedColor || (() => {}),
-    setIsDragging: setIsDragging || (() => {}),
-    setDraggedWeeks: setDraggedWeeks || (() => {}),
-    setDragStartWeek: setDragStartWeek || (() => {}),
+    setSelectedWeeks: setSelectedWeeks || (() => { }),
+    setSelectedColor: setSelectedColor || (() => { }),
+    setIsDragging: setIsDragging || (() => { }),
+    setDraggedWeeks: setDraggedWeeks || (() => { }),
+    setDragStartWeek: setDragStartWeek || (() => { }),
     milestones: milestones || {},
-    setMilestones: setMilestones || (() => {}),
+    setMilestones: setMilestones || (() => { }),
   }), [
     selectedColor,
     selectedWeeks,
@@ -324,10 +452,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   // Use modern touch gestures hook
   const { handleTouchStart, handleTouchMove, handleTouchEnd } =
     useModernTouchGestures({
-      paintWeeks: weekInteractions?.paintWeeks || (() => {}),
-      handleWeekMouseDown: handleWeekMouseDown || (() => {}),
-      handleWeekMouseEnter: handleWeekMouseEnter || (() => {}),
-      handleMouseUp: handleMouseUp || (() => {}),
+      paintWeeks: weekInteractions?.paintWeeks || (() => { }),
+      handleWeekMouseDown: handleWeekMouseDown || (() => { }),
+      handleWeekMouseEnter: handleWeekMouseEnter || (() => { }),
+      handleMouseUp: handleMouseUp || (() => { }),
     });
 
   // Handle custom mood creation - memoized to prevent unnecessary re-renders
@@ -348,11 +476,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
       id="main-content"
       role="main"
       aria-label="Life grid visualization"
-      className={`min-h-screen flex flex-col transition-all duration-500 ${
-        darkMode
-          ? "modern-bg-dark"
-          : "modern-bg"
-      }`}
+      className={`min-h-screen flex flex-col transition-all duration-500 ${darkMode
+        ? "modern-bg-dark"
+        : "modern-bg"
+        }`}
     >
       <TabNavigation
         currentTab={currentTab}
@@ -361,56 +488,70 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
         showWeeks={showWeeks}
         setShowWeeks={setShowWeeks}
         setDarkMode={setDarkMode}
-      />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 pt-20 sm:pt-24 overflow-hidden">
-                {/* Tabbed Navigation Content */}
-        {currentTab === "home" && (
-          <Dashboard stats={stats} darkMode={darkMode} />
-        )}
+      >
+        <div className="flex items-center gap-4">
+          <StreakDisplay />
+          <button
+            onClick={() => setShowAchievements(true)}
+            className={`p-2 rounded-full hover:bg-black/5 transition-colors ${darkMode ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
+            title="Achievements"
+          >
+            <span className="text-xl">🏆</span>
+          </button>
+        </div>
+      </TabNavigation>
 
-        {currentTab === "grid" && (
-          <div className={`relative mt-8 overflow-visible space-y-8`}>
-            {/* Modern Mood Palette */}
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element` }>
-              <ModernMoodPalette
-                selectedColor={selectedColor}
-                setSelectedColor={setSelectedColor}
-                selectedWeeks={selectedWeeks}
-                pinnedWeeks={pinnedWeeks}
-                rangeStart={rangeStart}
-                isInRangeMode={isInRangeMode}
-                resetRangeSelection={resetRangeSelection}
-                clearPinnedWeeks={clearPinnedWeeks}
-              />
-            </div>
-             <div className={`${
-              darkMode ? 'premium-card-dark' : 'premium-card'
-            } p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl mt-8` }>
-               <ClearLifeGrid
-                 lifeExpectancy={lifeExpectancy}
-                 currentWeek={currentWeek}
-                 milestones={milestones}
-                 selectedWeek={selectedWeek}
-                 selectedColor={selectedColor}
-                 selectedWeeks={selectedWeeks}
-                 handleWeekClick={handleWeekClick}
-                 handleWeekMouseDown={handleWeekMouseDown}
-                 handleWeekMouseEnter={handleWeekMouseEnter}
-                 handleMouseUp={handleMouseUp}
-                 handleTouchStart={handleTouchStart}
-                 handleTouchMove={handleTouchMove}
-                 handleTouchEnd={handleTouchEnd}
-                 isDragging={isDragging}
-                 draggedWeeks={draggedWeeks}
-                 isMobile={isMobile}
-                 darkMode={darkMode}
-                 allCategories={allCategories}
-                 selectionMode={selectionMode}
-                 showWeeks={showWeeks}
-                 rangeStart={rangeStart}
-                 isInRangeMode={isInRangeMode}
-                 enableVirtualization={true}
-               />
+      <AchievementPopup badge={newBadge} onClose={() => setNewBadge(null)} />
+      <AchievementsPanel isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 pt-20 sm:pt-24 overflow-hidden">
+        {/* Tabbed Navigation Content */}
+        {currentTab === "home" && (
+          <div className="space-y-16">
+            <Dashboard stats={stats} darkMode={darkMode} />
+
+            {/* Life Grid Section */}
+            <div className={`relative overflow-visible space-y-8`}>
+              {/* Modern Mood Palette */}
+              <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element`}>
+                <ModernMoodPalette
+                  selectedColor={selectedColor}
+                  setSelectedColor={setSelectedColor}
+                  selectedWeeks={selectedWeeks}
+                  pinnedWeeks={pinnedWeeks}
+                  rangeStart={rangeStart}
+                  isInRangeMode={isInRangeMode}
+                  resetRangeSelection={resetRangeSelection}
+                  clearPinnedWeeks={clearPinnedWeeks}
+                />
+              </div>
+              <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'
+                } p-6 sm:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl`}>
+                <ClearLifeGrid
+                  lifeExpectancy={lifeExpectancy}
+                  currentWeek={currentWeek}
+                  milestones={milestones}
+                  selectedWeek={selectedWeek}
+                  selectedColor={selectedColor}
+                  selectedWeeks={selectedWeeks}
+                  handleWeekClick={handleWeekClick}
+                  handleWeekMouseDown={handleWeekMouseDown}
+                  handleWeekMouseEnter={handleWeekMouseEnter}
+                  handleMouseUp={handleMouseUp}
+                  handleTouchStart={handleTouchStart}
+                  handleTouchMove={handleTouchMove}
+                  handleTouchEnd={handleTouchEnd}
+                  isDragging={isDragging}
+                  draggedWeeks={draggedWeeks}
+                  isMobile={isMobile}
+                  darkMode={darkMode}
+                  allCategories={allCategories}
+                  selectionMode={selectionMode}
+                  showWeeks={showWeeks}
+                  rangeStart={rangeStart}
+                  isInRangeMode={isInRangeMode}
+                  enableVirtualization={true}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -423,7 +564,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
           </div>
         )}
 
-        {currentTab === "pricing" && (
+        {currentTab === "premium" && (
           <PricingPage darkMode={darkMode} />
         )}
 
@@ -514,11 +655,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                           <button
                             key={layout.key}
                             onClick={() => setGridLayout(layout.key)}
-                            className={`p-3 rounded-xl transition-all duration-200 ${
-                              gridLayout === layout.key
-                                ? `bg-gradient-to-br ${theme.primary} text-white shadow-lg`
-                                : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
+                            className={`p-3 rounded-xl transition-all duration-200 ${gridLayout === layout.key
+                              ? `bg-gradient-to-br ${theme.primary} text-white shadow-lg`
+                              : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              }`}
                           >
                             <div className="text-xl mb-1">{layout.icon}</div>
                             <div className="text-xs font-semibold">{layout.label}</div>
@@ -540,11 +680,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                           <button
                             key={opt.key}
                             onClick={() => setPastWeekStyle(opt.key)}
-                            className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                              pastWeekStyle === opt.key
-                                ? `bg-gradient-to-r ${theme.tertiary} text-white shadow-lg`
-                                : darkMode ? "bg-slate-800/50 text-slate-300" : "bg-slate-100 text-slate-700"
-                            }`}
+                            className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${pastWeekStyle === opt.key
+                              ? `bg-gradient-to-r ${theme.tertiary} text-white shadow-lg`
+                              : darkMode ? "bg-slate-800/50 text-slate-300" : "bg-slate-100 text-slate-700"
+                              }`}
                           >
                             {opt.label}
                           </button>
@@ -580,11 +719,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                           <button
                             key={t.key}
                             onClick={() => setThemePreset(t.key)}
-                            className={`p-4 rounded-xl transition-all duration-200 ${
-                              themePreset === t.key
-                                ? `bg-gradient-to-br ${t.preview} text-white shadow-lg scale-105`
-                                : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
+                            className={`p-4 rounded-xl transition-all duration-200 ${themePreset === t.key
+                              ? `bg-gradient-to-br ${t.preview} text-white shadow-lg scale-105`
+                              : darkMode ? "bg-slate-800/50 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                              }`}
                           >
                             <div className={`h-8 rounded-lg bg-gradient-to-r ${t.preview} mb-2 ${themePreset === t.key ? 'ring-2 ring-white/50' : ''}`} />
                             <div className="text-xs font-semibold">{t.label}</div>

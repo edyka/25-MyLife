@@ -61,11 +61,11 @@ const ModernWeekBox = ({ weekNum }) => {
     // Add pulsing effect for current week
     content = enableAnimations ? (
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+        <div className="w-2 h-2 bg-white rounded-none animate-pulse" />
       </div>
     ) : (
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-2 h-2 bg-white rounded-full" />
+        <div className="w-2 h-2 bg-white rounded-none" />
       </div>
     );
   } else if (isPast) {
@@ -81,7 +81,7 @@ const ModernWeekBox = ({ weekNum }) => {
     // Modern dot design for past weeks - smaller inner dot
     content = (
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className={`w-1.5 h-1.5 rounded-full ${
+        <div className={`w-1.5 h-1.5 rounded-none ${
           darkMode ? 'bg-slate-400' : 'bg-slate-600'
         }`} />
       </div>
@@ -92,9 +92,9 @@ const ModernWeekBox = ({ weekNum }) => {
     }`;
   }
 
-  // Modern responsive sizing with circular/dot design
+  // Modern responsive sizing with square design
   const sizeClass = isMobile ? "w-3 h-3" : "w-4 h-4";
-  const isCircular = true; // Modern circular design
+  const isCircular = false; // Square design
   
   // Modern ring styling with better colors
   let ringClass = "";
@@ -184,21 +184,21 @@ const ModernWeekBox = ({ weekNum }) => {
 
       {/* Modern selection indicator */}
       {isWeekSelectedState && !isBeingDragged && enableAnimations && !prefersReducedMotion && (
-        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg animate-in fade-in zoom-in duration-200" />
+        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-sm border-2 border-white shadow-lg animate-in fade-in zoom-in duration-200" />
       )}
 
       {/* Drag indicator with improved styling */}
       {isBeingDragged && enableAnimations && !prefersReducedMotion && (
-        <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded-full border-2 border-yellow-400/70 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150" />
+        <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded-sm border-2 border-yellow-400/70 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150" />
       )}
 
       {/* Static indicators for reduced motion or disabled animations */}
       {(!enableAnimations || prefersReducedMotion) && isWeekSelectedState && !isBeingDragged && (
-        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg" />
+        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-sm border-2 border-white shadow-lg" />
       )}
 
       {(!enableAnimations || prefersReducedMotion) && isBeingDragged && (
-        <div className="absolute inset-0 bg-yellow-400/30 rounded-full border-2 border-yellow-400/70" />
+        <div className="absolute inset-0 bg-yellow-400/30 rounded-sm border-2 border-yellow-400/70" />
       )}
 
       {/* Hidden description for screen readers */}

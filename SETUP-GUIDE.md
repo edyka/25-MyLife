@@ -197,7 +197,43 @@ npm run dev
 
 ---
 
-## 5. Deployment to Netlify
+## 5. Advanced Setup (Optional)
+
+### Step 5.1: Sentry Error Monitoring
+
+1. Go to [sentry.io](https://sentry.io) and create a free account
+2. Create a new React project
+3. Copy your DSN (Data Source Name)
+4. Add to your `.env` file:
+   ```
+   VITE_SENTRY_DSN=your_sentry_dsn_here
+   ```
+
+### Step 5.2: Analytics (Privacy-Friendly)
+
+**Option A: Plausible (Recommended)**
+1. Go to [plausible.io](https://plausible.io)
+2. Add your domain
+3. Add to `.env`: `VITE_PLAUSIBLE_DOMAIN=yourdomain.com`
+
+**Option B: Google Analytics 4**
+1. Create GA4 property
+2. Get Measurement ID (G-XXXXXXXXXX)
+3. Add to `.env`: `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX`
+
+### Step 5.3: GitHub Secrets (for CI/CD)
+
+If using GitHub Actions:
+1. Go to Repo Settings → Secrets and variables → Actions
+2. Add:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `NETLIFY_AUTH_TOKEN`
+   - `NETLIFY_SITE_ID`
+
+---
+
+## 6. Deployment to Netlify
 
 Your app is already configured for Netlify deployment.
 
@@ -233,7 +269,7 @@ https://[your-netlify-subdomain].netlify.app/auth/callback
 
 ---
 
-## 6. What's Next
+## 7. What's Next
 
 ### ✅ Currently Free & Ready:
 

@@ -39,13 +39,13 @@ export const retryWithBackoff = async (fn, options = {}) => {
         console.log(`[Retry] Operation succeeded after ${attempt} retry(ies)`);
       }
       return result;
-    } catch (error) {
-      lastError = error;
+    } catch (_error) {
+      lastError = _error;
 
       // Don't retry if we've exhausted retries or error shouldn't be retried
-      if (attempt >= maxRetries || !shouldRetry(error)) {
-        console.error(`[Retry] Operation failed after ${attempt} retries:`, error);
-        throw error;
+      if (attempt >= maxRetries || !shouldRetry(_error)) {
+        console.error(`[Retry] Operation failed after ${attempt} retries:`, _error);
+        throw _error;
       }
 
       // Calculate exponential backoff delay with jitter

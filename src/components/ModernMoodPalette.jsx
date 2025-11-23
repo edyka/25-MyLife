@@ -296,7 +296,7 @@ const ModernMoodPalette = ({
               return (
                 <>
                   <div
-                    className="w-2 h-2 rounded-full animate-pulse"
+                    className="w-2 h-2 rounded-sm animate-pulse"
                     style={{ backgroundColor: mood.color }}
                   />
                   <span className={`text-sm font-medium ${
@@ -317,16 +317,17 @@ const ModernMoodPalette = ({
         <div
           className={`group relative p-3 rounded-xl transition-all duration-300 overflow-visible cursor-pointer ${
             selectedColor === 'none'
-              ? 'scale-105 shadow-xl ring-2 ring-slate-500'
-              : 'hover:scale-105 hover:shadow-lg'
-          } ${
-            darkMode
-              ? 'bg-slate-800/50 hover:bg-slate-700/50'
-              : 'bg-slate-100 hover:bg-slate-200'
+              ? 'scale-105 shadow-2xl ring-4 ring-slate-500'
+              : 'hover:scale-105 hover:shadow-xl'
           }`}
           style={{
-            borderWidth: '1px',
-            borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+            backgroundColor: selectedColor === 'none'
+              ? darkMode ? '#475569' : '#e2e8f0'
+              : darkMode ? '#1e293b' : '#f1f5f9',
+            borderWidth: '2px',
+            borderColor: selectedColor === 'none'
+              ? darkMode ? '#64748b' : '#94a3b8'
+              : darkMode ? '#334155' : '#cbd5e1'
           }}
           onClick={() => handleMoodSelect('none')}
         >
@@ -334,28 +335,28 @@ const ModernMoodPalette = ({
           <div className="relative flex flex-col items-center gap-2">
             {/* Icon Container */}
             <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                selectedColor === 'none' ? 'scale-110' : ''
+              className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 shadow-md ${
+                selectedColor === 'none' ? 'scale-110 shadow-lg' : ''
               } ${
-                darkMode ? 'bg-slate-700' : 'bg-white'
+                darkMode ? 'bg-slate-600' : 'bg-white'
               }`}
             >
               <Icons.Eraser
-                className={`w-4 h-4 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-600'
+                className={`w-5 h-5 ${
+                  darkMode ? 'text-slate-200' : 'text-slate-700'
                 }`}
               />
             </div>
 
             {/* Label */}
             <div className="text-center">
-              <p className={`text-xs font-semibold ${
+              <p className={`text-sm font-bold ${
                 darkMode ? 'text-white' : 'text-slate-900'
               }`}>
                 Clear
               </p>
-              <p className={`text-[10px] mt-0.5 ${
-                darkMode ? 'text-slate-500' : 'text-slate-500'
+              <p className={`text-xs mt-0.5 font-medium ${
+                darkMode ? 'text-slate-400' : 'text-slate-600'
               }`}>
                 Remove mood
               </p>
@@ -371,21 +372,20 @@ const ModernMoodPalette = ({
           return (
             <div
               key={mood.key}
-              className={`group relative p-3 rounded-xl transition-all duration-300 overflow-visible ${
+              className={`group relative p-3 rounded-xl transition-all duration-300 overflow-visible cursor-pointer ${
                 isActive
-                  ? 'scale-105 shadow-xl ring-2'
-                  : 'hover:scale-105 hover:shadow-lg'
-              } ${
-                darkMode
-                  ? mood.darkBg + '/20 hover:' + mood.darkBg + '/30'
-                  : mood.lightBg + ' hover:' + mood.lightBg
+                  ? 'scale-105 shadow-2xl ring-4'
+                  : 'hover:scale-105 hover:shadow-xl'
               }`}
               style={{
-                ringColor: isActive ? mood.color : undefined,
-                borderWidth: isActive ? '0' : '1px',
-                borderColor: darkMode
-                  ? isActive ? mood.color : 'rgba(255,255,255,0.1)'
-                  : isActive ? mood.color : 'rgba(0,0,0,0.05)'
+                backgroundColor: isActive
+                  ? `${mood.color}30`
+                  : darkMode
+                    ? `${mood.color}20`
+                    : `${mood.color}15`,
+                borderWidth: '2px',
+                borderColor: isActive ? mood.color : `${mood.color}40`,
+                ringColor: isActive ? mood.color : undefined
               }}
               onClick={() => handleMoodSelect(mood.key)}
               onMouseEnter={() => setHoveredMood(mood.key)}
@@ -403,32 +403,31 @@ const ModernMoodPalette = ({
               <div className="relative flex flex-col items-center gap-2">
                 {/* Icon Container */}
                 <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                    isActive || isHovered ? 'scale-110' : ''
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 shadow-md ${
+                    isActive || isHovered ? 'scale-110 shadow-lg' : ''
                   }`}
                   style={{
-                    backgroundColor: isActive ? mood.color : `${mood.color}20`
+                    backgroundColor: isActive ? mood.color : `${mood.color}${isHovered ? '50' : '40'}`
                   }}
                 >
                   <Icon
-                    className={`w-4 h-4 transition-colors duration-300 ${
-                      isActive ? 'text-white' : ''
-                    }`}
+                    className={`w-5 h-5 transition-colors duration-300`}
                     style={{
-                      color: isActive ? '#fff' : mood.color
+                      color: isActive ? '#fff' : mood.color,
+                      filter: isActive ? 'none' : 'brightness(0.8)'
                     }}
                   />
                 </div>
 
                 {/* Label and Description */}
                 <div className="text-center">
-                  <p className={`text-xs font-semibold ${
+                  <p className={`text-sm font-bold ${
                     darkMode ? 'text-white' : 'text-slate-900'
                   }`}>
                     {mood.label}
                   </p>
-                  <p className={`text-[10px] mt-0.5 ${
-                    darkMode ? 'text-slate-500' : 'text-slate-500'
+                  <p className={`text-xs mt-0.5 font-medium ${
+                    darkMode ? 'text-slate-400' : 'text-slate-600'
                   }`}>
                     {mood.description}
                   </p>
@@ -476,7 +475,7 @@ const ModernMoodPalette = ({
                 {isActive && (
                   <div className="absolute top-2 left-2">
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      className="w-5 h-5 rounded-sm flex items-center justify-center"
                       style={{ backgroundColor: mood.color }}
                     >
                       <Icons.Check className="w-3 h-3 text-white" />

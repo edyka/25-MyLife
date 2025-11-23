@@ -85,18 +85,34 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Helper functions for authentication
 export const auth = {
-  // Sign in with Google
+  // Sign in with Google - Following Supabase best practices
   signInWithGoogle: async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-        queryParams: {
-          prompt: 'select_account' // Force Google to show account selector
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account' // Show account selector and ensure refresh token
+          },
+          // Skip browser redirect for better UX (handled by Supabase)
+          skipBrowserRedirect: false
         }
+      });
+
+      if (error) {
+        console.error('[Supabase] Google OAuth error:', error);
+        return { data: null, error };
       }
-    });
-    return { data, error };
+
+      // If data.url exists, Supabase will handle the redirect automatically
+      // The redirect will go to Google, then back to our callback URL
+      return { data, error: null };
+    } catch (err) {
+      console.error('[Supabase] Google OAuth exception:', err);
+      return { data: null, error: err };
+    }
   },
 
   // Sign in with Facebook
@@ -131,14 +147,53 @@ export const auth = {
   },
 
   // Sign up with Email
-  signUpWithEmail: async (email, password) => {
+  signUpWithEmail: async (email, password, firstName, initialData = null) => {
+    const options = {
+      emailRedirectTo: `${window.location.origin}/`
+    };
+
+    if (firstName) {
+      options.data = {
+        first_name: firstName,
+        full_name: firstName
+      };
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`
-      }
+      options
     });
+
+    // If successful and we have a user, create the profile immediately
+    if (data?.user && !error) {
+      // Create initial profile if we have name OR initial data
+      if (firstName || initialData) {
+        const profileData = {};
+
+        if (firstName) {
+          profileData.name = firstName;
+        }
+
+        // Add initial data if available (from LifeCalculator)
+        if (initialData && initialData.birthDate) {
+          // Parse YYYY-MM-DD string directly to avoid timezone issues
+          const [year, month, day] = initialData.birthDate.split('-').map(Number);
+          profileData.birthDay = day;
+          profileData.birthMonth = month;
+          profileData.birthYear = year;
+
+          if (initialData.lifeExpectancy) {
+            profileData.lifeExpectancy = initialData.lifeExpectancy;
+          }
+        }
+
+        if (Object.keys(profileData).length > 0) {
+          await database.saveUserProfile(data.user.id, profileData);
+        }
+      }
+    }
+
     return { data, error };
   },
 
@@ -152,12 +207,12 @@ export const auth = {
   getCurrentUser: async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       // Check for Brave Shields blocking (406 errors)
       if (error && (error.status === 406 || error.message?.includes('406'))) {
         console.warn('[Viventiva] Brave Shields may be blocking Supabase requests (406 error)');
       }
-      
+
       return { user: session?.user || null, error };
     } catch (error) {
       // Handle network errors that might indicate Brave Shields blocking
@@ -171,6 +226,30 @@ export const auth = {
   // Listen to auth changes
   onAuthStateChange: (callback) => {
     return supabase.auth.onAuthStateChange(callback);
+  },
+
+  // Check if Supabase is reachable
+  checkConnection: async () => {
+    try {
+      // Try to fetch the auth health endpoint
+      // We use a simple fetch instead of the SDK to get the raw status
+      const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseAnonKey
+        }
+      });
+
+      return {
+        online: response.ok,
+        status: response.status
+      };
+    } catch (error) {
+      return {
+        online: false,
+        error
+      };
+    }
   }
 };
 
@@ -178,19 +257,38 @@ export const auth = {
 export const database = {
   // Save user profile data
   saveUserProfile: async (userId, profileData) => {
+    const updates = {
+      user_id: userId,
+      name: profileData.name,
+      birth_day: profileData.birthDay,
+      birth_month: profileData.birthMonth,
+      birth_year: profileData.birthYear,
+      life_expectancy: profileData.lifeExpectancy,
+      updated_at: new Date().toISOString()
+    };
+
+    // Only include engagement_stats if provided
+    if (profileData.engagementStats) {
+      updates.engagement_stats = profileData.engagementStats;
+    }
+
     const { data, error } = await supabase
       .from('user_profiles')
-      .upsert({
-        user_id: userId,
-        name: profileData.name,
-        birth_day: profileData.birthDay,
-        birth_month: profileData.birthMonth,
-        birth_year: profileData.birthYear,
-        life_expectancy: profileData.lifeExpectancy,
-        updated_at: new Date().toISOString()
-      }, {
+      .upsert(updates, {
         onConflict: 'user_id'
       });
+    return { data, error };
+  },
+
+  // Save engagement stats independently
+  saveEngagementStats: async (userId, stats) => {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({
+        engagement_stats: stats,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
     return { data, error };
   },
 
@@ -202,12 +300,12 @@ export const database = {
         .select('*')
         .eq('user_id', userId)
         .single();
-      
+
       // Check for Brave Shields blocking (406 errors)
       if (error && error.status === 406) {
         console.error('[Viventiva] Brave Shields is blocking Supabase requests (406). Please disable Shields for localhost.');
       }
-      
+
       return { data, error };
     } catch (error) {
       console.error('[Viventiva] Error fetching user profile:', error);
@@ -218,7 +316,7 @@ export const database = {
   // Save mood/milestone data with retry logic
   saveMilestones: async (userId, milestones) => {
     const { retryWithBackoff } = await import('../utils/retry');
-    
+
     try {
       const result = await retryWithBackoff(async () => {
         const { data, error } = await supabase
@@ -230,11 +328,11 @@ export const database = {
           }, {
             onConflict: 'user_id'
           });
-        
+
         if (error) throw error;
         return { data, error: null };
       });
-      
+
       return result;
     } catch (error) {
       console.error('[Viventiva] Failed to save milestones after retries:', error);
@@ -262,7 +360,7 @@ export const database = {
   // Save goals with retry logic
   saveGoals: async (userId, goals) => {
     const { retryWithBackoff } = await import('../utils/retry');
-    
+
     try {
       const result = await retryWithBackoff(async () => {
         const { data, error } = await supabase
@@ -274,11 +372,11 @@ export const database = {
           }, {
             onConflict: 'user_id'
           });
-        
+
         if (error) throw error;
         return { data, error: null };
       });
-      
+
       return result;
     } catch (error) {
       console.error('[Viventiva] Failed to save goals after retries:', error);
@@ -305,7 +403,7 @@ export const database = {
   // Save selections (selectedWeeks, pinnedWeeks) with retry logic
   saveSelections: async (userId, selections) => {
     const { retryWithBackoff } = await import('../utils/retry');
-    
+
     try {
       const result = await retryWithBackoff(async () => {
         const { data, error } = await supabase
@@ -317,11 +415,11 @@ export const database = {
           }, {
             onConflict: 'user_id'
           });
-        
+
         if (error) throw error;
         return { data, error: null };
       });
-      
+
       return result;
     } catch (error) {
       console.error('[Viventiva] Failed to save selections after retries:', error);
@@ -399,7 +497,7 @@ export const database = {
   // Save user settings (dark mode, theme preset, etc.) with retry logic
   saveUserSettings: async (userId, settings) => {
     const { retryWithBackoff } = await import('../utils/retry');
-    
+
     try {
       const result = await retryWithBackoff(async () => {
         const { data, error } = await supabase
@@ -411,11 +509,11 @@ export const database = {
           }, {
             onConflict: 'user_id'
           });
-        
+
         if (error) throw error;
         return { data, error: null };
       });
-      
+
       return result;
     } catch (error) {
       console.error('[Viventiva] Failed to save settings after retries:', error);
@@ -437,5 +535,34 @@ export const database = {
       .eq('user_id', userId)
       .single();
     return { data, error };
+  },
+
+  // Waitlist functions
+  saveWaitlistSignup: async (email, name, interest) => {
+    const { data, error } = await supabase
+      .from('waitlist')
+      .insert({
+        email: email.toLowerCase().trim(),
+        name: name?.trim() || null,
+        interest: interest || null,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    return { data, error };
+  },
+
+  getWaitlistCount: async () => {
+    const { count, error } = await supabase
+      .from('waitlist')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Error getting waitlist count:', error);
+      return null;
+    }
+
+    return count;
   }
 };

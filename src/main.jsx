@@ -49,8 +49,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 );
 
-// Register service worker once (avoid duplicate registration)
-if ('serviceWorker' in navigator) {
+// Register service worker only in production (skip in development to avoid errors)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.getRegistration();
@@ -58,7 +58,34 @@ if ('serviceWorker' in navigator) {
         await navigator.serviceWorker.register('/sw.js');
       }
     } catch (err) {
-      console.warn('SW registration skipped:', err);
+      console.warn('[Viventiva] SW registration skipped:', err);
     }
   });
+} else if (import.meta.env.DEV) {
+  // Unregister service workers in development (one-time only)
+  if ('serviceWorker' in navigator) {
+    const unregisterServiceWorkers = async () => {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        if (registrations.length > 0) {
+          console.log(`[Viventiva] Found ${registrations.length} service worker(s) to unregister`);
+
+          await Promise.all(
+            registrations.map(async (registration) => {
+              const unregistered = await registration.unregister();
+              console.log(`[Viventiva] Service worker unregistered:`, unregistered);
+              return unregistered;
+            })
+          );
+
+          console.log('[Viventiva] All service workers unregistered');
+        }
+      } catch (error) {
+        console.warn('[Viventiva] Error unregistering service workers:', error);
+      }
+    };
+
+    // Run ONCE on page load only
+    window.addEventListener('load', unregisterServiceWorkers);
+  }
 }

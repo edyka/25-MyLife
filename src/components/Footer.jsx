@@ -69,21 +69,22 @@ const Footer = ({ darkMode, onNavigate }) => {
     { icon: Mail, label: "Contact", href: "mailto:contact@viventiva.com" },
     { icon: Shield, label: "Privacy Policy", action: () => onNavigate('privacy') },
     { icon: FileText, label: "Terms of Service", action: () => onNavigate('terms') },
-    { icon: Cookie, label: "Cookie Settings", action: () => {
-      // Navigate to settings page and show cookie preferences
-      const event = new CustomEvent('showCookieSettings');
-      window.dispatchEvent(event);
-      onNavigate('settings');
-    }},
+    {
+      icon: Cookie, label: "Cookie Settings", action: () => {
+        // Navigate to settings page and show cookie preferences
+        const event = new CustomEvent('showCookieSettings');
+        window.dispatchEvent(event);
+        onNavigate('settings');
+      }
+    },
   ];
 
   return (
     <footer
-      className={`mt-20 border-t-2 transition-all duration-500 ${
-        darkMode
+      className={`border-t-2 transition-all duration-500 ${darkMode
           ? "premium-card-dark border-slate-700/30"
           : "premium-card border-slate-200/30"
-      } backdrop-blur-lg`}
+        } backdrop-blur-lg`}
     >
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Main Footer Content */}
@@ -103,9 +104,8 @@ const Footer = ({ darkMode, onNavigate }) => {
               </div>
               <div>
                 <h3
-                  className={`text-display font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent ${
-                    darkMode ? "drop-shadow-sm" : ""
-                  }`}
+                  className={`text-display font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent ${darkMode ? "drop-shadow-sm" : ""
+                    }`}
                 >
                   Viventiva
                 </h3>
@@ -115,11 +115,10 @@ const Footer = ({ darkMode, onNavigate }) => {
               </div>
             </div>
             <p
-              className={`text-body leading-relaxed mb-8 max-w-lg ${
-                darkMode ? "text-slate-300" : "text-slate-600"
-              }`}
+              className={`text-body leading-relaxed mb-8 max-w-lg ${darkMode ? "text-slate-300" : "text-slate-600"
+                }`}
             >
-              Transform how you visualize your life's journey. Each week matters, each moment counts. 
+              Transform how you visualize your life's journey. Each week matters, each moment counts.
               Make every week intentional with beautiful, meaningful life tracking.
             </p>
             <div
@@ -142,9 +141,8 @@ const Footer = ({ darkMode, onNavigate }) => {
           {/* Enhanced Quick Links */}
           <div>
             <h4
-              className={`text-heading mb-6 ${
-                darkMode ? "text-slate-100" : "text-slate-800"
-              }`}
+              className={`text-heading mb-6 ${darkMode ? "text-slate-100" : "text-slate-800"
+                }`}
             >
               Quick Links
             </h4>
@@ -152,19 +150,18 @@ const Footer = ({ darkMode, onNavigate }) => {
               {footerLinks.map((link, index) => {
                 const IconComponent = link.icon;
                 const Component = link.href ? motion.a : motion.button;
-                const props = link.href 
+                const props = link.href
                   ? { href: link.href }
                   : { onClick: link.action, type: "button" };
-                
+
                 return (
                   <li key={index}>
                     <Component
                       {...props}
-                      className={`interactive-element flex items-center gap-4 text-body font-semibold transition-all duration-300 px-3 py-2 rounded-xl ${
-                        darkMode
+                      className={`interactive-element flex items-center gap-4 text-body font-semibold transition-all duration-300 px-3 py-2 rounded-xl ${darkMode
                           ? "text-slate-300 hover:text-slate-100 hover:bg-slate-800/40"
                           : "text-slate-600 hover:text-slate-800 hover:bg-slate-100/60"
-                      } group`}
+                        } group`}
                       whileHover={{ x: 6 }}
                       transition={{ duration: 0.3 }}
                     >
@@ -180,9 +177,8 @@ const Footer = ({ darkMode, onNavigate }) => {
           {/* Enhanced Social Media */}
           <div>
             <h4
-              className={`text-heading mb-6 ${
-                darkMode ? "text-slate-100" : "text-slate-800"
-              }`}
+              className={`text-heading mb-6 ${darkMode ? "text-slate-100" : "text-slate-800"
+                }`}
             >
               Connect With Us
             </h4>
@@ -193,11 +189,10 @@ const Footer = ({ darkMode, onNavigate }) => {
                   <motion.a
                     key={index}
                     href={social.href}
-                    className={`interactive-element p-4 rounded-2xl transition-all duration-300 border-2 ${
-                      darkMode
+                    className={`interactive-element p-4 rounded-2xl transition-all duration-300 border-2 ${darkMode
                         ? "bg-slate-800/50 hover:bg-slate-700/60 border-slate-700/50 hover:border-slate-600"
                         : "bg-slate-50 hover:bg-slate-100 border-slate-200/50 hover:border-slate-300"
-                    } shadow-lg hover:shadow-xl group`}
+                      } shadow-lg hover:shadow-xl group`}
                     whileHover={{ scale: 1.05, y: -4 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label={social.label}
@@ -212,27 +207,24 @@ const Footer = ({ darkMode, onNavigate }) => {
 
         {/* Enhanced Divider */}
         <div
-          className={`border-t-2 pt-8 ${
-            darkMode ? "border-slate-700/30" : "border-slate-200/30"
-          }`}
+          className={`border-t-2 pt-8 ${darkMode ? "border-slate-700/30" : "border-slate-200/30"
+            }`}
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             {/* Enhanced Copyright */}
             <div
-              className={`text-body font-semibold ${
-                darkMode ? "text-slate-400" : "text-slate-600"
-              }`}
+              className={`text-body font-semibold ${darkMode ? "text-slate-400" : "text-slate-600"
+                }`}
             >
               © {currentYear} Viventiva. All rights reserved.
             </div>
 
             {/* Theme Selector with Dots */}
             <div
-              className={`text-caption flex items-center gap-4 font-semibold px-4 py-2 rounded-2xl border ${
-                darkMode
+              className={`text-caption flex items-center gap-4 font-semibold px-4 py-2 rounded-2xl border ${darkMode
                   ? "text-slate-400 bg-slate-800/40 border-slate-700/50"
                   : "text-slate-600 bg-slate-100/60 border-slate-200/50"
-              }`}
+                }`}
             >
               <span>Theme Colors</span>
               <div className="flex items-center gap-2 relative">
@@ -242,13 +234,11 @@ const Footer = ({ darkMode, onNavigate }) => {
                     onClick={() => setThemePreset(themeItem.key)}
                     onMouseEnter={() => setHoveredTheme(themeItem.key)}
                     onMouseLeave={() => setHoveredTheme(null)}
-                    className={`relative w-3 h-3 rounded-full transition-all duration-300 ${
-                      themePreset === themeItem.key
+                    className={`relative w-3 h-3 rounded-full transition-all duration-300 ${themePreset === themeItem.key
                         ? 'ring-2 ring-offset-2 scale-125'
                         : 'hover:scale-125'
-                    } ${
-                      darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'
-                    }`}
+                      } ${darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'
+                      }`}
                     style={{
                       backgroundColor: themeItem.color,
                       ringColor: themeItem.color
@@ -260,11 +250,10 @@ const Footer = ({ darkMode, onNavigate }) => {
                 {/* Tooltip */}
                 {hoveredTheme && (
                   <div
-                    className={`absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
-                      darkMode
+                    className={`absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${darkMode
                         ? 'bg-slate-700 text-white'
                         : 'bg-slate-900 text-white'
-                    } shadow-lg z-50`}
+                      } shadow-lg z-50`}
                   >
                     {themes.find(t => t.key === hoveredTheme)?.name}
                   </div>

@@ -86,9 +86,8 @@ const WeekBox = memo(({
     bgColor = "bg-red-500 border border-red-700";
   } else if (isPast) {
     if (hasMilestone && allCategories[hasMilestone.category]) {
-      bgColor = `${allCategories[hasMilestone.category].color} border ${
-        darkMode ? "border-gray-600" : "border-gray-300"
-      }`;
+      bgColor = `${allCategories[hasMilestone.category].color} border ${darkMode ? "border-gray-600" : "border-gray-300"
+        }`;
     } else {
       bgColor = darkMode
         ? "bg-gray-600 border border-gray-500"
@@ -101,9 +100,8 @@ const WeekBox = memo(({
       </div>
     );
   } else if (hasMilestone && allCategories[hasMilestone.category]) {
-    bgColor = `${allCategories[hasMilestone.category].color} border ${
-      darkMode ? "border-gray-600" : "border-gray-300"
-    }`;
+    bgColor = `${allCategories[hasMilestone.category].color} border ${darkMode ? "border-gray-600" : "border-gray-300"
+      }`;
   }
 
   // Modern responsive sizing for the week box
@@ -111,16 +109,13 @@ const WeekBox = memo(({
 
   return (
     <div
-      className={`${sizeClass} week-square cursor-pointer relative select-none ${bgColor} ${
-        selectedWeek === weekNum ? "ring-2 ring-blue-500" : ""
-      } ${isBeingDragged ? "ring-2 ring-yellow-400 shadow-lg" : ""} ${
-        isWeekSelected && !isBeingDragged
+      className={`${sizeClass} week-square cursor-pointer relative select-none ${bgColor} ${selectedWeek === weekNum ? "ring-2 ring-blue-500" : ""
+        } ${isBeingDragged ? "ring-2 ring-yellow-400 shadow-lg" : ""} ${isWeekSelected && !isBeingDragged
           ? "ring-2 ring-purple-500 shadow-md"
           : ""
-      } ${isWeekInPreview ? "ring-2 ring-blue-400 ring-opacity-60" : ""} ${
-        isInMultiSelectMode ? "ring-1 ring-gray-400 ring-opacity-50" : ""
-      } ${shouldShowHoverEffect ? "hover:scale-103" : ""
-      } active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200`}
+        } ${isWeekInPreview ? "ring-2 ring-blue-400 ring-opacity-60" : ""} ${isInMultiSelectMode ? "ring-1 ring-gray-400 ring-opacity-50" : ""
+        } ${shouldShowHoverEffect ? "hover:scale-110 hover:z-10 hover:shadow-[0_0_12px_rgba(59,130,246,0.5)] hover:ring-2 hover:ring-blue-400/50" : ""
+        } active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200`}
       onMouseDown={(e) => {
         e.preventDefault();
         handleWeekMouseDown(weekNum, e);
@@ -150,24 +145,20 @@ const WeekBox = memo(({
       }}
       title={`Week ${weekNum} - Age ${getYearFromWeek(
         weekNum
-      )} years, ${getQuarterFromWeek(weekNum)}${
-        hasMilestone
-          ? ` | Mood: ${
-              allCategories[hasMilestone.category]?.label || "Unknown"
-            }`
+      )} years, ${getQuarterFromWeek(weekNum)}${hasMilestone
+          ? ` | Mood: ${allCategories[hasMilestone.category]?.label || "Unknown"
+          }`
           : ""
-      }${isSelected ? " (Selected)" : ""}`}
+        }${isSelected ? " (Selected)" : ""}`}
       role="button"
       tabIndex={0}
       aria-label={`Week ${weekNum}, Age ${getYearFromWeek(
         weekNum
-      )} years, ${getQuarterFromWeek(weekNum)}. ${
-        hasMilestone
-          ? `Mood: ${
-              allCategories[hasMilestone.category]?.label || "Unknown"
-            } - ${hasMilestone.title}`
+      )} years, ${getQuarterFromWeek(weekNum)}. ${hasMilestone
+          ? `Mood: ${allCategories[hasMilestone.category]?.label || "Unknown"
+          } - ${hasMilestone.title}`
           : "No mood set"
-      }${isSelected ? ". Currently selected" : ""}`}
+        }${isSelected ? ". Currently selected" : ""}`}
       aria-pressed={isSelected}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

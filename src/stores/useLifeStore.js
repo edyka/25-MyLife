@@ -86,7 +86,8 @@ export const useLifeStore = create(
         birthMonth: state.birthMonth,
         birthYear: state.birthYear,
         lifeExpectancy: state.lifeExpectancy,
-        currentWeek: state.currentWeek
+        currentWeek: state.currentWeek,
+        userName: state.userName
       })
     }
   )

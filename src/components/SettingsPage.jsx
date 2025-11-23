@@ -5,7 +5,7 @@ import { useUIStore } from '../stores/useUIStore';
 import { useMilestoneStore } from '../stores/useMilestoneStore';
 import { getTheme } from '../utils/themeConfig';
 import { getCookieConsent, hasAnalyticsConsent, setCookieConsent, getConsentDate, clearCookieConsent } from '../utils/cookieConsent';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const SettingsPage = () => {
   // Use Zustand stores directly
@@ -13,8 +13,10 @@ const SettingsPage = () => {
   const birthMonth = useLifeStore(state => state.birthMonth);
   const birthYear = useLifeStore(state => state.birthYear);
   const lifeExpectancy = useLifeStore(state => state.lifeExpectancy);
+  const userName = useLifeStore(state => state.userName);
   const setBirthData = useLifeStore(state => state.setBirthData);
   const setLifeExpectancy = useLifeStore(state => state.setLifeExpectancy);
+  const setUserName = useLifeStore(state => state.setUserName);
 
   const setCurrentPage = useUIStore(state => state.setCurrentPage);
   const darkMode = useUIStore(state => state.darkMode);
@@ -30,6 +32,9 @@ const SettingsPage = () => {
   const [cookieConsent, setCookieConsentState] = useState(getCookieConsent());
   const [analyticsEnabled, setAnalyticsEnabled] = useState(hasAnalyticsConsent());
   const [consentDate, setConsentDate] = useState(getConsentDate());
+  
+  // Debounce timer for name saving
+  const nameSaveTimerRef = useRef(null);
 
   // Update state when consent changes
   useEffect(() => {
@@ -67,6 +72,46 @@ const SettingsPage = () => {
   }, [darkMode]);
 
   // Add missing change handlers
+  const handleUserNameChange = (value) => {
+    console.log('User name changed to:', value);
+    setUserName(value);
+    
+    // Clear existing timer
+    if (nameSaveTimerRef.current) {
+      clearTimeout(nameSaveTimerRef.current);
+    }
+    
+    // Debounce: Save to Supabase after 1 second of no changes
+    nameSaveTimerRef.current = setTimeout(async () => {
+      try {
+        const { auth, database } = await import('../lib/supabase');
+        const { user } = await auth.getCurrentUser();
+        
+        if (user) {
+          await database.saveUserProfile(user.id, {
+            name: value || '',
+            birthDay: birthDay,
+            birthMonth: birthMonth,
+            birthYear: birthYear,
+            lifeExpectancy: lifeExpectancy
+          });
+          console.log('[Settings] Name saved to Supabase');
+        }
+      } catch (error) {
+        console.error('[Settings] Error saving name to Supabase:', error);
+      }
+    }, 1000);
+  };
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (nameSaveTimerRef.current) {
+        clearTimeout(nameSaveTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleBirthDayChange = (value) => {
     console.log('Birth day changed to:', value);
     setBirthData(value, birthMonth, birthYear);
@@ -112,6 +157,25 @@ const SettingsPage = () => {
           <div className="space-y-6">
             <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
               <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>Personal Information</h3>
+
+              {/* Name field */}
+              <div className="mb-4">
+                <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Name</label>
+                <input
+                  type="text"
+                  value={userName || ''}
+                  onChange={(e) => handleUserNameChange(e.target.value)}
+                  placeholder="Enter your name"
+                  className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
+                    darkMode
+                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                  }`}
+                  style={{ outline: 'none' }}
+                />
+              </div>
+
+              {/* Birth date fields */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Day</label>

@@ -1,17 +1,17 @@
 // import { useState } from "react";
-import { Grid, Target, Moon, Sun, Home, Sparkles, LogOut } from "lucide-react";
+import { Grid, Target, Moon, Sun, Home, Sparkles, LogOut, User } from "lucide-react";
 import { Switch } from "@headlessui/react";
 
 // Import optimized life selectors
 import { useLifeStore } from "../stores/useLifeStore";
 import { useUIStore } from "../stores/useUIStore";
 import { getTheme } from "../utils/themeConfig";
+import { auth } from "../lib/supabase";
 
 const TABS = [
   { key: "home", label: "Home", icon: Home },
-  { key: "grid", label: "Life Grid", icon: Grid },
   { key: "goals", label: "Goals", icon: Target },
-  { key: "pricing", label: "Pricing", icon: Sparkles, badge: true },
+  { key: "premium", label: "Premium", icon: Sparkles, badge: true },
 ];
 
 const TabNavigation = ({
@@ -22,125 +22,218 @@ const TabNavigation = ({
   setShowWeeks,
   setDarkMode,
 }) => {
-  // Get current age from optimized selectors
+  // Get current age and user name from optimized selectors
   const currentWeek = useLifeStore(state => state.currentWeek);
+  const userName = useLifeStore(state => state.userName);
   const currentAge = Math.floor((currentWeek - 1) / 52);
 
   const themePreset = useUIStore((state) => state.themePreset);
+  const setCurrentPage = useUIStore((state) => state.setCurrentPage);
   const theme = getTheme(themePreset);
 
   const handleLogout = async () => {
     console.log('[Viventiva] Logout initiated');
-    
-    // Clear session timeout
+
+    // CRITICAL: Force sync all pending data to Supabase before logout
+    // Wait up to 5 seconds to ensure data is saved, but don't block logout forever
+    const syncPromise = (async () => {
+      try {
+        const { auth, database } = await import('../lib/supabase');
+        const { user } = await auth.getCurrentUser();
+
+        if (!user) {
+          console.warn('[Viventiva] No user found, skipping sync');
+          return;
+        }
+
+        console.log('[Viventiva] Force syncing data to Supabase before logout...');
+
+        // Import stores
+        const milestoneStoreModule = await import('../stores/useMilestoneStore');
+        const selectionStoreModule = await import('../stores/useSelectionStore');
+        const useMilestoneStore = milestoneStoreModule.useMilestoneStore;
+        const useSelectionStore = selectionStoreModule.useSelectionStore;
+
+        // Get current state
+        const milestoneStore = useMilestoneStore.getState();
+        const selectionStore = useSelectionStore.getState();
+
+        // Force sync milestones (don't wait for debounce)
+        const milestoneData = {
+          milestones: milestoneStore.milestones || {},
+          customMoods: milestoneStore.customMoods || {},
+          customCategories: milestoneStore.customCategories || {}
+        };
+
+        const weekCount = Object.keys(milestoneData.milestones || {}).length;
+        console.log('[Viventiva] Force syncing milestones:', weekCount, 'weeks');
+        console.log('[Viventiva] Milestone data structure:', {
+          milestones: weekCount,
+          customMoods: Object.keys(milestoneData.customMoods || {}).length,
+          customCategories: Object.keys(milestoneData.customCategories || {}).length,
+          sampleWeek: weekCount > 0 ? Object.keys(milestoneData.milestones)[0] : null
+        });
+
+        const { error: milestonesError, data: milestonesResult } = await database.saveMilestones(user.id, milestoneData);
+        if (milestonesError) {
+          console.error('[Viventiva] Error force syncing milestones:', milestonesError);
+          throw new Error(`Failed to save milestones: ${milestonesError.message}`);
+        } else {
+          console.log('[Viventiva] Milestones force synced successfully:', weekCount, 'weeks saved');
+
+          // Verify the save by reading it back
+          const { data: verifyData, error: verifyError } = await database.getMilestones(user.id);
+          if (!verifyError && verifyData?.milestones_data) {
+            const savedCount = verifyData.milestones_data.milestones
+              ? Object.keys(verifyData.milestones_data.milestones || {}).length
+              : Object.keys(verifyData.milestones_data || {}).length;
+            console.log('[Viventiva] Verified milestones saved:', savedCount, 'weeks in Supabase');
+            if (savedCount !== weekCount) {
+              console.warn('[Viventiva] WARNING: Week count mismatch! Expected:', weekCount, 'Got:', savedCount);
+            }
+          } else {
+            console.warn('[Viventiva] Could not verify milestones save:', verifyError);
+          }
+        }
+
+        // Force sync selections
+        const selectionsData = {
+          selectedWeeks: Array.from(selectionStore.selectedWeeks || new Set()),
+          pinnedWeeks: Array.from(selectionStore.pinnedWeeks || new Set()),
+          selectedColor: selectionStore.selectedColor
+        };
+
+        console.log('[Viventiva] Force syncing selections:', {
+          selectedWeeks: selectionsData.selectedWeeks.length,
+          pinnedWeeks: selectionsData.pinnedWeeks.length,
+          selectedColor: selectionsData.selectedColor
+        });
+
+        const { error: selectionsError } = await database.saveSelections(user.id, selectionsData);
+        if (selectionsError) {
+          console.error('[Viventiva] Error force syncing selections:', selectionsError);
+          // Don't throw - selections are less critical than milestones
+        } else {
+          console.log('[Viventiva] Selections force synced successfully');
+        }
+
+        // Force sync goals
+        try {
+          const goals = milestoneStore.goals || [];
+          console.log('[Viventiva] Force syncing goals:', goals.length);
+          const { error: goalsError } = await database.saveGoals(user.id, goals);
+          if (goalsError) {
+            console.error('[Viventiva] Error force syncing goals:', goalsError);
+          } else {
+            console.log('[Viventiva] Goals force synced successfully');
+          }
+        } catch (goalsError) {
+          console.error('[Viventiva] Error in goals sync block:', goalsError);
+        }
+
+        // Force sync settings
+        try {
+          const { useUIStore } = await import('../stores/useUIStore');
+          await useUIStore.getState().syncSettingsToSupabase();
+          console.log('[Viventiva] Settings force synced successfully');
+        } catch (settingsError) {
+          console.error('[Viventiva] Error force syncing settings:', settingsError);
+          // Don't throw - settings are less critical
+        }
+
+        console.log('[Viventiva] All data synced successfully, proceeding with logout');
+      } catch (error) {
+        console.error('[Viventiva] Error force syncing before logout:', error);
+        // Don't throw - we still want to logout even if sync fails
+      }
+    })();
+
+    // Wait up to 5 seconds for sync to complete, then proceed with logout anyway
     try {
-      const { destroySessionTimeout } = await import('../utils/sessionTimeout');
-      destroySessionTimeout();
+      await Promise.race([
+        syncPromise,
+        new Promise(resolve => setTimeout(() => {
+          console.warn('[Viventiva] Sync timeout after 5 seconds, proceeding with logout');
+          resolve();
+        }, 5000))
+      ]);
     } catch (error) {
-      console.error('[Viventiva] Error destroying session timeout:', error);
+      console.error('[Viventiva] Sync error, proceeding with logout:', error);
     }
-    
-    // Clear rate limits on logout
-    try {
-      const { clearAllRateLimits } = await import('../utils/rateLimiter');
-      clearAllRateLimits();
-    } catch (error) {
-      console.error('[Viventiva] Error clearing rate limits:', error);
-    }
-    
-    // Preserve UI preferences and selections before clearing
-    const uiPreferences = localStorage.getItem('memento-vivere-ui');
-    const selections = localStorage.getItem('memento-vivere-selections');
+
+    // Set logout flag IMMEDIATELY to prevent auth listener from re-authenticating
+    sessionStorage.setItem('viventiva_logging_out', 'true');
 
     // Clear authentication flags
     localStorage.removeItem('viventiva_authenticated');
     localStorage.removeItem('viventiva_profile_complete');
     localStorage.removeItem('viventiva_just_logged_in');
 
-    // Clear all user-specific data from localStorage to prevent data leakage between users
+    // Clear all user-specific data
     localStorage.removeItem('memento-vivere-life');
     localStorage.removeItem('memento-vivere-milestones');
+    localStorage.removeItem('memento-vivere-selections'); // Also clear selections
+
+    // Clear Zustand stores to ensure clean state
+    try {
+      // Import stores dynamically to avoid circular dependencies
+      const milestoneStoreModule = await import('../stores/useMilestoneStore');
+      const selectionStoreModule = await import('../stores/useSelectionStore');
+      const useMilestoneStore = milestoneStoreModule.useMilestoneStore;
+      const useSelectionStore = selectionStoreModule.useSelectionStore;
+
+      useMilestoneStore.getState().clearMilestones();
+      useMilestoneStore.getState().setCustomMoods({});
+      useMilestoneStore.getState().setCustomCategories({});
+      useSelectionStore.getState().clearAllSelections();
+    } catch (e) {
+      console.warn('[Viventiva] Could not clear stores:', e);
+    }
 
     // Clear user name from store
     try {
-      const { useLifeStore } = await import('../stores/useLifeStore');
       const store = useLifeStore.getState();
       if (store.setUserName) {
         store.setUserName('');
       }
-    } catch (error) {
-      console.error('Error clearing username:', error);
+    } catch (e) {
+      console.warn('[Viventiva] Could not clear username:', e);
     }
 
-    // Restore UI preferences and selections (keep them across logout)
-    if (uiPreferences) {
-      localStorage.setItem('memento-vivere-ui', uiPreferences);
-    }
-    if (selections) {
-      localStorage.setItem('memento-vivere-selections', selections);
-    }
-
-    // Sign out from Supabase - wait for it to complete
-    try {
-      const { auth } = await import('../lib/supabase');
-      
-      // Clear Supabase session from localStorage directly (keys start with 'sb-')
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-      if (supabaseUrl) {
-        const projectRef = supabaseUrl.split('//')[1]?.split('.')[0] || '';
-        if (projectRef) {
-          // Clear all Supabase auth-related localStorage keys
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith(`sb-${projectRef}-auth-token`) || 
-                key.startsWith(`sb-${projectRef}-auth-token-code-verifier`)) {
-              localStorage.removeItem(key);
-              console.log(`[Viventiva] Cleared Supabase localStorage key: ${key}`);
-            }
-          });
-        }
+    // Clear all Supabase auth keys
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('sb-') || key.includes('supabase.auth') || key.includes('viventiva-auth'))) {
+        keysToRemove.push(key);
       }
-      
-      // Also clear any keys that might match Supabase patterns
-      Object.keys(localStorage).forEach(key => {
-        if (key.includes('supabase') || key.includes('sb-')) {
-          // Don't clear our own keys, just Supabase's
-          if (!key.startsWith('viventiva') && !key.startsWith('memento-vivere')) {
-            localStorage.removeItem(key);
-            console.log(`[Viventiva] Cleared potential Supabase key: ${key}`);
-          }
-        }
-      });
-      
-      // Sign out from Supabase
-      const { error } = await auth.signOut();
-      if (error) {
-        console.error('[Viventiva] Error signing out:', error);
-      } else {
-        console.log('[Viventiva] Successfully signed out from Supabase');
-      }
-      
-      // Wait longer to ensure signOut completes and SIGNED_OUT event fires
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } catch (error) {
-      console.error('[Viventiva] Error signing out:', error);
     }
+    keysToRemove.forEach(key => {
+      console.log('[Viventiva] Clearing key:', key);
+      localStorage.removeItem(key);
+    });
 
-    // Set a flag to prevent re-authentication on reload
-    sessionStorage.setItem('viventiva_logging_out', 'true');
+    // Call auth.signOut() but don't wait for it - redirect immediately
+    auth.signOut().then(() => {
+      console.log('[Viventiva] Supabase signOut completed');
+    }).catch((error) => {
+      console.error('[Viventiva] Supabase signOut error (ignored):', error);
+    });
 
-    // Reload page to reset app state
-    console.log('[Viventiva] Reloading page after logout');
-    window.location.href = '/'; // Use href instead of reload to ensure clean state
+    // Redirect immediately (use setTimeout to ensure it happens even if there are pending promises)
+    console.log('[Viventiva] Redirecting to home...');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
   };
 
   return (
-    <nav className={`w-full flex flex-col items-center border-b-2 transition-all duration-500 sticky top-0 z-30 ${
-      darkMode
-        ? "premium-card-dark border-slate-700/30 backdrop-blur-lg"
-        : "premium-card border-slate-200/30 backdrop-blur-lg"
-    }`}>
-        <div className="w-full max-w-7xl px-4 sm:px-6 py-3 sm:py-4 min-h-[64px] flex flex-col items-center gap-3 md:grid md:grid-cols-[auto_1fr_auto] md:items-center">
-        {/* Left side - Brand Logo */}
+    <nav className={`w-full flex flex-col items-center border-b-2 transition-all duration-500 sticky top-0 z-30 ${darkMode
+      ? "premium-card-dark border-slate-700/30 backdrop-blur-lg"
+      : "premium-card border-slate-200/30 backdrop-blur-lg"
+      }`}>
+      <div className="w-full max-w-7xl px-4 sm:px-6 py-3 sm:py-4 min-h-[64px] flex flex-col items-center gap-3 md:grid md:grid-cols-[auto_1fr_auto] md:items-center">
+        {/* Left side - Brand Logo and User */}
         <div className="order-3 md:order-none md:col-start-1 flex items-center gap-3">
           <div className="relative">
             <div className={`w-10 h-10 bg-gradient-to-br ${theme.iconBg} rounded-3xl shadow-lg ${theme.shadow} flex items-center justify-center group`}>
@@ -152,13 +245,28 @@ const TabNavigation = ({
             </div>
             <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-md animate-pulse`}></div>
           </div>
-          <div className="hidden sm:block">
-            <h3 className={`text-lg font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
-              Viventiva
-            </h3>
-            <p className={`text-[10px] font-medium leading-none ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-              Age: {currentAge}y
-            </p>
+          <div className="hidden sm:flex sm:items-center sm:gap-2">
+            <div>
+              <h3 className={`text-lg font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
+                {userName ? `${userName}'s Life` : 'Viventiva'}
+              </h3>
+              <p className={`text-[10px] font-medium leading-none ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                Age: {currentAge}y
+              </p>
+            </div>
+            {userName && (
+              <button
+                onClick={() => setCurrentPage('settings')}
+                className={`ml-2 px-2 py-1 rounded-lg transition-all duration-300 hover:scale-105 flex items-center gap-1.5 ${darkMode
+                  ? "bg-slate-800/50 hover:bg-slate-700/50 text-slate-300"
+                  : "bg-slate-100/50 hover:bg-slate-200/50 text-slate-700"
+                  }`}
+                aria-label="User settings"
+              >
+                <User className="w-3 h-3" />
+                <span className="text-xs font-semibold">{userName}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -169,13 +277,12 @@ const TabNavigation = ({
               <div key={key} className="relative flex flex-col items-center">
                 <button
                   onClick={() => setCurrentTab(key)}
-                  className={`px-3 sm:px-4 py-2 sm:py-3 rounded-2xl font-semibold text-sm transition-all duration-300 focus:outline-none flex flex-col items-center justify-center h-12 sm:h-14 hover:scale-105 ${
-                    currentTab === key
-                      ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg ${theme.shadow}`
-                      : darkMode
+                  className={`px-3 sm:px-4 py-2 sm:py-3 rounded-2xl font-semibold text-sm transition-all duration-300 focus:outline-none flex flex-col items-center justify-center h-12 sm:h-14 hover:scale-105 ${currentTab === key
+                    ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg ${theme.shadow}`
+                    : darkMode
                       ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                       : "text-slate-600 hover:text-slate-800 hover:bg-slate-100/50"
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5 mb-0.5" />
                   <span className="text-[10px] sm:text-xs font-semibold tracking-wide uppercase hidden sm:block">
@@ -189,27 +296,24 @@ const TabNavigation = ({
         {/* right controls (row 2 center on mobile, right on desktop) */}
         <div className="order-2 md:order-none md:col-start-3 flex items-center gap-2 sm:gap-4 justify-center md:justify-end">
           <div className="flex items-center gap-3">
-            <span className={`text-xs font-semibold ${
-              darkMode ? "text-slate-300" : "text-slate-600"
-            }`}>
+            <span className={`text-xs font-semibold ${darkMode ? "text-slate-300" : "text-slate-600"
+              }`}>
               {showWeeks ? "Weeks" : "Months"}
             </span>
             <Switch
               checked={showWeeks}
               onChange={setShowWeeks}
-              className={`${
-                showWeeks
-                  ? `bg-gradient-to-r ${theme.primary}`
-                  : darkMode
+              className={`${showWeeks
+                ? `bg-gradient-to-r ${theme.primary}`
+                : darkMode
                   ? "bg-slate-700/50"
                   : "bg-slate-200"
-              } relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none shadow-lg`}
+                } relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none shadow-lg`}
             >
               <span className="sr-only">Toggle weeks/months</span>
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
-                  showWeeks ? "translate-x-5" : "translate-x-0"
-                }`}
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${showWeeks ? "translate-x-5" : "translate-x-0"
+                  }`}
               />
             </Switch>
           </div>
@@ -217,11 +321,10 @@ const TabNavigation = ({
           <button
             aria-label="Toggle dark mode"
             onClick={() => setDarkMode(!darkMode)}
-            className={`px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md ${
-              darkMode
-                ? "bg-gradient-to-r from-slate-700 to-slate-800 text-slate-200 hover:from-slate-600 hover:to-slate-700"
-                : "bg-gradient-to-r from-white to-slate-50 text-slate-700 border border-slate-200 hover:from-slate-50 hover:to-slate-100"
-            }`}
+            className={`px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md ${darkMode
+              ? "bg-gradient-to-r from-slate-700 to-slate-800 text-slate-200 hover:from-slate-600 hover:to-slate-700"
+              : "bg-gradient-to-r from-white to-slate-50 text-slate-700 border border-slate-200 hover:from-slate-50 hover:to-slate-100"
+              }`}
           >
             {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span className="text-[10px] sm:text-xs font-semibold hidden sm:inline">{darkMode ? "Light" : "Dark"}</span>
@@ -230,11 +333,10 @@ const TabNavigation = ({
           <button
             aria-label="Logout"
             onClick={handleLogout}
-            className={`px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md ${
-              darkMode
-                ? `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90`
-                : `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90 border border-transparent`
-            }`}
+            className={`px-3 py-2 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md ${darkMode
+              ? `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90`
+              : `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90 border border-transparent`
+              }`}
           >
             <LogOut className="w-4 h-4" />
             <span className="text-[10px] sm:text-xs font-semibold hidden sm:inline">Logout</span>

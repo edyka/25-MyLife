@@ -179,7 +179,7 @@ class PerformanceMonitor {
     this.observers.forEach(observer => {
       try {
         observer.disconnect();
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     });

@@ -1,97 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
 
-    <!-- Primary Meta Tags -->
-    <title>Viventiva - Visualize Your Life in Weeks</title>
-    <meta name="title" content="Viventiva - Visualize Your Life in Weeks" />
-    <meta name="description" content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose. Remember to live - memento vivere." />
-    <meta name="keywords" content="life visualization, life calendar, weeks of life, life tracker, memento mori, intentional living, life planning, personal growth, life goals, time visualization" />
-    <meta name="author" content="Viventiva" />
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="English" />
+<head>
+  <meta charset="UTF-8" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="shortcut icon" href="/favicon.ico" />
+  <!-- Primary Meta Tags -->
+  <title>Viventiva - Visualize Your Life in Weeks</title>
+  <meta name="title" content="Viventiva - Visualize Your Life in Weeks" />
+  <meta name="description"
+    content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose. Remember to live - memento vivere." />
+  <meta name="keywords"
+    content="life visualization, life calendar, weeks of life, life tracker, memento mori, intentional living, life planning, personal growth, life goals, time visualization" />
+  <meta name="author" content="Viventiva" />
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="English" />
 
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.webmanifest" />
+  <!-- Favicon -->
 
-    <!-- Theme and Mobile -->
-    <meta name="theme-color" content="#111827" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicon.ico" />
 
-    <!-- iOS Specific -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Viventiva" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Prevent iOS text size adjustment -->
-    <meta name="format-detection" content="telephone=no" />
+  <!-- Theme and Mobile -->
+  <meta name="theme-color" content="#111827" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://viventiva.com/" />
-    <meta property="og:title" content="Viventiva - Visualize Your Life in Weeks" />
-    <meta property="og:description" content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose." />
-    <meta property="og:image" content="https://viventiva.com/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Viventiva" />
-    <meta property="og:locale" content="en_US" />
+  <!-- iOS Specific -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Viventiva" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://viventiva.com/" />
-    <meta property="twitter:title" content="Viventiva - Visualize Your Life in Weeks" />
-    <meta property="twitter:description" content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose." />
-    <meta property="twitter:image" content="https://viventiva.com/og-image.png" />
+  <!-- Prevent iOS text size adjustment -->
+  <meta name="format-detection" content="telephone=no" />
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://viventiva.com/" />
-    <style>
-      * {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-      }
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://viventiva.com/" />
+  <meta property="og:title" content="Viventiva - Visualize Your Life in Weeks" />
+  <meta property="og:description"
+    content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose." />
+  <meta property="og:image" content="https://viventiva.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="Viventiva" />
+  <meta property="og:locale" content="en_US" />
 
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-          sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior-y: none;
-        /* Prevent pull-to-refresh on iOS */
-        position: fixed;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://viventiva.com/" />
+  <meta property="twitter:title" content="Viventiva - Visualize Your Life in Weeks" />
+  <meta property="twitter:description"
+    content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose." />
+  <meta property="twitter:image" content="https://viventiva.com/og-image.png" />
 
-      #root {
-        min-height: 100vh;
-        height: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-      }
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://viventiva.com/" />
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
 
-      /* Fix iOS input zoom */
-      input, select, textarea {
-        font-size: 16px !important;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: none;
+      /* Prevent pull-to-refresh on iOS */
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #root {
+      min-height: 100vh;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Fix iOS input zoom */
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
