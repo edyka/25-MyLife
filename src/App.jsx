@@ -320,7 +320,9 @@ const App = () => {
   return (
     <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
       <BrowserCompatibility darkMode={darkMode} />
-      <CookieConsent />
+      {/* Don't show cookie banner on landing/waitlist page */}
+      {currentPage !== "landing" && <CookieConsent />}
+
 
       {/* Backend Offline Warning Banner */}
       {!isBackendAvailable && (
