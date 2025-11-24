@@ -3,6 +3,9 @@ import {
   Sun, Moon, Meh, Coffee, Target, Sparkles, Wind
 } from 'lucide-react';
 
+// Toggle this to switch between waitlist and full homepage
+export const WAITLIST_MODE = true;
+
 // Modern predefined moods for the new MoodPalette
 export const modernMoods = {
   happy: { color: 'bg-emerald-500', icon: Smile, label: 'Happy' },
@@ -85,7 +88,7 @@ export const lifeStages = {
     darkColor: 'bg-yellow-800 border-yellow-600'
   },
   adolescence: {
-    label: 'Adolescence', 
+    label: 'Adolescence',
     start: 13,
     end: 17,
     color: 'bg-orange-200 border-orange-400',

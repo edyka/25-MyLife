@@ -22,8 +22,7 @@ import { useState } from "react";
 import LoginModal from "./LoginModal";
 import WaitlistPage from "./WaitlistPage";
 
-// Toggle this to switch between waitlist and full homepage
-const WAITLIST_MODE = true;
+import { WAITLIST_MODE } from "../utils/constants";
 
 
 const HOW_IT_WORKS = [

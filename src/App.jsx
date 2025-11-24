@@ -15,6 +15,7 @@ import CookieConsent from "./components/CookieConsent";
 
 // Import optimized Zustand selectors
 import { useUIStore } from "./stores/useUIStore";
+import { WAITLIST_MODE } from "./utils/constants";
 
 const App = () => {
   // Use optimized Zustand selectors to prevent unnecessary re-renders
@@ -321,7 +322,7 @@ const App = () => {
     <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
       <BrowserCompatibility darkMode={darkMode} />
       {/* Don't show cookie banner on landing/waitlist page */}
-      {currentPage !== "landing" && <CookieConsent />}
+      {currentPage !== "landing" && !WAITLIST_MODE && <CookieConsent />}
 
 
       {/* Backend Offline Warning Banner */}
