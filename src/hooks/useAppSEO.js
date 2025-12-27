@@ -31,30 +31,36 @@ export const useAppSEO = (currentPage, user) => {
   const setCurrentPage = useUIStore(state => state.setCurrentPage)
 
   // Hash sanitation and history management for OAuth flow
+  // IMPORTANT: Delay cleaning hash to allow Supabase to read auth tokens first
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const hadAuthTokens = hasAuthTokensInHash(window.location.hash)
 
     if (hadAuthTokens) {
-      try {
-        // Clean the hash from URL
-        window.history.replaceState(
-          { viventiva: true, page: 'main', tab: 'home' },
-          document.title,
-          window.location.pathname + window.location.search
-        )
-        // Push a new state so back button stays in app
-        window.history.pushState(
-          { viventiva: true, page: 'main', tab: 'home' },
-          document.title,
-          window.location.pathname
-        )
-        historyInitialized.current = true
-        prevState.current = { page: 'main', tab: 'home' }
-      } catch {
-        /* ignore */
-      }
+      // Wait for Supabase to process the tokens before cleaning the URL
+      const cleanupTimer = setTimeout(() => {
+        try {
+          // Clean the hash from URL
+          window.history.replaceState(
+            { viventiva: true, page: 'main', tab: 'home' },
+            document.title,
+            window.location.pathname + window.location.search
+          )
+          // Push a new state so back button stays in app
+          window.history.pushState(
+            { viventiva: true, page: 'main', tab: 'home' },
+            document.title,
+            window.location.pathname
+          )
+          historyInitialized.current = true
+          prevState.current = { page: 'main', tab: 'home' }
+        } catch {
+          /* ignore */
+        }
+      }, 1000) // Give Supabase 1 second to process tokens
+
+      return () => clearTimeout(cleanupTimer)
     }
   }, [])
 
