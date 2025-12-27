@@ -3,7 +3,6 @@ import { useState } from "react";
 import {
   Heart,
   Mail,
-  Github,
   Instagram,
   Facebook,
   X,
@@ -66,16 +65,9 @@ const Footer = ({ darkMode, onNavigate, isAuthenticated = true }) => {
     },
     {
       icon: X,
-      label: "Twitter",
+      label: "Twitter/X",
       href: "https://x.com/Viventiva_",
       color: "text-sky-500 hover:text-sky-600",
-    },
-    {
-      icon: Github,
-      label: "GitHub",
-      href: "#",
-      color:
-        "text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white",
     },
   ];
 
@@ -197,13 +189,15 @@ const Footer = ({ darkMode, onNavigate, isAuthenticated = true }) => {
             >
               Connect With Us
             </h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {socialLinks.map((social, index) => {
                 const IconComponent = social.icon;
                 return (
                   <motion.a
                     key={index}
                     href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={`interactive-element p-4 rounded-2xl transition-all duration-300 border-2 ${darkMode
                       ? "bg-slate-800/50 hover:bg-slate-700/60 border-slate-700/50 hover:border-slate-600"
                       : "bg-slate-50 hover:bg-slate-100 border-slate-200/50 hover:border-slate-300"

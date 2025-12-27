@@ -546,7 +546,8 @@ const HomePage = ({ darkMode, onLogin }) => {
       {/* Shared Footer */}
       <Footer darkMode={darkMode} isAuthenticated={false} onNavigate={(page) => {
         if (page === 'login') handleLoginClick();
-        if (page === 'signup') handleSignUpClick();
+        else if (page === 'signup') handleSignUpClick();
+        else setCurrentPage(page);
       }} />
 
       {/* Login Modal */}
