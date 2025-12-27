@@ -1,8 +1,63 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ArrowRight, Sparkles } from 'lucide-react';
+import { useUIStore } from '../stores/useUIStore';
 
-const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
+// Full Tailwind class mappings (dynamic class names don't work with Tailwind purge)
+const themeClasses = {
+    emerald: {
+        bgGlow: 'bg-emerald-500/20',
+        badgeBg: 'bg-emerald-100',
+        badgeBgDark: 'bg-emerald-900/30',
+        badgeText: 'text-emerald-600',
+        badgeTextDark: 'text-emerald-400',
+        focusBorder: 'focus:border-emerald-500',
+        selectedBg: 'bg-emerald-500',
+        accentText: 'text-emerald-500',
+        buttonGradient: 'bg-gradient-to-r from-emerald-500 to-emerald-600',
+        accentColor: '#10b981'
+    },
+    ocean: {
+        bgGlow: 'bg-blue-500/20',
+        badgeBg: 'bg-blue-100',
+        badgeBgDark: 'bg-blue-900/30',
+        badgeText: 'text-blue-600',
+        badgeTextDark: 'text-blue-400',
+        focusBorder: 'focus:border-blue-500',
+        selectedBg: 'bg-blue-500',
+        accentText: 'text-blue-500',
+        buttonGradient: 'bg-gradient-to-r from-blue-500 to-blue-600',
+        accentColor: '#3b82f6'
+    },
+    sunset: {
+        bgGlow: 'bg-orange-500/20',
+        badgeBg: 'bg-orange-100',
+        badgeBgDark: 'bg-orange-900/30',
+        badgeText: 'text-orange-600',
+        badgeTextDark: 'text-orange-400',
+        focusBorder: 'focus:border-orange-500',
+        selectedBg: 'bg-orange-500',
+        accentText: 'text-orange-500',
+        buttonGradient: 'bg-gradient-to-r from-orange-500 to-orange-600',
+        accentColor: '#f97316'
+    },
+    purple: {
+        bgGlow: 'bg-purple-500/20',
+        badgeBg: 'bg-purple-100',
+        badgeBgDark: 'bg-purple-900/30',
+        badgeText: 'text-purple-600',
+        badgeTextDark: 'text-purple-400',
+        focusBorder: 'focus:border-purple-500',
+        selectedBg: 'bg-purple-500',
+        accentText: 'text-purple-500',
+        buttonGradient: 'bg-gradient-to-r from-purple-500 to-purple-600',
+        accentColor: '#a855f7'
+    }
+};
+
+const LifeCalculator = ({ darkMode, onSignUp }) => {
+    const themePreset = useUIStore((state) => state.themePreset);
+    const theme = themeClasses[themePreset] || themeClasses.sunset;
     const [name, setName] = useState('');
     const [birthDay, setBirthDay] = useState('');
     const [showDayPicker, setShowDayPicker] = useState(false);
@@ -61,13 +116,13 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
             >
                 <div className={`rounded-[2.5rem] p-8 md:p-12 overflow-hidden relative ${darkMode ? "bg-slate-800/50 border border-slate-700" : "bg-white shadow-2xl border border-slate-100"}`}>
                     {/* Background Glow */}
-                    <div className={`absolute top-0 right-0 w-64 h-64 bg-${activeColor}-500/20 blur-[100px] rounded-full pointer-events-none`} />
+                    <div className={`absolute top-0 right-0 w-64 h-64 ${theme.bgGlow} blur-[100px] rounded-full pointer-events-none`} />
                     <div className={`absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 blur-[100px] rounded-full pointer-events-none`} />
 
                     <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
                         {/* Input Section */}
                         <div className="flex-1 w-full text-center md:text-left">
-                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6 ${darkMode ? `bg-${activeColor}-900/30 text-${activeColor}-400` : `bg-${activeColor}-100 text-${activeColor}-600`}`}>
+                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-6 ${darkMode ? `${theme.badgeBgDark} ${theme.badgeTextDark}` : `${theme.badgeBg} ${theme.badgeText}`}`}>
                                 <Sparkles className="w-3 h-3" />
                                 Try it now
                             </div>
@@ -87,9 +142,9 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         placeholder="Your Name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className={`w-full px-4 py-3 rounded-xl font-medium outline-none border-2 transition-all ${darkMode
-                                            ? "bg-slate-900/50 border-slate-700 text-white focus:border-" + activeColor + "-500"
-                                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-" + activeColor + "-500"
+                                        className={`w-full px-4 py-3 rounded-xl font-medium outline-none border-2 transition-all ${theme.focusBorder} ${darkMode
+                                            ? "bg-slate-900/50 border-slate-700 text-white"
+                                            : "bg-slate-50 border-slate-200 text-slate-900"
                                             }`}
                                     />
                                 </div>
@@ -102,8 +157,8 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                             type="button"
                                             onClick={() => setShowDayPicker(!showDayPicker)}
                                             className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${darkMode
-                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600" + (showDayPicker ? " border-" + activeColor + "-500" : "")
-                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300" + (showDayPicker ? " border-" + activeColor + "-500" : "")
+                                                ? `bg-slate-800 border-slate-700 text-white hover:border-slate-600 ${showDayPicker ? 'border-orange-500' : ''}`
+                                                : `bg-white border-slate-200 text-slate-900 hover:border-slate-300 ${showDayPicker ? 'border-orange-500' : ''}`
                                                 }`}
                                         >
                                             {birthDay || 'Day'}
@@ -123,9 +178,9 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                                             }}
                                                             className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
                                                                 birthDay === String(i + 1)
-                                                                    ? `bg-${activeColor}-500 text-white`
-                                                                    : darkMode 
-                                                                        ? "text-slate-300 hover:bg-slate-700" 
+                                                                    ? `${theme.selectedBg} text-white`
+                                                                    : darkMode
+                                                                        ? "text-slate-300 hover:bg-slate-700"
                                                                         : "text-slate-700 hover:bg-slate-100"
                                                             }`}
                                                         >
@@ -141,9 +196,9 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         <select
                                             value={birthMonth}
                                             onChange={(e) => handleDateChange('month', e.target.value)}
-                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${darkMode
-                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600 focus:border-" + activeColor + "-500"
-                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300 focus:border-" + activeColor + "-500"
+                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${theme.focusBorder} ${darkMode
+                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600"
+                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300"
                                                 }`}
                                         >
                                             <option value="">Month</option>
@@ -157,9 +212,9 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         <select
                                             value={birthYear}
                                             onChange={(e) => handleDateChange('year', e.target.value)}
-                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${darkMode
-                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600 focus:border-" + activeColor + "-500"
-                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300 focus:border-" + activeColor + "-500"
+                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${theme.focusBorder} ${darkMode
+                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600"
+                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300"
                                                 }`}
                                         >
                                             <option value="">Year</option>
@@ -176,7 +231,7 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         <label className={`text-sm font-semibold ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
                                             Life Expectancy
                                         </label>
-                                        <span className={`text-lg font-bold text-${activeColor}-500`}>
+                                        <span className={`text-lg font-bold ${theme.accentText}`}>
                                             {lifeExpectancy} years
                                         </span>
                                     </div>
@@ -188,7 +243,7 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         onChange={(e) => setLifeExpectancy(parseInt(e.target.value))}
                                         className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${darkMode ? "bg-slate-700" : "bg-slate-300"}`}
                                         style={{
-                                            accentColor: activeColor === 'emerald' ? '#10b981' : activeColor === 'blue' ? '#3b82f6' : activeColor === 'orange' ? '#f97316' : '#a855f7'
+                                            accentColor: theme.accentColor
                                         }}
                                     />
                                 </div>
@@ -206,7 +261,7 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         className="grid grid-cols-2 gap-4"
                                     >
                                         <div className={`p-6 rounded-2xl text-center ${darkMode ? "bg-slate-900/80" : "bg-slate-50"}`}>
-                                            <div className={`text-4xl md:text-5xl font-black mb-2 text-${activeColor}-500`}>
+                                            <div className={`text-4xl md:text-5xl font-black mb-2 ${theme.accentText}`}>
                                                 {stats.weeksLived.toLocaleString()}
                                             </div>
                                             <div className={`text-xs font-bold uppercase tracking-wider ${darkMode ? "text-slate-500" : "text-slate-400"}`}>
@@ -224,7 +279,7 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                         <div className="col-span-2 mt-4">
                                             <button
                                                 onClick={() => onSignUp({ name, birthDate, lifeExpectancy })}
-                                                className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600`}
+                                                className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 ${theme.buttonGradient}`}
                                             >
                                                 Visualize My Entire Life
                                                 <ArrowRight className="w-5 h-5" />

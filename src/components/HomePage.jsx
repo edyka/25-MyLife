@@ -29,14 +29,58 @@ const HomePage = ({ darkMode, onLogin }) => {
   const setCurrentPage = useUIStore((state) => state.setCurrentPage);
   const theme = getTheme(themePreset);
 
-  // Map presets to Tailwind color names for dynamic classes
-  const themeColors = {
-    emerald: 'emerald',
-    ocean: 'blue',
-    sunset: 'orange',
-    purple: 'purple'
+  // Map presets to full Tailwind classes (dynamic class names don't work with Tailwind purge)
+  const themeClasses = {
+    emerald: {
+      textLight: 'text-emerald-400',
+      textDark: 'text-emerald-600',
+      gradient: 'from-emerald-400 to-teal-500',
+      buttonBg: 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700',
+      buttonShadow: 'shadow-emerald-500/30 hover:shadow-emerald-500/50',
+      bgLight: 'bg-emerald-200',
+      bgDark: 'bg-emerald-900',
+      iconColor: 'text-emerald-500',
+      borderHover: 'group-hover:border-emerald-500/50',
+      glowShadow: 'group-hover:shadow-emerald-500/20'
+    },
+    ocean: {
+      textLight: 'text-blue-400',
+      textDark: 'text-blue-600',
+      gradient: 'from-blue-400 to-cyan-500',
+      buttonBg: 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700',
+      buttonShadow: 'shadow-blue-500/30 hover:shadow-blue-500/50',
+      bgLight: 'bg-blue-200',
+      bgDark: 'bg-blue-900',
+      iconColor: 'text-blue-500',
+      borderHover: 'group-hover:border-blue-500/50',
+      glowShadow: 'group-hover:shadow-blue-500/20'
+    },
+    sunset: {
+      textLight: 'text-orange-400',
+      textDark: 'text-orange-600',
+      gradient: 'from-orange-400 to-red-500',
+      buttonBg: 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700',
+      buttonShadow: 'shadow-orange-500/30 hover:shadow-orange-500/50',
+      bgLight: 'bg-orange-200',
+      bgDark: 'bg-orange-900',
+      iconColor: 'text-orange-500',
+      borderHover: 'group-hover:border-orange-500/50',
+      glowShadow: 'group-hover:shadow-orange-500/20'
+    },
+    purple: {
+      textLight: 'text-purple-400',
+      textDark: 'text-purple-600',
+      gradient: 'from-purple-400 to-violet-500',
+      buttonBg: 'bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700',
+      buttonShadow: 'shadow-purple-500/30 hover:shadow-purple-500/50',
+      bgLight: 'bg-purple-200',
+      bgDark: 'bg-purple-900',
+      iconColor: 'text-purple-500',
+      borderHover: 'group-hover:border-purple-500/50',
+      glowShadow: 'group-hover:shadow-purple-500/20'
+    }
   };
-  const activeColor = themeColors[themePreset] || 'emerald';
+  const activeTheme = themeClasses[themePreset] || themeClasses.sunset;
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSignUpMode, setIsSignUpMode] = useState(false);
@@ -78,8 +122,8 @@ const HomePage = ({ darkMode, onLogin }) => {
     >
       {/* Aurora Background - Global (behind everything) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className={`absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 animate-pulse-slow ${darkMode ? `bg-${activeColor}-900` : `bg-${activeColor}-200`}`} />
-        <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 animate-pulse-slow delay-1000 ${darkMode ? `bg-${activeColor === 'purple' ? 'blue' : activeColor}-900` : `bg-${activeColor === 'purple' ? 'blue' : activeColor}-200`}`} />
+        <div className={`absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 animate-pulse-slow ${darkMode ? activeTheme.bgDark : activeTheme.bgLight}`} />
+        <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 animate-pulse-slow delay-1000 ${darkMode ? activeTheme.bgDark : activeTheme.bgLight}`} />
       </div>
 
       {/* Top Right Navigation */}
@@ -170,7 +214,7 @@ const HomePage = ({ darkMode, onLogin }) => {
               </div>
               <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-lg animate-pulse`}></div>
             </div>
-            <span className={`text-2xl sm:text-3xl uppercase tracking-[0.15em] font-semibold ${darkMode ? 'text-' + activeColor + '-400' : 'text-' + activeColor + '-600'}`}>
+            <span className={`text-2xl sm:text-3xl uppercase tracking-[0.15em] font-semibold ${darkMode ? activeTheme.textLight : activeTheme.textDark}`}>
               Viventiva
             </span>
           </motion.div>
@@ -179,7 +223,7 @@ const HomePage = ({ darkMode, onLogin }) => {
           <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extralight mb-6 leading-[1.1] tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
             Your life is
             <br />
-            <span className={`font-semibold text-transparent bg-clip-text bg-gradient-to-r from-${activeColor}-400 to-${activeColor}-600`}>{(4000).toLocaleString()} weeks.</span>
+            <span className={`font-semibold text-transparent bg-clip-text bg-gradient-to-r ${activeTheme.gradient}`}>{(4000).toLocaleString()} weeks.</span>
           </h1>
 
           {/* Subheadline */}
@@ -246,9 +290,9 @@ const HomePage = ({ darkMode, onLogin }) => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSignUpClick}
-              className={`group relative px-8 py-4 rounded-xl font-medium text-lg shadow-xl shadow-${activeColor}-500/20 overflow-hidden`}
+              className={`group relative px-8 py-4 rounded-xl font-medium text-lg shadow-xl ${activeTheme.buttonShadow} overflow-hidden`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-105`} />
+              <div className={`absolute inset-0 ${activeTheme.buttonBg} transition-transform duration-300 group-hover:scale-105`} />
               <span className="relative text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
                 Visualize My Life
@@ -331,13 +375,13 @@ const HomePage = ({ darkMode, onLogin }) => {
             ].map((item, i) => (
               <div key={i} className="relative flex flex-col items-center text-center group">
                 <div className={`w-24 h-24 rounded-3xl mb-6 flex items-center justify-center text-3xl font-bold transition-all duration-300 relative z-10 ${darkMode
-                  ? "bg-slate-900 border-2 border-slate-800 group-hover:border-" + activeColor + "-500/50 group-hover:shadow-[0_0_30px_-10px_rgba(var(--" + activeColor + "-500),0.3)]"
-                  : "bg-white border-2 border-slate-100 group-hover:border-" + activeColor + "-500/50 group-hover:shadow-xl"
+                  ? `bg-slate-900 border-2 border-slate-800 ${activeTheme.borderHover} group-hover:shadow-xl`
+                  : `bg-white border-2 border-slate-100 ${activeTheme.borderHover} group-hover:shadow-xl`
                   }`}>
                   <div className={`absolute -top-3 -right-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${darkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`}>
                     {i + 1}
                   </div>
-                  <item.icon className={`w-10 h-10 text-${activeColor}-500`} />
+                  <item.icon className={`w-10 h-10 ${activeTheme.iconColor}`} />
                 </div>
                 <h3 className={`text-2xl font-bold mb-3 ${darkMode ? "text-white" : "text-slate-900"}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed max-w-xs ${darkMode ? "text-slate-400" : "text-slate-600"}`}>{item.desc}</p>
@@ -356,9 +400,9 @@ const HomePage = ({ darkMode, onLogin }) => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSignUpClick}
-              className={`group relative px-10 py-5 rounded-xl font-medium text-lg shadow-xl shadow-${activeColor}-500/20 overflow-hidden`}
+              className={`group relative px-10 py-5 rounded-xl font-medium text-lg shadow-xl ${activeTheme.buttonShadow} overflow-hidden`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-105`} />
+              <div className={`absolute inset-0 ${activeTheme.buttonBg} transition-transform duration-300 group-hover:scale-105`} />
               <span className="relative text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
                 Visualize My Life
@@ -371,7 +415,6 @@ const HomePage = ({ darkMode, onLogin }) => {
           <div className="mt-8">
             <LifeCalculator
               darkMode={darkMode}
-              activeColor={activeColor}
               onSignUp={handleSignUpClick}
             />
           </div>
@@ -393,9 +436,9 @@ const HomePage = ({ darkMode, onLogin }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSignUpClick}
-                className={`group relative px-10 py-5 rounded-xl font-medium text-lg shadow-xl shadow-${activeColor}-500/30 overflow-hidden`}
+                className={`group relative px-10 py-5 rounded-xl font-medium text-lg shadow-xl ${activeTheme.buttonShadow} overflow-hidden`}
               >
-                <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-110`} />
+                <div className={`absolute inset-0 ${activeTheme.buttonBg} transition-transform duration-300 group-hover:scale-110`} />
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative text-white flex items-center gap-3">
                   <Sparkles className="w-6 h-6" />
