@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
+import { getYearFromWeek } from "../utils/dateUtils";
 import { useRenderPerformance } from "../utils/performanceMonitor";
 
 const WeekBox = memo(({
@@ -10,6 +10,7 @@ const WeekBox = memo(({
   handleTouchStart,
   handleTouchMove,
   handleTouchEnd,
+  handleDoubleClick,
   isSelected,
   isInPreview,
   // Performance optimization: pass store data as props to avoid 54,000+ subscriptions
@@ -23,7 +24,8 @@ const WeekBox = memo(({
   draggedWeeks = new Set(),
   selectionMode = "single",
   isMobile = false,
-  darkMode = false
+  darkMode = false,
+  setTooltip
 }) => {
   // Performance monitoring (only in development for performance-critical component)
   const isDev = process.env.NODE_ENV === 'development';
@@ -120,10 +122,42 @@ const WeekBox = memo(({
         e.preventDefault();
         handleWeekMouseDown(weekNum, e);
       }}
-      onMouseEnter={() => handleWeekMouseEnter(weekNum)}
+      onMouseEnter={() => {
+        handleWeekMouseEnter(weekNum);
+        // Show custom tooltip (only if setTooltip is provided)
+        if (!setTooltip) return;
+        const ageText = `Age ${getYearFromWeek(weekNum)} years`;
+
+        if (hasMilestone) {
+          const categoryLabel = allCategories[hasMilestone.category]?.label || 'Unknown';
+          const milestoneTitle = hasMilestone.title || '';
+          setTooltip({
+            visible: true,
+            label: milestoneTitle || categoryLabel,
+            content: milestoneTitle ? `${categoryLabel} · Week ${weekNum} · ${ageText}` : `Week ${weekNum} · ${ageText}`,
+            color: allCategories[hasMilestone.category]?.color || null
+          });
+        } else {
+          setTooltip({
+            visible: true,
+            label: `Week ${weekNum}`,
+            content: ageText,
+            color: null
+          });
+        }
+      }}
+      onMouseLeave={() => {
+        if (setTooltip) setTooltip({ visible: false });
+      }}
       onClick={(e) => {
         if (!isDragging) {
           handleWeekClick(weekNum, e);
+        }
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (handleDoubleClick) {
+          handleDoubleClick(weekNum, e);
         }
       }}
       onTouchStart={(e) => {
@@ -143,21 +177,11 @@ const WeekBox = memo(({
           handleTouchEnd();
         }
       }}
-      title={`Week ${weekNum} - Age ${getYearFromWeek(
-        weekNum
-      )} years, ${getQuarterFromWeek(weekNum)}${hasMilestone
-          ? ` | Mood: ${allCategories[hasMilestone.category]?.label || "Unknown"
-          }`
-          : ""
-        }${isSelected ? " (Selected)" : ""}`}
       role="button"
       tabIndex={0}
-      aria-label={`Week ${weekNum}, Age ${getYearFromWeek(
-        weekNum
-      )} years, ${getQuarterFromWeek(weekNum)}. ${hasMilestone
-          ? `Mood: ${allCategories[hasMilestone.category]?.label || "Unknown"
-          } - ${hasMilestone.title}`
-          : "No mood set"
+      aria-label={`Week ${weekNum}, Age ${getYearFromWeek(weekNum)} years. ${hasMilestone
+        ? `${hasMilestone.title ? hasMilestone.title + ' - ' : ''}${allCategories[hasMilestone.category]?.label || "Unknown"}`
+        : "No mood set"
         }${isSelected ? ". Currently selected" : ""}`}
       aria-pressed={isSelected}
       onKeyDown={(e) => {
@@ -170,6 +194,22 @@ const WeekBox = memo(({
       }}
     >
       {content}
+
+      {/* Flag indicator for weeks with milestones */}
+      {hasMilestone && (
+        <div className="absolute top-0 right-0 pointer-events-none">
+          <div className={`w-0 h-0 border-l-[6px] border-l-transparent border-t-[6px] ${
+            hasMilestone.isMilestone ? 'border-t-yellow-400' : 'border-t-white/80'
+          }`} />
+        </div>
+      )}
+
+      {/* Diamond indicator for important milestones */}
+      {hasMilestone?.isMilestone && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-1.5 h-1.5 bg-yellow-400 rotate-45 shadow-sm border-[0.5px] border-yellow-600/30" />
+        </div>
+      )}
 
       {isWeekSelected && !isBeingDragged && (
         <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-purple-500 rounded-full border-2 border-white shadow-lg animate-in fade-in zoom-in duration-200" />

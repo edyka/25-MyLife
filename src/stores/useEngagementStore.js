@@ -66,7 +66,7 @@ export const useEngagementStore = create(
             loadFromSupabase: async (userId) => {
                 if (!userId) return;
 
-                const { data, error } = await database.getUserProfile(userId);
+                const { data } = await database.getUserProfile(userId);
                 if (data && data.engagement_stats) {
                     set({
                         streak: data.engagement_stats.streak || 0,
@@ -78,7 +78,7 @@ export const useEngagementStore = create(
             },
 
             // Check for specific badges based on state
-            checkBadges: (milestones, goals, selections) => {
+            checkBadges: (milestones, goals, _selections) => {
                 const { unlockBadge } = get();
                 const unlocked = [];
 

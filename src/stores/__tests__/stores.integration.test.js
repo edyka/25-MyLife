@@ -18,7 +18,7 @@ describe('Stores Integration', () => {
 
   it('should initialize life store correctly', () => {
     const { result } = renderHook(() => useLifeStore());
-    
+
     act(() => {
       result.current.setBirthData(15, 6, 1990);
       result.current.setLifeExpectancy(85);
@@ -33,7 +33,7 @@ describe('Stores Integration', () => {
 
   it('should handle milestone management', () => {
     const { result } = renderHook(() => useMilestoneStore());
-    
+
     act(() => {
       result.current.updateMilestone(100, {
         title: 'Test Milestone',
@@ -55,7 +55,7 @@ describe('Stores Integration', () => {
 
   it('should manage week selections', () => {
     const { result } = renderHook(() => useSelectionStore());
-    
+
     act(() => {
       result.current.setSelectedColor('happy');
       result.current.addToSelectedWeeks(52);
@@ -77,7 +77,7 @@ describe('Stores Integration', () => {
 
   it('should handle UI state changes', () => {
     const { result } = renderHook(() => useUIStore());
-    
+
     act(() => {
       result.current.setDarkMode(true);
       result.current.setCurrentTab('stats');
@@ -95,12 +95,12 @@ describe('Stores Integration', () => {
 
   it('should calculate current week correctly', () => {
     const { result } = renderHook(() => useLifeStore());
-    
+
     act(() => {
       // Set birth date to approximately 2 years ago
       const twoYearsAgo = new Date();
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-      
+
       result.current.setBirthData(
         twoYearsAgo.getDate(),
         twoYearsAgo.getMonth() + 1,
@@ -134,7 +134,7 @@ describe('Stores Integration', () => {
     // Clear localStorage before test
     localStorage.clear();
 
-    const { result, rerender } = renderHook(() => useSelectionStore());
+    const { result } = renderHook(() => useSelectionStore());
 
     // Add selections
     act(() => {

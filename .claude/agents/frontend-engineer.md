@@ -1,6 +1,7 @@
 ---
 name: frontend-engineer
 description: Use this agent when you need frontend development expertise, including React/Vue/Angular component creation, CSS styling, responsive design, user interface implementation, frontend architecture decisions, performance optimization, accessibility improvements, or debugging frontend issues. Examples: <example>Context: User needs help implementing a responsive navigation component. user: 'I need to create a mobile-friendly navigation bar that collapses on smaller screens' assistant: 'I'll use the frontend-engineer agent to help design and implement this responsive navigation component' <commentary>Since this involves frontend UI component development and responsive design, use the frontend-engineer agent.</commentary></example> <example>Context: User is experiencing CSS layout issues. user: 'My flexbox layout is breaking on mobile devices' assistant: 'Let me use the frontend-engineer agent to diagnose and fix this CSS layout issue' <commentary>CSS troubleshooting and responsive design fixes are core frontend engineering tasks.</commentary></example>
+model: opus
 color: green
 ---
 

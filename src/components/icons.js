@@ -23,3 +23,4 @@ export { default as Book } from "lucide-react/dist/esm/icons/book";
 export { default as Dumbbell } from "lucide-react/dist/esm/icons/dumbbell";
 export { default as Palette } from "lucide-react/dist/esm/icons/palette";
 export { default as Eraser } from "lucide-react/dist/esm/icons/eraser";
+export { default as Trash2 } from "lucide-react/dist/esm/icons/trash-2";

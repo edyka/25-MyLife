@@ -1,24 +1,40 @@
-import { ArrowLeft, Cookie } from 'lucide-react';
+import { ArrowLeft, Cookie, Download, Lock, Image } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { usePremiumStore } from '../stores/usePremiumStore';
+import UpgradeModal from './UpgradeModal';
 import { exportData } from '../utils/storageUtils';
-import { useLifeStore } from '../stores/useLifeStore';
 import { useUIStore } from '../stores/useUIStore';
 import { useMilestoneStore } from '../stores/useMilestoneStore';
+import { useProfileEditor } from '../hooks/useProfileEditor';
 import { getTheme } from '../utils/themeConfig';
-import { getCookieConsent, hasAnalyticsConsent, setCookieConsent, getConsentDate, clearCookieConsent } from '../utils/cookieConsent';
-import { useState, useEffect, useRef } from 'react';
+import { getCookieConsent, hasAnalyticsConsent, setCookieConsent, getConsentDate, clearCookieConsent } from '../utils/consentManager';
+import { useState, useEffect } from 'react';
 
 const SettingsPage = () => {
-  // Use Zustand stores directly
-  const birthDay = useLifeStore(state => state.birthDay);
-  const birthMonth = useLifeStore(state => state.birthMonth);
-  const birthYear = useLifeStore(state => state.birthYear);
-  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy);
-  const userName = useLifeStore(state => state.userName);
-  const setBirthData = useLifeStore(state => state.setBirthData);
-  const setLifeExpectancy = useLifeStore(state => state.setLifeExpectancy);
-  const setUserName = useLifeStore(state => state.setUserName);
+  const {
+    editName,
+    setEditName,
+    editDay,
+    setEditDay,
+    editMonth,
+    setEditMonth,
+    editYear,
+    setEditYear,
+    editExpectancy,
+    setEditExpectancy,
+    saveProfile,
+    birthDay,
+    birthMonth,
+    birthYear,
+    lifeExpectancy
+  } = useProfileEditor();
 
   const setCurrentPage = useUIStore(state => state.setCurrentPage);
+  
+  // Premium state for PNG export gating
+  const hasExportPng = usePremiumStore((state) => state.hasFeature('pngExport'));
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [exportingPng, setExportingPng] = useState(false);
   const darkMode = useUIStore(state => state.darkMode);
   const themePreset = useUIStore(state => state.themePreset);
 
@@ -29,12 +45,9 @@ const SettingsPage = () => {
   const theme = getTheme(themePreset);
 
   // Cookie consent state
-  const [cookieConsent, setCookieConsentState] = useState(getCookieConsent());
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(hasAnalyticsConsent());
-  const [consentDate, setConsentDate] = useState(getConsentDate());
-  
-  // Debounce timer for name saving
-  const nameSaveTimerRef = useRef(null);
+  const [, setCookieConsentState] = useState(() => getCookieConsent());
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(() => hasAnalyticsConsent());
+  const [consentDate, setConsentDate] = useState(() => getConsentDate());
 
   // Update state when consent changes
   useEffect(() => {
@@ -44,95 +57,76 @@ const SettingsPage = () => {
       setConsentDate(getConsentDate());
     };
 
-    // Scroll to cookie settings when requested
-    const handleScrollToCookieSettings = () => {
+    // Scroll to privacy settings when requested
+    const handleScrollToPrivacySettings = () => {
       setTimeout(() => {
-        const cookieSection = document.getElementById('cookie-preferences-section');
-        if (cookieSection) {
-          cookieSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const privacySection = document.getElementById('privacy-preferences-section');
+        if (privacySection) {
+          privacySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
           // Highlight the section briefly
-          cookieSection.style.transition = 'box-shadow 0.3s ease';
-          cookieSection.style.boxShadow = darkMode 
-            ? '0 0 20px rgba(16, 185, 129, 0.3)' 
+          privacySection.style.transition = 'box-shadow 0.3s ease';
+          privacySection.style.boxShadow = darkMode
+            ? '0 0 20px rgba(16, 185, 129, 0.3)'
             : '0 0 20px rgba(16, 185, 129, 0.2)';
           setTimeout(() => {
-            cookieSection.style.boxShadow = '';
+            privacySection.style.boxShadow = '';
           }, 2000);
         }
       }, 300);
     };
 
-    window.addEventListener('cookieConsentChanged', handleConsentChange);
-    window.addEventListener('scrollToCookieSettings', handleScrollToCookieSettings);
-    
+    window.addEventListener('privacyConsentChanged', handleConsentChange);
+    window.addEventListener('scrollToPrivacySettings', handleScrollToPrivacySettings);
+
     return () => {
-      window.removeEventListener('cookieConsentChanged', handleConsentChange);
-      window.removeEventListener('scrollToCookieSettings', handleScrollToCookieSettings);
+      window.removeEventListener('privacyConsentChanged', handleConsentChange);
+      window.removeEventListener('scrollToPrivacySettings', handleScrollToPrivacySettings);
     };
   }, [darkMode]);
 
-  // Add missing change handlers
-  const handleUserNameChange = (value) => {
-    console.log('User name changed to:', value);
-    setUserName(value);
-    
-    // Clear existing timer
-    if (nameSaveTimerRef.current) {
-      clearTimeout(nameSaveTimerRef.current);
+  // PNG Export function
+  const handleExportPng = async () => {
+    if (!hasExportPng) {
+      setShowUpgradeModal(true);
+      return;
     }
     
-    // Debounce: Save to Supabase after 1 second of no changes
-    nameSaveTimerRef.current = setTimeout(async () => {
-      try {
-        const { auth, database } = await import('../lib/supabase');
-        const { user } = await auth.getCurrentUser();
-        
-        if (user) {
-          await database.saveUserProfile(user.id, {
-            name: value || '',
-            birthDay: birthDay,
-            birthMonth: birthMonth,
-            birthYear: birthYear,
-            lifeExpectancy: lifeExpectancy
-          });
-          console.log('[Settings] Name saved to Supabase');
-        }
-      } catch (error) {
-        console.error('[Settings] Error saving name to Supabase:', error);
+    setExportingPng(true);
+    try {
+      // Find the life grid element
+      const gridElement = document.querySelector('[data-life-grid]');
+      if (!gridElement) {
+        alert('Could not find life grid to export. Please go to the main page first.');
+        return;
       }
-    }, 1000);
-  };
-  
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (nameSaveTimerRef.current) {
-        clearTimeout(nameSaveTimerRef.current);
-      }
-    };
-  }, []);
-
-  const handleBirthDayChange = (value) => {
-    console.log('Birth day changed to:', value);
-    setBirthData(value, birthMonth, birthYear);
-  };
-
-  const handleBirthMonthChange = (value) => {
-    console.log('Birth month changed to:', value);
-    setBirthData(birthDay, value, birthYear);
-  };
-
-  const handleBirthYearChange = (value) => {
-    console.log('Birth year changed to:', value);
-    setBirthData(birthDay, birthMonth, value);
+      
+      const dataUrl = await toPng(gridElement, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: darkMode ? '#0f172a' : '#ffffff'
+      });
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `viventiva-life-grid-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Error exporting PNG:', error);
+      alert('Failed to export PNG. Please try again.');
+    } finally {
+      setExportingPng(false);
+    }
   };
 
   const handleUpdateProfile = () => {
-    console.log('Update Profile button clicked - navigating to setup page');
+    console.log('Update Profile button clicked - saving profile and navigating to setup page');
+    saveProfile();
     setCurrentPage('setup');
   };
 
   return (
+    <>
     <div className={`min-h-screen ${darkMode ? 'modern-bg-dark' : 'modern-bg'} transition-all duration-500 p-4`}>
       <div className="max-w-4xl mx-auto">
         <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-2xl p-4 md:p-6`}>
@@ -140,11 +134,10 @@ const SettingsPage = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentPage('main')}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode
-                    ? `hover:bg-white/10 text-slate-300 hover:text-white`
-                    : `hover:bg-slate-100 text-slate-600 hover:${theme.accent.replace('text-', 'text-')}`
-                }`}
+                className={`p-2 rounded-lg transition-colors ${darkMode
+                  ? `hover:bg-white/10 text-slate-300 hover:text-white`
+                  : `hover:bg-slate-100 text-slate-600 hover:${theme.accent.replace('text-', 'text-')}`
+                  }`}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -163,14 +156,13 @@ const SettingsPage = () => {
                 <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Name</label>
                 <input
                   type="text"
-                  value={userName || ''}
-                  onChange={(e) => handleUserNameChange(e.target.value)}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
                   placeholder="Enter your name"
-                  className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
-                    darkMode
-                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                  }`}
+                  className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
+                    ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                    : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                    }`}
                   style={{ outline: 'none' }}
                 />
               </div>
@@ -181,28 +173,26 @@ const SettingsPage = () => {
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Day</label>
                   <input
                     type="number"
-                    value={birthDay}
-                    onChange={(e) => handleBirthDayChange(e.target.value)}
+                    value={editDay}
+                    onChange={(e) => setEditDay(e.target.value)}
                     min="1"
                     max="31"
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
-                      darkMode
-                        ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                        : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                    }`}
+                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
+                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
                     style={{ outline: 'none' }}
                   />
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Month</label>
                   <select
-                    value={birthMonth}
-                    onChange={(e) => handleBirthMonthChange(e.target.value)}
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
-                      darkMode
-                        ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                        : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                    }`}
+                    value={editMonth}
+                    onChange={(e) => setEditMonth(e.target.value)}
+                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
+                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
                     style={{ outline: 'none' }}
                   >
                     <option value="1">Jan</option>
@@ -223,15 +213,14 @@ const SettingsPage = () => {
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Year</label>
                   <input
                     type="number"
-                    value={birthYear}
-                    onChange={(e) => handleBirthYearChange(e.target.value)}
+                    value={editYear}
+                    onChange={(e) => setEditYear(e.target.value)}
                     min="1920"
                     max={new Date().getFullYear()}
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
-                      darkMode
-                        ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                        : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                    }`}
+                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
+                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
                     style={{ outline: 'none' }}
                   />
                 </div>
@@ -239,15 +228,14 @@ const SettingsPage = () => {
                   <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Life Expectancy</label>
                   <input
                     type="number"
-                    value={lifeExpectancy}
-                    onChange={(e) => setLifeExpectancy(e.target.value)}
+                    value={editExpectancy}
+                    onChange={(e) => setEditExpectancy(e.target.value)}
                     min="50"
                     max="110"
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
-                      darkMode
-                        ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                        : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                    }`}
+                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
+                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
                     style={{ outline: 'none' }}
                   />
                 </div>
@@ -271,7 +259,23 @@ const SettingsPage = () => {
                   onClick={() => exportData(birthDay, birthMonth, birthYear, lifeExpectancy, milestones)}
                   className={`${theme.buttonPrimary} px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow}`}
                 >
-                  Export Data
+                  <Download className="w-4 h-4 inline mr-2" />
+                  Export Data (JSON)
+                </button>
+                <button
+                  onClick={handleExportPng}
+                  disabled={exportingPng}
+                  className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow} ${
+                    hasExportPng 
+                      ? theme.buttonPrimary 
+                      : 'bg-gradient-to-r from-slate-500 to-slate-600'
+                  } ${exportingPng ? 'opacity-70 cursor-wait' : ''}`}
+                >
+                  <Image className="w-4 h-4 inline mr-2" />
+                  {exportingPng ? 'Exporting...' : 'Export Grid as PNG'}
+                  {!hasExportPng && (
+                    <Lock className="w-3 h-3 inline ml-2 opacity-70" />
+                  )}
                 </button>
                 <button
                   onClick={() => {
@@ -287,14 +291,14 @@ const SettingsPage = () => {
             </div>
 
             {/* Cookie Preferences */}
-            <div id="cookie-preferences-section" className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
+            <div id="privacy-preferences-section" className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
               <div className="flex items-center gap-3 mb-4">
                 <Cookie className={`w-5 h-5 ${theme.accent}`} />
                 <h3 className={`text-lg font-semibold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                   Cookie Preferences
                 </h3>
               </div>
-              
+
               <div className="space-y-4">
                 <div className={`p-4 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -306,19 +310,17 @@ const SettingsPage = () => {
                         Required for the app to function properly
                       </p>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      darkMode ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
+                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
                       Always Active
                     </div>
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-lg border-2 ${
-                  darkMode 
-                    ? analyticsEnabled ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-white/10'
-                    : analyticsEnabled ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'
-                }`}>
+                <div className={`p-4 rounded-lg border-2 ${darkMode
+                  ? analyticsEnabled ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-white/10'
+                  : analyticsEnabled ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'
+                  }`}>
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <h4 className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
@@ -333,7 +335,7 @@ const SettingsPage = () => {
                         const newValue = !analyticsEnabled;
                         setCookieConsent('accepted', newValue);
                         setAnalyticsEnabled(newValue);
-                        
+
                         if (newValue) {
                           // Initialize analytics if enabled
                           try {
@@ -344,18 +346,16 @@ const SettingsPage = () => {
                           }
                         }
                       }}
-                      className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                        analyticsEnabled
-                          ? `bg-gradient-to-r ${theme.primary}`
-                          : darkMode
+                      className={`relative w-12 h-6 rounded-full transition-all duration-300 ${analyticsEnabled
+                        ? `bg-gradient-to-r ${theme.primary}`
+                        : darkMode
                           ? 'bg-slate-700'
                           : 'bg-slate-300'
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${
-                          analyticsEnabled ? 'translate-x-6' : 'translate-x-0'
-                        }`}
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${analyticsEnabled ? 'translate-x-6' : 'translate-x-0'
+                          }`}
                       />
                     </button>
                   </div>
@@ -379,11 +379,10 @@ const SettingsPage = () => {
                         console.error('[Settings] Error initializing analytics:', error);
                       }
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                      darkMode
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
+                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
                   >
                     Accept All
                   </button>
@@ -392,11 +391,10 @@ const SettingsPage = () => {
                       setCookieConsent('declined', false);
                       setAnalyticsEnabled(false);
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                      darkMode
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
+                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
                   >
                     Decline All
                   </button>
@@ -408,14 +406,13 @@ const SettingsPage = () => {
                         setAnalyticsEnabled(false);
                         setConsentDate(null);
                         // Trigger banner to show again
-                        window.dispatchEvent(new CustomEvent('showCookieBanner'));
+                        window.dispatchEvent(new CustomEvent('showConsentBanner'));
                       }
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                      darkMode
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
+                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
                   >
                     Reset Preferences
                   </button>
@@ -426,6 +423,14 @@ const SettingsPage = () => {
         </div>
       </div>
     </div>
+    
+    {/* Upgrade Modal */}
+    <UpgradeModal
+      isOpen={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      feature="PNG Export"
+    />
+    </>
   );
 };
 

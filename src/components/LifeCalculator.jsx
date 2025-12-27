@@ -5,6 +5,7 @@ import { Calendar, ArrowRight, Sparkles } from 'lucide-react';
 const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
     const [name, setName] = useState('');
     const [birthDay, setBirthDay] = useState('');
+    const [showDayPicker, setShowDayPicker] = useState(false);
     const [birthMonth, setBirthMonth] = useState('');
     const [birthYear, setBirthYear] = useState('');
     const [birthDate, setBirthDate] = useState('');
@@ -51,7 +52,7 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
     }, [birthDate, lifeExpectancy]);
 
     return (
-        <section className="relative z-10 w-full py-24 px-4 sm:px-6">
+        <section className="relative z-10 w-full py-8 px-4 sm:px-6">
             <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -93,53 +94,80 @@ const LifeCalculator = ({ darkMode, activeColor, onSignUp }) => {
                                     />
                                 </div>
 
-                                {/* Date Input - Split Fields for easier entry */}
-                                <div className="flex gap-2">
-                                    <div className="flex-1">
-                                        <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Day</label>
-                                        <input
-                                            type="number"
-                                            placeholder="DD"
-                                            min="1"
-                                            max="31"
-                                            value={birthDay}
-                                            onChange={(e) => handleDateChange('day', e.target.value)}
-                                            className={`w-full px-4 py-3 rounded-xl text-center font-bold outline-none border-2 transition-all ${darkMode
-                                                ? "bg-slate-900/50 border-slate-700 text-white focus:border-" + activeColor + "-500"
-                                                : "bg-slate-50 border-slate-200 text-slate-900 focus:border-" + activeColor + "-500"
+                                {/* Date Input - Clean Dropdowns */}
+                                <div className="flex gap-3">
+                                    <div className="flex-1 relative">
+                                        <label className={`block text-xs font-medium uppercase tracking-wider mb-2 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Day</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDayPicker(!showDayPicker)}
+                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${darkMode
+                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600" + (showDayPicker ? " border-" + activeColor + "-500" : "")
+                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300" + (showDayPicker ? " border-" + activeColor + "-500" : "")
                                                 }`}
-                                        />
+                                        >
+                                            {birthDay || 'Day'}
+                                        </button>
+                                        
+                                        {/* Day Picker Grid */}
+                                        {showDayPicker && (
+                                            <div className={`absolute bottom-full left-0 mb-1 p-3 rounded-2xl shadow-2xl z-50 w-64 ${darkMode ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"}`}>
+                                                <div className="grid grid-cols-7 gap-1">
+                                                    {Array.from({ length: 31 }, (_, i) => (
+                                                        <button
+                                                            key={i}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleDateChange('day', String(i + 1));
+                                                                setShowDayPicker(false);
+                                                            }}
+                                                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                                                birthDay === String(i + 1)
+                                                                    ? `bg-${activeColor}-500 text-white`
+                                                                    : darkMode 
+                                                                        ? "text-slate-300 hover:bg-slate-700" 
+                                                                        : "text-slate-700 hover:bg-slate-100"
+                                                            }`}
+                                                        >
+                                                            {i + 1}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex-1">
-                                        <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Month</label>
+                                        <label className={`block text-xs font-medium uppercase tracking-wider mb-2 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Month</label>
                                         <select
                                             value={birthMonth}
                                             onChange={(e) => handleDateChange('month', e.target.value)}
-                                            className={`w-full px-2 py-3 rounded-xl text-center font-bold outline-none border-2 transition-all appearance-none ${darkMode
-                                                ? "bg-slate-900/50 border-slate-700 text-white focus:border-" + activeColor + "-500"
-                                                : "bg-slate-50 border-slate-200 text-slate-900 focus:border-" + activeColor + "-500"
+                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${darkMode
+                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600 focus:border-" + activeColor + "-500"
+                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300 focus:border-" + activeColor + "-500"
                                                 }`}
                                         >
-                                            <option value="">MM</option>
-                                            {Array.from({ length: 12 }, (_, i) => (
-                                                <option key={i} value={i + 1}>{String(i + 1).padStart(2, '0')}</option>
+                                            <option value="">Month</option>
+                                            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
+                                                <option key={i} value={i + 1}>{month}</option>
                                             ))}
                                         </select>
                                     </div>
-                                    <div className="flex-[1.5]">
-                                        <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Year</label>
-                                        <input
-                                            type="number"
-                                            placeholder="YYYY"
-                                            min="1900"
-                                            max={new Date().getFullYear()}
+                                    <div className="flex-1">
+                                        <label className={`block text-xs font-medium uppercase tracking-wider mb-2 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Year</label>
+                                        <select
                                             value={birthYear}
                                             onChange={(e) => handleDateChange('year', e.target.value)}
-                                            className={`w-full px-4 py-3 rounded-xl text-center font-bold outline-none border-2 transition-all ${darkMode
-                                                ? "bg-slate-900/50 border-slate-700 text-white focus:border-" + activeColor + "-500"
-                                                : "bg-slate-50 border-slate-200 text-slate-900 focus:border-" + activeColor + "-500"
+                                            className={`w-full px-3 py-3.5 rounded-xl text-center font-semibold outline-none border-2 transition-all cursor-pointer ${darkMode
+                                                ? "bg-slate-800 border-slate-700 text-white hover:border-slate-600 focus:border-" + activeColor + "-500"
+                                                : "bg-white border-slate-200 text-slate-900 hover:border-slate-300 focus:border-" + activeColor + "-500"
                                                 }`}
-                                        />
+                                        >
+                                            <option value="">Year</option>
+                                            {Array.from({ length: new Date().getFullYear() - 1919 }, (_, i) => {
+                                                const year = new Date().getFullYear() - i;
+                                                return <option key={year} value={year}>{year}</option>;
+                                            })}
+                                        </select>
                                     </div>
                                 </div>
                                 {/* Life Expectancy Slider */}

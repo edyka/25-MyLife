@@ -41,6 +41,15 @@ export const getUserFriendlyError = (error) => {
     return 'Please check your email and confirm your account before logging in.';
   }
 
+  // Row Level Security / permissions (common when policies are missing)
+  if (errorMessage.toLowerCase().includes('row-level security') || errorMessage.toLowerCase().includes('rls')) {
+    return 'Permission error saving your data. Please ensure your Supabase RLS policies are set correctly (run the provided SQL permission fix), then try again.';
+  }
+
+  if (errorMessage.toLowerCase().includes('permission denied')) {
+    return 'Permission error. Your Supabase database permissions may be missing for authenticated users.';
+  }
+
   if (errorMessage.includes('Password')) {
     if (errorMessage.includes('weak')) {
       return 'Password is too weak. Please use at least 6 characters.';

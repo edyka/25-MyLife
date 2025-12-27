@@ -1,6 +1,7 @@
 ---
 name: backend-architect
 description: Use this agent when you need expert guidance on web backend development, system architecture, API design, database modeling, or implementation using modern programming languages like Python, Node.js, Go, Rust, or Java. Examples: <example>Context: User needs help designing a REST API for an e-commerce platform. user: 'I need to design endpoints for user authentication, product catalog, and order management' assistant: 'I'll use the backend-architect agent to help design a comprehensive API structure with proper authentication flows and data models'</example> <example>Context: User is implementing a microservices architecture and needs guidance. user: 'How should I structure my microservices for a social media app?' assistant: 'Let me engage the backend-architect agent to provide expert guidance on microservices design patterns and service boundaries'</example>
+model: opus
 color: blue
 ---
 

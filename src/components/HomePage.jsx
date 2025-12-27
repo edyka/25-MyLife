@@ -2,17 +2,14 @@ import Footer from "./Footer";
 import LifeCalculator from "./LifeCalculator";
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
   Sparkles,
   LogIn,
-  UserPlus,
   Calendar,
-  Smile,
+
   Target,
   Clock,
-  Zap,
-  Shield,
-  Heart,
+
+
   Sun,
   Moon
 } from "lucide-react";
@@ -25,45 +22,11 @@ import WaitlistPage from "./WaitlistPage";
 import { WAITLIST_MODE } from "../utils/constants";
 
 
-const HOW_IT_WORKS = [
-  {
-    icon: Calendar,
-    title: "Input Your Birth Date",
-    description: "We calculate your precise life progress based on statistical data."
-  },
-  {
-    icon: Clock,
-    title: "Visualize Your Time",
-    description: "See your life as a grid of weeks. Every box is a week of your life."
-  },
-  {
-    icon: Target,
-    title: "Plan Your Legacy",
-    description: "Set goals, track moods, and make every remaining week count."
-  }
-];
-
-const BENEFITS = [
-  {
-    icon: Zap,
-    title: "Laser Focus",
-    description: "Stop drifting through life. See exactly how much time you have to achieve your dreams."
-  },
-  {
-    icon: Smile,
-    title: "Perspective Shift",
-    description: "Small worries fade away when you see the big picture of your life's journey."
-  },
-  {
-    icon: Shield,
-    title: "Private & Secure",
-    description: "Your life data is yours alone. We use bank-level encryption to keep it safe."
-  }
-];
 
 const HomePage = ({ darkMode, onLogin }) => {
   const themePreset = useUIStore((state) => state.themePreset);
   const setDarkMode = useUIStore((state) => state.setDarkMode);
+  const setCurrentPage = useUIStore((state) => state.setCurrentPage);
   const theme = getTheme(themePreset);
 
   // Map presets to Tailwind color names for dynamic classes
@@ -153,74 +116,210 @@ const HomePage = ({ darkMode, onLogin }) => {
       </motion.div>
 
 
-      {/* SECTION 1: HERO (Default BG) */}
-      <section className="relative z-10 w-full pt-32 pb-20 px-4 sm:px-6">
+      
+
+      {/* SECTION 1: HERO */}
+      <section className="relative z-10 w-full min-h-screen flex items-center justify-center pt-20 pb-20 px-4 sm:px-6 overflow-hidden">
+        {/* Floating Week Squares Background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={`float-${i}`}
+              className={`absolute w-3 h-3 rounded-sm opacity-30 ${
+                ['bg-amber-400', 'bg-emerald-400', 'bg-rose-400', 'bg-sky-400', 'bg-violet-400', 'bg-orange-400', 'bg-teal-400'][i % 7]
+              }`}
+              style={{ left: `${(i * 7) % 100}%` }}
+              initial={{ 
+                y: -20,
+                opacity: 0 
+              }}
+              animate={{ 
+                y: '120vh',
+                opacity: [0, 0.4, 0],
+                rotate: 180
+              }}
+              transition={{
+                duration: 12 + Math.random() * 8,
+                repeat: Infinity,
+                delay: i * 0.4,
+                ease: "linear"
+              }}
+            />
+          ))}
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center max-w-4xl mx-auto"
+          className="text-center max-w-5xl mx-auto"
         >
-          <div className="mb-8 flex justify-center">
-            <div className="relative transform scale-150">
-              <div className={`w-12 h-12 bg-gradient-to-br ${theme.iconBg} rounded-3xl shadow-xl ${theme.shadow} flex items-center justify-center group`}>
-                <div className="grid grid-cols-3 gap-1 w-6 h-6">
+          {/* Logo + Brand Name */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-10 flex justify-center items-center gap-4"
+          >
+            <div className="relative">
+              <div className={`w-14 h-14 bg-gradient-to-br ${theme.iconBg} rounded-3xl shadow-xl ${theme.shadow} flex items-center justify-center group`}>
+                <div className="grid grid-cols-3 gap-1 w-7 h-7">
                   {[...Array(9)].map((_, i) => (
                     <div key={i} className="bg-white/95 rounded-sm group-hover:bg-white transition-all duration-300"></div>
                   ))}
                 </div>
               </div>
-              <div className={`absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-lg animate-pulse`}></div>
+              <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-lg animate-pulse`}></div>
             </div>
-          </div>
+            <span className={`text-2xl sm:text-3xl uppercase tracking-[0.15em] font-semibold ${darkMode ? 'text-' + activeColor + '-400' : 'text-' + activeColor + '-600'}`}>
+              Viventiva
+            </span>
+          </motion.div>
 
-          <h1 className={`text-5xl md:text-7xl font-black mb-8 tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
-            Visualize <span className={`text-transparent bg-clip-text bg-gradient-to-r from-${activeColor}-400 to-${activeColor}-600`}>Your Life</span>
+          {/* Main Headline */}
+          <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extralight mb-6 leading-[1.1] tracking-tight ${darkMode ? "text-white" : "text-slate-900"}`}>
+            Your life is
+            <br />
+            <span className={`font-semibold text-transparent bg-clip-text bg-gradient-to-r from-${activeColor}-400 to-${activeColor}-600`}>{(4000).toLocaleString()} weeks.</span>
           </h1>
 
-          <p className={`text-xl md:text-2xl mb-10 max-w-2xl mx-auto leading-relaxed ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-            See your entire life in weeks. Make every single one count.
+          {/* Subheadline */}
+          <p className={`text-lg md:text-xl font-light max-w-xl mx-auto mb-10 leading-relaxed ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+            See them all. Color the ones that matter.
+            <br className="hidden sm:block" />
+            Stop counting days. Start making weeks count.
           </p>
 
-          <motion.figure
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+          {/* Week Visualization */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
             className="mb-12"
           >
-            <blockquote className={`text-lg italic font-serif ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
-              "The trouble is, you think you have time."
-            </blockquote>
-            <figcaption className={`text-sm mt-2 font-medium ${darkMode ? "text-slate-600" : "text-slate-400"}`}>— Buddha</figcaption>
-          </motion.figure>
+            <div className={`inline-flex items-center gap-1.5 p-5 rounded-2xl ${darkMode ? 'bg-slate-800/80 backdrop-blur-sm border border-slate-700/50' : 'bg-white/80 backdrop-blur-sm shadow-lg shadow-slate-200/50 border border-slate-200/50'}`}>
+              {/* Past weeks - colored */}
+              {['bg-amber-400', 'bg-emerald-400', 'bg-rose-400', 'bg-sky-400', 'bg-violet-400', 'bg-orange-400', 'bg-teal-400'].map((color, i) => (
+                <motion.div
+                  key={`past-${i}`}
+                  className={`w-5 h-5 md:w-6 md:h-6 rounded-sm ${color}`}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.08 }}
+                />
+              ))}
+              
+              {/* Current week - pulsing */}
+              <motion.div
+                className={`w-5 h-5 md:w-6 md:h-6 rounded-sm ${darkMode ? 'bg-white' : 'bg-slate-900'}`}
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              
+              {/* Future weeks - empty */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={`future-${i}`}
+                  className={`w-5 h-5 md:w-6 md:h-6 rounded-sm border-2 ${darkMode ? 'border-slate-600' : 'border-slate-300'}`}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.0 + i * 0.08 }}
+                />
+              ))}
+            </div>
+            
+            <p className={`text-sm mt-4 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+              Past · <span className={`${darkMode ? 'text-white' : 'text-slate-900'} font-medium`}>Now</span> · Future
+            </p>
+            <p className={`text-lg mt-4 italic ${darkMode ? 'text-slate-400' : 'text-slate-400'}`}>
+              "The trouble is, you think you have time." <span className="not-italic">— Buddha</span>
+            </p>
+          </motion.div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSignUpClick}
-            className={`group relative px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-${activeColor}-500/20 overflow-hidden`}
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-110`} />
-            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <span className="relative text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              Visualize My Life
-            </span>
-          </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSignUpClick}
+              className={`group relative px-8 py-4 rounded-xl font-medium text-lg shadow-xl shadow-${activeColor}-500/20 overflow-hidden`}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-105`} />
+              <span className="relative text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                Visualize My Life
+              </span>
+            </motion.button>
+
+          </motion.div>
+
+          {/* Social proof */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className={`mt-8 text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}
+          >
+            Free to start · No credit card required
+          </motion.p>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className={`mt-3 text-xs ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}
+          >
+            By continuing, you agree to our{' '}
+            <button 
+              onClick={() => setCurrentPage('terms')} 
+              className={`underline hover:no-underline transition-all ${darkMode ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Terms
+            </button>
+            {' '}and{' '}
+            <button 
+              onClick={() => setCurrentPage('privacy')} 
+              className={`underline hover:no-underline transition-all ${darkMode ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Privacy Policy
+            </button>
+          </motion.p>
+
+          {/* Scroll Indicator */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, y: [0, 8, 0] }}
+            transition={{ delay: 1.2, y: { duration: 1.5, repeat: Infinity, ease: "easeInOut" } }}
+            className="mt-12"
+          >
+            <div className={`w-6 h-10 mx-auto rounded-full border-2 ${darkMode ? 'border-slate-600' : 'border-slate-300'} flex justify-center pt-2`}>
+              <motion.div
+                animate={{ y: [0, 12, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                className={`w-1.5 h-1.5 rounded-full ${darkMode ? 'bg-slate-500' : 'bg-slate-400'}`}
+              />
+            </div>
+            <p className={`text-xs mt-2 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>Scroll</p>
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* SECTION 2: HOW IT WORKS (Alternate BG) */}
+      {/* THREE SIMPLE STEPS Section */}
       <section className={`relative z-10 w-full py-24 px-4 sm:px-6 ${darkMode ? "bg-slate-800/30" : "bg-white/60"} backdrop-blur-sm`}>
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-5xl mx-auto"
-        >
-          <div className="text-center mb-16">
-            <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? "text-white" : "text-slate-900"}`}>How It Works</h2>
-          </div>
+        <div className="max-w-6xl mx-auto">
+          {/* HOW IT WORKS */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="text-center mb-16">
+              <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? "text-white" : "text-slate-900"}`}>Three Simple Steps</h2>
+            </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
             <div className={`hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 ${darkMode ? "bg-slate-700" : "bg-slate-200"}`} />
@@ -240,84 +339,47 @@ const HomePage = ({ darkMode, onLogin }) => {
                   </div>
                   <item.icon className={`w-10 h-10 text-${activeColor}-500`} />
                 </div>
-                <h3 className={`text-xl font-bold mb-3 ${darkMode ? "text-white" : "text-slate-900"}`}>{item.title}</h3>
+                <h3 className={`text-2xl font-bold mb-3 ${darkMode ? "text-white" : "text-slate-900"}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed max-w-xs ${darkMode ? "text-slate-400" : "text-slate-600"}`}>{item.desc}</p>
               </div>
             ))}
           </div>
-        </motion.div>
-      </section>
+          
+          {/* CTA Button after steps */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12 mb-8"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSignUpClick}
+              className={`group relative px-10 py-5 rounded-xl font-medium text-lg shadow-xl shadow-${activeColor}-500/20 overflow-hidden`}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-105`} />
+              <span className="relative text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                Visualize My Life
+              </span>
+            </motion.button>
+          </motion.div>
+          </motion.div>
 
-      {/* Interactive Life Calculator */}
-      <LifeCalculator
-        darkMode={darkMode}
-        activeColor={activeColor}
-        onSignUp={handleSignUpClick}
-      />
-
-      {/* SECTION 3: WHY VIVENTIVA (Default BG) */}
-      <section className="relative z-10 w-full py-24 px-4 sm:px-6">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="max-w-6xl mx-auto"
-        >
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className={`text-3xl md:text-4xl font-black mb-6 ${darkMode ? "text-white" : "text-slate-900"}`}>
-                Why Viventiva?
-              </h2>
-              <p className={`text-lg mb-10 leading-relaxed ${darkMode ? "text-slate-300" : "text-slate-600"}`}>
-                Most people live as if they have infinite time. Viventiva gives you the visual clarity to prioritize what truly matters.
-              </p>
-              <div className="space-y-6">
-                {BENEFITS.map((benefit, index) => {
-                  const Icon = benefit.icon;
-                  return (
-                    <div key={index} className={`flex items-start gap-5 p-4 rounded-2xl transition-all duration-300 ${darkMode ? "hover:bg-slate-800/50" : "hover:bg-white/50"}`}>
-                      <div className={`p-3.5 rounded-2xl shadow-sm ${darkMode ? "bg-slate-800 text-" + activeColor + "-400" : "bg-white text-" + activeColor + "-600"}`}>
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className={`font-bold text-lg mb-2 ${darkMode ? "text-white" : "text-slate-900"}`}>{benefit.title}</h4>
-                        <p className={`text-sm leading-relaxed ${darkMode ? "text-slate-400" : "text-slate-600"}`}>{benefit.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="relative transform md:translate-x-8">
-              <div className={`aspect-square rounded-full bg-gradient-to-tr from-${activeColor}-500 to-purple-600 opacity-20 blur-[100px] absolute inset-0 animate-pulse-slow`}></div>
-              <div className={`relative z-10 rounded-3xl p-8 border backdrop-blur-xl ${darkMode ? "bg-slate-900/80 border-slate-700" : "bg-white/80 border-slate-200"} shadow-2xl transform rotate-3 transition-transform duration-500 hover:rotate-0`}>
-                <div className="space-y-8">
-                  <div className="flex items-center justify-between">
-                    <div className={`text-sm font-medium ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Your Life Progress</div>
-                    <div className={`text-sm font-bold text-${activeColor}-500`}>34%</div>
-                  </div>
-                  <div className={`h-4 rounded-full ${darkMode ? "bg-slate-800" : "bg-slate-100"} overflow-hidden`}>
-                    <div className={`h-full rounded-full bg-gradient-to-r ${theme.primary} w-[34%]`}></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className={`p-5 rounded-2xl ${darkMode ? "bg-slate-800" : "bg-slate-50"}`}>
-                      <div className={`text-3xl font-black mb-1 ${darkMode ? "text-white" : "text-slate-900"}`}>2,840</div>
-                      <div className={`text-xs font-medium uppercase tracking-wider ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Weeks Left</div>
-                    </div>
-                    <div className={`p-5 rounded-2xl ${darkMode ? "bg-slate-800" : "bg-slate-50"}`}>
-                      <div className={`text-3xl font-black mb-1 ${darkMode ? "text-white" : "text-slate-900"}`}>1,560</div>
-                      <div className={`text-xs font-medium uppercase tracking-wider ${darkMode ? "text-slate-500" : "text-slate-500"}`}>Weeks Lived</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Life Calculator - Merged into same section */}
+          <div className="mt-8">
+            <LifeCalculator
+              darkMode={darkMode}
+              activeColor={activeColor}
+              onSignUp={handleSignUpClick}
+            />
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* SECTION 4: CTA & SOCIAL PROOF (Alternate BG) */}
-      <section className={`relative z-10 w-full py-24 px-4 sm:px-6 ${darkMode ? "bg-slate-800/30" : "bg-white/60"} backdrop-blur-sm`}>
+      <section className={`relative z-10 w-full pt-0 pb-8 px-4 sm:px-6 ${darkMode ? "bg-slate-800/30" : "bg-white/60"} backdrop-blur-sm`}>
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -325,13 +387,13 @@ const HomePage = ({ darkMode, onLogin }) => {
           className="max-w-6xl mx-auto"
         >
           {/* CTA Button */}
-          <div className="max-w-4xl mx-auto text-center mb-24">
+          <div className="max-w-4xl mx-auto text-center mb-16">
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSignUpClick}
-                className={`group relative px-10 py-5 rounded-full font-bold text-xl shadow-xl shadow-${activeColor}-500/30 overflow-hidden`}
+                className={`group relative px-10 py-5 rounded-xl font-medium text-lg shadow-xl shadow-${activeColor}-500/30 overflow-hidden`}
               >
                 <div className={`absolute inset-0 bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-600 transition-transform duration-300 group-hover:scale-110`} />
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -343,18 +405,18 @@ const HomePage = ({ darkMode, onLogin }) => {
             </div>
           </div>
 
-          {/* Social Proof Section - Updated with Flags & Photos */}
+          {/* Social Proof Section */}
           <div className="max-w-7xl mx-auto">
             {/* Stats */}
             <div className="text-center mb-16">
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 ${darkMode ? "bg-slate-800/50 border border-slate-700/50" : "bg-white/50 border border-slate-200"} backdrop-blur-sm`}>
                 <div className="flex -space-x-2">
-                  <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900" />
-                  <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900" />
-                  <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900" />
+                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white text-xs font-bold">S</div>
+                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">K</div>
+                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold">G</div>
                 </div>
                 <span className={`text-sm font-semibold ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-                  Join 36,000+ people visualizing their lives
+                  Join people visualizing their lives
                 </span>
               </div>
               <h2 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? "text-white" : "text-slate-900"}`}>Loved Worldwide</h2>
@@ -366,38 +428,42 @@ const HomePage = ({ darkMode, onLogin }) => {
                 {
                   stars: 5,
                   text: "This completely changed how I think about time. Seeing my life in weeks made me realize I need to stop procrastinating.",
-                  name: "Sarah Miller",
+                  initials: "SM",
+                  name: "Sarah M.",
                   role: "Designer",
                   country: "USA",
                   flag: "🇺🇸",
-                  img: "https://randomuser.me/api/portraits/women/44.jpg"
+                  gradient: "from-pink-500 to-rose-500"
                 },
                 {
                   stars: 5,
                   text: "Efficiency and clarity in one app. The visualization is exactly what I needed to structure my long-term goals.",
-                  name: "Klaus Weber",
+                  initials: "KW",
+                  name: "Klaus W.",
                   role: "Engineer",
                   country: "Germany",
                   flag: "🇩🇪",
-                  img: "https://randomuser.me/api/portraits/men/32.jpg"
+                  gradient: "from-blue-500 to-indigo-500"
                 },
                 {
                   stars: 5,
                   text: "Bellissimo! The design is stunning and it really helps me appreciate every single week of my life.",
-                  name: "Giulia Romano",
+                  initials: "GR",
+                  name: "Giulia R.",
                   role: "Artist",
                   country: "Italy",
                   flag: "🇮🇹",
-                  img: "https://randomuser.me/api/portraits/women/68.jpg"
+                  gradient: "from-emerald-500 to-teal-500"
                 },
                 {
                   stars: 5,
                   text: "Life changing. I use it every Sunday to plan my week. It gives me a sense of urgency and purpose.",
-                  name: "Rafael Silva",
+                  initials: "RS",
+                  name: "Rafael S.",
                   role: "Entrepreneur",
                   country: "Brazil",
                   flag: "🇧🇷",
-                  img: "https://randomuser.me/api/portraits/men/45.jpg"
+                  gradient: "from-amber-500 to-orange-500"
                 }
               ].map((testimonial, i) => (
                 <motion.div
@@ -417,7 +483,9 @@ const HomePage = ({ darkMode, onLogin }) => {
                     "{testimonial.text}"
                   </p>
                   <div className="flex items-center gap-3 mt-auto">
-                    <img src={testimonial.img} alt={testimonial.name} className="w-10 h-10 rounded-full" />
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white text-sm font-bold`}>
+                      {testimonial.initials}
+                    </div>
                     <div>
                       <div className={`font-bold text-sm flex items-center gap-2 ${darkMode ? "text-white" : "text-slate-900"}`}>
                         {testimonial.name} <span className="text-base" role="img" aria-label={testimonial.country}>{testimonial.flag}</span>
@@ -433,7 +501,7 @@ const HomePage = ({ darkMode, onLogin }) => {
       </section>
 
       {/* Shared Footer */}
-      <Footer darkMode={darkMode} onNavigate={(page) => {
+      <Footer darkMode={darkMode} isAuthenticated={false} onNavigate={(page) => {
         if (page === 'login') handleLoginClick();
         if (page === 'signup') handleSignUpClick();
       }} />

@@ -9,7 +9,8 @@
  * - Error classification and user-friendly messages
  */
 
-import { database, auth, getUserFriendlyError, classifyError } from '../lib/supabase';
+import { database, getUserFriendlyError, classifyError } from '../lib/supabase';
+import { retryWithBackoff } from '../utils/retry';
 
 class DataService {
   constructor() {
@@ -88,10 +89,10 @@ class DataService {
     try {
       // Execute all queries in parallel with retry logic
       const results = await Promise.allSettled([
-        this.retryWithBackoff(() => database.getUserProfile(userId)),
-        this.retryWithBackoff(() => database.getMilestones(userId)),
-        this.retryWithBackoff(() => database.getSelections(userId)),
-        this.retryWithBackoff(() => database.getUserSettings(userId))
+        retryWithBackoff(() => database.getUserProfile(userId)),
+        retryWithBackoff(() => database.getMilestones(userId)),
+        retryWithBackoff(() => database.getSelections(userId)),
+        retryWithBackoff(() => database.getUserSettings(userId))
       ]);
 
       const loadTime = performance.now() - startTime;
@@ -141,42 +142,6 @@ class DataService {
       console.error('[DataService] Fatal error loading user data:', error);
       throw error;
     }
-  }
-
-  /**
-   * Retry a function with exponential backoff
-   * @private
-   */
-  async retryWithBackoff(fn, maxRetries = 3) {
-    let lastError = null;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        lastError = error;
-
-        // Don't retry on auth errors or client errors
-        const errorType = classifyError(error);
-        if (errorType === 'AUTHENTICATION_ERROR' || errorType === 'PERMISSION_ERROR') {
-          throw error;
-        }
-
-        // Last attempt - throw error
-        if (attempt === maxRetries - 1) {
-          console.error(`[DataService] All ${maxRetries} attempts failed:`, error);
-          throw error;
-        }
-
-        // Calculate exponential backoff delay (1s, 2s, 4s, ...)
-        const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-        console.log(`[DataService] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
-
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-
-    throw lastError;
   }
 
   /**

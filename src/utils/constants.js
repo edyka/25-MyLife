@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 
 // Toggle this to switch between waitlist and full homepage
-export const WAITLIST_MODE = true;
+export const WAITLIST_MODE = false;
 
 // Modern predefined moods for the new MoodPalette
 export const modernMoods = {

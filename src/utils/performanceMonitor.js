@@ -40,7 +40,6 @@ class PerformanceMonitor {
     if (!window.performance || !window.performance.timing) return;
 
     const timing = window.performance.timing;
-    const navigation = window.performance.navigation;
 
     const pageLoadTime = timing.loadEventEnd - timing.navigationStart;
     const domContentLoaded = timing.domContentLoadedEventEnd - timing.navigationStart;
@@ -143,15 +142,15 @@ class PerformanceMonitor {
   /**
    * Report metric to analytics
    */
-  reportMetric(name, value, metadata = {}) {
+  async reportMetric(name, value, metadata = {}) {
     try {
-      const { trackEvent } = require('./analytics');
+      const { trackEvent } = await import('./analytics');
       trackEvent('performance_metric', {
         metric: name,
         value: Math.round(value),
         ...metadata,
       });
-    } catch (error) {
+    } catch {
       // Analytics not critical, continue silently
     }
   }
@@ -179,7 +178,7 @@ class PerformanceMonitor {
     this.observers.forEach(observer => {
       try {
         observer.disconnect();
-      } catch (_error) {
+      } catch {
         // Ignore cleanup errors
       }
     });

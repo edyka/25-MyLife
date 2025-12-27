@@ -4,7 +4,7 @@ import App from './App.jsx';
 import './index.css';
 import { initSentry } from './utils/sentry';
 import { initAnalytics } from './utils/analytics';
-import { hasAnalyticsConsent } from './utils/cookieConsent';
+import { hasAnalyticsConsent } from './utils/consentManager';
 
 // Initialize Sentry error monitoring (essential, no consent needed)
 initSentry();
@@ -16,7 +16,7 @@ if (hasAnalyticsConsent()) {
 }
 
 // Listen for consent changes to initialize analytics dynamically
-window.addEventListener('cookieConsentChanged', (event) => {
+window.addEventListener('privacyConsentChanged', (event) => {
   const { analyticsEnabled } = event.detail;
   if (analyticsEnabled) {
     initAnalytics();

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { auth, database } from '../lib/supabase';
 
 /**
  * Debounce utility for Supabase syncs
@@ -19,36 +20,39 @@ export const useUIStore = create(
     (set, get) => ({
       // Theme and appearance
       darkMode: false,
-      
+
       // Layout and navigation
       currentTab: 'home',
       currentPage: 'main',
       showWeeks: true,
-      
+
       // Device and responsive state
       isMobile: false,
-      
+
       // Modal and overlay state
       showMobileColorSelection: false,
       showLifeInsights: false,
       showSettingsModal: false,
       showGoalModal: false,
-      
+
       // Performance and animation preferences
       enableAnimations: true,
       enableVirtualization: true,
-      
+
       // Grid display preferences
       gridLayout: 'standard', // 'standard', 'compact', 'quarterly'
       // Past weeks visualization: 'hatch' | 'corner' | 'none'
       pastWeekStyle: 'hatch',
 
       // Theme preset for accent gradients: 'emerald' | 'ocean' | 'sunset' | 'purple'
-      themePreset: 'emerald',
+      themePreset: 'sunset',
       showCurrentWeekIndicator: true,
       showMilestoneIndicators: true,
       showAgeLabels: true,
-      
+
+      // Tooltip state
+      tooltip: { visible: false, content: null, label: null, color: null },
+
       // Actions for theme
       setDarkMode: (darkMode) => {
         set({ darkMode });
@@ -62,25 +66,26 @@ export const useUIStore = create(
         // Debounced sync to Supabase if user is logged in
         debouncedSync(() => get().syncSettingsToSupabase());
       },
-      
+
       // Actions for navigation
       setCurrentTab: (tab) => set({ currentTab: tab }),
       setCurrentPage: (page) => set({ currentPage: page }),
       setShowWeeks: (show) => set({ showWeeks: show }),
-      
+
       // Actions for device state
       setIsMobile: (isMobile) => set({ isMobile }),
-      
+
       // Actions for modals and overlays
       setShowMobileColorSelection: (show) => set({ showMobileColorSelection: show }),
       setShowLifeInsights: (show) => set({ showLifeInsights: show }),
       setShowSettingsModal: (show) => set({ showSettingsModal: show }),
       setShowGoalModal: (show) => set({ showGoalModal: show }),
-      
+      setTooltip: (tooltipData) => set({ tooltip: { ...get().tooltip, ...tooltipData } }),
+
       // Actions for preferences
       setEnableAnimations: (enable) => set({ enableAnimations: enable }),
       setEnableVirtualization: (enable) => set({ enableVirtualization: enable }),
-      
+
       // Actions for grid display
       setGridLayout: (layout) => set({ gridLayout: layout }),
       setShowCurrentWeekIndicator: (show) => set({ showCurrentWeekIndicator: show }),
@@ -92,7 +97,7 @@ export const useUIStore = create(
         // Debounced sync to Supabase if user is logged in
         debouncedSync(() => get().syncSettingsToSupabase());
       },
-      
+
       // Computed getters
       getThemeClasses: () => {
         const { darkMode } = get();
@@ -103,7 +108,7 @@ export const useUIStore = create(
           hover: darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
         };
       },
-      
+
       getLayoutClasses: () => {
         const { isMobile } = get();
         return {
@@ -126,32 +131,32 @@ export const useUIStore = create(
         if (themePreset === 'cyan') return 'from-sky-300 via-sky-400 to-blue-500';
         return 'from-emerald-50 via-teal-50 to-green-50';
       },
-      
+
       // Initialize device detection
       initializeDeviceDetection: () => {
         if (typeof window !== 'undefined') {
           const checkMobile = () => {
             get().setIsMobile(window.innerWidth < 768);
           };
-          
+
           checkMobile();
           window.addEventListener('resize', checkMobile);
-          
+
           return () => window.removeEventListener('resize', checkMobile);
         }
       },
-      
+
       // Auto-detect system theme preference
       initializeTheme: () => {
         if (typeof window !== 'undefined' && window.matchMedia) {
           const { darkMode } = get();
-          
+
           // If no preference is stored, use system preference
           if (darkMode === null || darkMode === undefined) {
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             set({ darkMode: systemPrefersDark });
           }
-          
+
           // Listen for system theme changes
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
           const handleChange = (e) => {
@@ -159,7 +164,7 @@ export const useUIStore = create(
             // This could be enhanced with a separate "auto" setting
             set({ darkMode: e.matches });
           };
-          
+
           if (mediaQuery.addListener) {
             mediaQuery.addListener(handleChange);
             return () => mediaQuery.removeListener(handleChange);
@@ -169,7 +174,7 @@ export const useUIStore = create(
           }
         }
       },
-      
+
       // Close all modals
       closeAllModals: () => {
         set({
@@ -183,9 +188,8 @@ export const useUIStore = create(
       // Sync settings to Supabase
       syncSettingsToSupabase: async () => {
         try {
-          const { auth, database } = await import('../lib/supabase');
           const { user } = await auth.getCurrentUser();
-          
+
           if (user) {
             const state = get();
             const settings = {
@@ -199,7 +203,7 @@ export const useUIStore = create(
               enableAnimations: state.enableAnimations,
               enableVirtualization: state.enableVirtualization
             };
-            
+
             await database.saveUserSettings(user.id, settings);
             console.log('[Viventiva] Settings synced to Supabase');
           }
@@ -211,15 +215,14 @@ export const useUIStore = create(
       // Load settings from Supabase
       loadSettingsFromSupabase: async () => {
         try {
-          const { auth, database } = await import('../lib/supabase');
           const { user } = await auth.getCurrentUser();
-          
+
           if (user) {
             const { data, error } = await database.getUserSettings(user.id);
-            
+
             if (data && data.settings_data && !error) {
               const settings = data.settings_data;
-              
+
               // Update store with settings from Supabase
               set({
                 darkMode: settings.darkMode ?? get().darkMode,
@@ -232,7 +235,7 @@ export const useUIStore = create(
                 enableAnimations: settings.enableAnimations ?? get().enableAnimations,
                 enableVirtualization: settings.enableVirtualization ?? get().enableVirtualization
               });
-              
+
               console.log('[Viventiva] Settings loaded from Supabase');
             }
           }

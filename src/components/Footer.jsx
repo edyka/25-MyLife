@@ -12,23 +12,38 @@ import {
   Info,
   FileText,
   Cookie,
+  Lock,
 } from "lucide-react";
 import { useUIStore } from "../stores/useUIStore";
+import { usePremiumStore } from "../stores/usePremiumStore";
 import { getTheme } from "../utils/themeConfig";
+import UpgradeModal from "./UpgradeModal";
 
-const Footer = ({ darkMode, onNavigate }) => {
+const Footer = ({ darkMode, onNavigate, isAuthenticated = true }) => {
   const themePreset = useUIStore((state) => state.themePreset);
   const setThemePreset = useUIStore((state) => state.setThemePreset);
   const theme = getTheme(themePreset);
   const currentYear = new Date().getFullYear();
   const [hoveredTheme, setHoveredTheme] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Feature gating for themes
+  const hasPremiumThemes = usePremiumStore((state) => state.hasFeature('premiumThemes'));
 
   const themes = [
-    { key: 'emerald', color: '#10b981', name: 'Emerald' },
-    { key: 'ocean', color: '#3b82f6', name: 'Ocean' },
-    { key: 'sunset', color: '#f97316', name: 'Sunset' },
-    { key: 'purple', color: '#a855f7', name: 'Purple' },
+    { key: 'emerald', color: '#10b981', name: 'Emerald', premium: false },
+    { key: 'ocean', color: '#3b82f6', name: 'Ocean', premium: true },
+    { key: 'sunset', color: '#f97316', name: 'Sunset', premium: true },
+    { key: 'purple', color: '#a855f7', name: 'Purple', premium: true },
   ];
+
+  const handleThemeClick = (themeItem) => {
+    if (themeItem.premium && !hasPremiumThemes) {
+      setShowUpgradeModal(true);
+    } else {
+      setThemePreset(themeItem.key);
+    }
+  };
 
   const socialLinks = [
     {
@@ -71,8 +86,8 @@ const Footer = ({ darkMode, onNavigate }) => {
     { icon: FileText, label: "Terms of Service", action: () => onNavigate('terms') },
     {
       icon: Cookie, label: "Cookie Settings", action: () => {
-        // Navigate to settings page and show cookie preferences
-        const event = new CustomEvent('showCookieSettings');
+        // Navigate to settings page and show privacy preferences
+        const event = new CustomEvent('showPrivacySettings');
         window.dispatchEvent(event);
         onNavigate('settings');
       }
@@ -82,8 +97,8 @@ const Footer = ({ darkMode, onNavigate }) => {
   return (
     <footer
       className={`border-t-2 transition-all duration-500 ${darkMode
-          ? "premium-card-dark border-slate-700/30"
-          : "premium-card border-slate-200/30"
+        ? "premium-card-dark border-slate-700/30"
+        : "premium-card border-slate-200/30"
         } backdrop-blur-lg`}
     >
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -159,8 +174,8 @@ const Footer = ({ darkMode, onNavigate }) => {
                     <Component
                       {...props}
                       className={`interactive-element flex items-center gap-4 text-body font-semibold transition-all duration-300 px-3 py-2 rounded-xl ${darkMode
-                          ? "text-slate-300 hover:text-slate-100 hover:bg-slate-800/40"
-                          : "text-slate-600 hover:text-slate-800 hover:bg-slate-100/60"
+                        ? "text-slate-300 hover:text-slate-100 hover:bg-slate-800/40"
+                        : "text-slate-600 hover:text-slate-800 hover:bg-slate-100/60"
                         } group`}
                       whileHover={{ x: 6 }}
                       transition={{ duration: 0.3 }}
@@ -190,8 +205,8 @@ const Footer = ({ darkMode, onNavigate }) => {
                     key={index}
                     href={social.href}
                     className={`interactive-element p-4 rounded-2xl transition-all duration-300 border-2 ${darkMode
-                        ? "bg-slate-800/50 hover:bg-slate-700/60 border-slate-700/50 hover:border-slate-600"
-                        : "bg-slate-50 hover:bg-slate-100 border-slate-200/50 hover:border-slate-300"
+                      ? "bg-slate-800/50 hover:bg-slate-700/60 border-slate-700/50 hover:border-slate-600"
+                      : "bg-slate-50 hover:bg-slate-100 border-slate-200/50 hover:border-slate-300"
                       } shadow-lg hover:shadow-xl group`}
                     whileHover={{ scale: 1.05, y: -4 }}
                     whileTap={{ scale: 0.95 }}
@@ -219,50 +234,67 @@ const Footer = ({ darkMode, onNavigate }) => {
               © {currentYear} Viventiva. All rights reserved.
             </div>
 
-            {/* Theme Selector with Dots */}
-            <div
-              className={`text-caption flex items-center gap-4 font-semibold px-4 py-2 rounded-2xl border ${darkMode
+            {/* Theme Selector with Dots - Only show for authenticated users */}
+            {isAuthenticated && (
+              <div
+                className={`text-caption flex items-center gap-4 font-semibold px-4 py-2 rounded-2xl border ${darkMode
                   ? "text-slate-400 bg-slate-800/40 border-slate-700/50"
                   : "text-slate-600 bg-slate-100/60 border-slate-200/50"
-                }`}
-            >
-              <span>Theme Colors</span>
-              <div className="flex items-center gap-2 relative">
-                {themes.map((themeItem) => (
-                  <button
-                    key={themeItem.key}
-                    onClick={() => setThemePreset(themeItem.key)}
-                    onMouseEnter={() => setHoveredTheme(themeItem.key)}
-                    onMouseLeave={() => setHoveredTheme(null)}
-                    className={`relative w-3 h-3 rounded-full transition-all duration-300 ${themePreset === themeItem.key
-                        ? 'ring-2 ring-offset-2 scale-125'
-                        : 'hover:scale-125'
-                      } ${darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'
-                      }`}
-                    style={{
-                      backgroundColor: themeItem.color,
-                      ringColor: themeItem.color
-                    }}
-                    aria-label={`Switch to ${themeItem.name} theme`}
-                  />
-                ))}
+                  }`}
+              >
+                <span>Theme Colors</span>
+                <div className="flex items-center gap-2 relative">
+                  {themes.map((themeItem) => {
+                    const isLocked = themeItem.premium && !hasPremiumThemes;
+                    return (
+                      <button
+                        key={themeItem.key}
+                        onClick={() => handleThemeClick(themeItem)}
+                        onMouseEnter={() => setHoveredTheme(themeItem.key)}
+                        onMouseLeave={() => setHoveredTheme(null)}
+                        className={`relative w-3 h-3 rounded-full transition-all duration-300 ${themePreset === themeItem.key
+                          ? 'ring-2 ring-offset-2 scale-125'
+                          : 'hover:scale-125'
+                          } ${darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'
+                          } ${isLocked ? 'opacity-60' : ''}`}
+                        style={{
+                          backgroundColor: themeItem.color,
+                          ringColor: themeItem.color
+                        }}
+                        aria-label={`Switch to ${themeItem.name} theme${isLocked ? ' (Pro)' : ''}`}
+                      >
+                        {isLocked && (
+                          <Lock className="w-2 h-2 text-white absolute -top-0.5 -right-0.5" />
+                        )}
+                      </button>
+                    );
+                  })}
 
-                {/* Tooltip */}
-                {hoveredTheme && (
-                  <div
-                    className={`absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${darkMode
+                  {/* Tooltip */}
+                  {hoveredTheme && (
+                    <div
+                      className={`absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${darkMode
                         ? 'bg-slate-700 text-white'
                         : 'bg-slate-900 text-white'
-                      } shadow-lg z-50`}
-                  >
-                    {themes.find(t => t.key === hoveredTheme)?.name}
-                  </div>
-                )}
+                        } shadow-lg z-50`}
+                    >
+                      {themes.find(t => t.key === hoveredTheme)?.name}
+                      {themes.find(t => t.key === hoveredTheme)?.premium && !hasPremiumThemes && ' 🔒'}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature="Premium Themes"
+      />
     </footer>
   );
 };

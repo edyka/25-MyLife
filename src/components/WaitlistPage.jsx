@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { ArrowRight, Check, Sparkles, Users, Crown } from "lucide-react";
+import { useEffect } from "react";
+import { database } from "../lib/supabase";
 
 const WaitlistPage = () => {
     const [email, setEmail] = useState("");
@@ -11,10 +13,9 @@ const WaitlistPage = () => {
     const [waitlistCount, setWaitlistCount] = useState(247); // Default, will be updated
 
     // Load waitlist count on mount
-    useState(() => {
+    useEffect(() => {
         const loadCount = async () => {
             try {
-                const { database } = await import('../lib/supabase');
                 const count = await database.getWaitlistCount();
                 if (count) setWaitlistCount(count);
             } catch (error) {
@@ -30,7 +31,6 @@ const WaitlistPage = () => {
         setErrorMessage("");
 
         try {
-            const { database } = await import('../lib/supabase');
             const { error } = await database.saveWaitlistSignup(email, name, interest);
 
             if (error) {
@@ -191,7 +191,7 @@ const WaitlistPage = () => {
                                                 <option value="productivity">Productivity & Time Management</option>
                                                 <option value="mindfulness">Mindfulness & Awareness</option>
                                                 <option value="journaling">Journaling & Reflection</option>
-                                                <option value="other">Other</option>
+
                                             </select>
                                         </div>
 

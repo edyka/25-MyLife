@@ -17,7 +17,9 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
     const [birthYear, setBirthYear] = useState("");
     const [lifeExpectancy, setLifeExpectancy] = useState("80");
     const [loading, setLoading] = useState(false);
+    const [showDayPicker, setShowDayPicker] = useState(false);
     const [calculatedStats, setCalculatedStats] = useState(null);
+    const [birthDateError, setBirthDateError] = useState("");
 
     const totalSteps = 4;
 
@@ -43,6 +45,55 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
         };
     };
 
+    // Validate birth date
+    const validateBirthDate = () => {
+        const day = parseInt(birthDay);
+        const month = parseInt(birthMonth);
+        const year = parseInt(birthYear);
+        const currentYear = new Date().getFullYear();
+
+        // Check if values are numbers
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+            return "Please enter valid numbers for your birth date";
+        }
+
+        // Check year range (reasonable: 1900 to current year)
+        if (year < 1900 || year > currentYear) {
+            return `Year must be between 1900 and ${currentYear}`;
+        }
+
+        // Check month range
+        if (month < 1 || month > 12) {
+            return "Month must be between 1 and 12";
+        }
+
+        // Check days in month (accounting for leap years)
+        const daysInMonth = new Date(year, month, 0).getDate();
+        if (day < 1 || day > daysInMonth) {
+            return `Day must be between 1 and ${daysInMonth} for ${monthNames[month - 1]}`;
+        }
+
+        // Check if date is in the future
+        const birthDate = new Date(year, month - 1, day);
+        const today = new Date();
+        if (birthDate > today) {
+            return "Birth date cannot be in the future";
+        }
+
+        // Check minimum age (at least 5 years old)
+        const ageInYears = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        if (ageInYears < 5) {
+            return "You must be at least 5 years old to use this app";
+        }
+
+        // Check maximum age (reasonable: 120 years)
+        if (ageInYears > 120) {
+            return "Please enter a valid birth year";
+        }
+
+        return ""; // No error
+    };
+
     const handleFinish = async () => {
         try {
             setLoading(true);
@@ -66,7 +117,7 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
             }
 
             // Save to Supabase (remote database)
-            await database.saveUserProfile(user.id, {
+            const { error: saveProfileError } = await database.saveUserProfile(user.id, {
                 name: name || 'User',
                 birthDay: parseInt(birthDay),
                 birthMonth: parseInt(birthMonth),
@@ -74,12 +125,18 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
                 lifeExpectancy: parseInt(lifeExpectancy)
             });
 
+            // IMPORTANT: don't let onboarding "complete" if the profile didn't actually persist
+            if (saveProfileError) {
+                throw saveProfileError;
+            }
+
             // Migrate anonymous painted weeks to Supabase
             const anonymousWeeks = localStorage.getItem('viventiva_anonymous_weeks');
             if (anonymousWeeks) {
                 try {
                     const parsed = JSON.parse(anonymousWeeks);
-                    await database.saveMilestones(user.id, parsed);
+                    const { error: saveMilestonesError } = await database.saveMilestones(user.id, parsed);
+                    if (saveMilestonesError) throw saveMilestonesError;
 
                     const { useMilestoneStore } = await import('../stores/useMilestoneStore');
                     const milestoneStore = useMilestoneStore.getState();
@@ -104,14 +161,14 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
                     hasName: !!name,
                     lifeExpectancy: parseInt(lifeExpectancy),
                 });
-            } catch (err) { }
+            } catch { /* Analytics not critical */ }
 
             setLoading(false);
 
             try {
                 const { toast } = await import('../utils/toast');
                 toast.success('Profile saved successfully!');
-            } catch (err) { }
+            } catch { /* Toast not critical */ }
 
             onComplete();
         } catch (err) {
@@ -135,12 +192,29 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
     // Determine if current step is valid
     const isStepValid = () => {
         if (step === 1) return name.trim().length > 0;
-        if (step === 2) return birthDay && birthMonth && birthYear && birthYear.length === 4;
-        if (step === 3) return lifeExpectancy > 0;
+        if (step === 2) {
+            // Basic check first
+            if (!birthDay || !birthMonth || !birthYear || birthYear.length !== 4) {
+                return false;
+            }
+            // Full validation
+            const error = validateBirthDate();
+            return error === "";
+        }
+        if (step === 3) return lifeExpectancy > 0 && lifeExpectancy <= 120;
         return true;
     };
 
     const handleNext = () => {
+        // Validate birth date on step 2 before proceeding
+        if (step === 2) {
+            const error = validateBirthDate();
+            if (error) {
+                setBirthDateError(error);
+                return;
+            }
+            setBirthDateError("");
+        }
         if (step === 3) {
             setCalculatedStats(calculateStats());
         }
@@ -228,23 +302,55 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
                                 </p>
                             </div>
                             <div className="grid grid-cols-3 gap-3">
-                                <input
-                                    type="number"
-                                    value={birthDay}
-                                    onChange={(e) => setBirthDay(e.target.value)}
-                                    className={`w-full px-4 py-4 text-lg text-center rounded-xl ${darkMode
-                                        ? "bg-slate-800 text-white border-slate-700"
-                                        : "bg-slate-50 text-slate-900 border-slate-200"
-                                        } border-2 focus:outline-none focus:border-blue-500`}
-                                    placeholder="DD"
-                                    autoFocus
-                                />
+                                {/* Day Picker */}
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDayPicker(!showDayPicker)}
+                                        className={`w-full px-4 py-4 text-lg text-center rounded-xl font-semibold cursor-pointer ${darkMode
+                                            ? "bg-slate-800 text-white border-slate-700 hover:border-slate-600"
+                                            : "bg-slate-50 text-slate-900 border-slate-200 hover:border-slate-300"
+                                        } border-2 ${showDayPicker ? "border-blue-500" : ""}`}
+                                    >
+                                        {birthDay || "Day"}
+                                    </button>
+                                    {showDayPicker && (
+                                        <div className={`absolute bottom-full left-0 mb-2 p-3 rounded-2xl shadow-2xl z-50 w-64 ${darkMode ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"}`}>
+                                            <div className="grid grid-cols-7 gap-1">
+                                                {Array.from({ length: 31 }, (_, i) => (
+                                                    <button
+                                                        key={i}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setBirthDay(String(i + 1));
+                                                            setShowDayPicker(false);
+                                                            setBirthDateError("");
+                                                        }}
+                                                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                                            birthDay === String(i + 1)
+                                                                ? "bg-blue-500 text-white"
+                                                                : darkMode 
+                                                                    ? "text-slate-300 hover:bg-slate-700" 
+                                                                    : "text-slate-700 hover:bg-slate-100"
+                                                        }`}
+                                                    >
+                                                        {i + 1}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Month Select */}
                                 <select
                                     value={birthMonth}
-                                    onChange={(e) => setBirthMonth(e.target.value)}
-                                    className={`w-full px-4 py-4 text-lg rounded-xl ${darkMode
-                                        ? "bg-slate-800 text-white border-slate-700"
-                                        : "bg-slate-50 text-slate-900 border-slate-200"
+                                    onChange={(e) => {
+                                        setBirthMonth(e.target.value);
+                                        setBirthDateError("");
+                                    }}
+                                    className={`w-full px-4 py-4 text-lg rounded-xl cursor-pointer ${darkMode
+                                        ? "bg-slate-800 text-white border-slate-700 hover:border-slate-600"
+                                        : "bg-slate-50 text-slate-900 border-slate-200 hover:border-slate-300"
                                         } border-2 focus:outline-none focus:border-blue-500`}
                                 >
                                     <option value="">Month</option>
@@ -252,18 +358,35 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
                                         <option key={m} value={i + 1}>{m}</option>
                                     ))}
                                 </select>
-                                <input
-                                    type="number"
+                                {/* Year Select */}
+                                <select
                                     value={birthYear}
-                                    onChange={(e) => setBirthYear(e.target.value)}
-                                    className={`w-full px-4 py-4 text-lg text-center rounded-xl ${darkMode
-                                        ? "bg-slate-800 text-white border-slate-700"
-                                        : "bg-slate-50 text-slate-900 border-slate-200"
+                                    onChange={(e) => {
+                                        setBirthYear(e.target.value);
+                                        setBirthDateError(""); // Clear error on change
+                                    }}
+                                    className={`w-full px-4 py-4 text-lg rounded-xl cursor-pointer ${darkMode
+                                        ? "bg-slate-800 text-white border-slate-700 hover:border-slate-600"
+                                        : "bg-slate-50 text-slate-900 border-slate-200 hover:border-slate-300"
                                         } border-2 focus:outline-none focus:border-blue-500`}
-                                    placeholder="YYYY"
-                                    onKeyDown={(e) => e.key === "Enter" && isStepValid() && handleNext()}
-                                />
+                                >
+                                    <option value="">Year</option>
+                                    {Array.from({ length: new Date().getFullYear() - 1919 }, (_, i) => {
+                                        const year = new Date().getFullYear() - i;
+                                        return <option key={year} value={year}>{year}</option>;
+                                    })}
+                                </select>
                             </div>
+                            {/* Error Message */}
+                            {birthDateError && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-red-500 text-sm text-center mt-2 font-medium"
+                                >
+                                    {birthDateError}
+                                </motion.p>
+                            )}
                         </motion.div>
                     )}
 
@@ -286,21 +409,55 @@ const OnboardingWizard = ({ darkMode, onComplete }) => {
                                     This sets the canvas size. You can change it anytime.
                                 </p>
                             </div>
-                            <div className="relative max-w-xs mx-auto">
-                                <input
-                                    type="number"
-                                    value={lifeExpectancy}
-                                    onChange={(e) => setLifeExpectancy(e.target.value)}
-                                    className={`w-full px-6 py-4 text-3xl font-bold text-center rounded-xl ${darkMode
-                                        ? "bg-slate-800 text-white border-slate-700"
-                                        : "bg-slate-50 text-slate-900 border-slate-200"
-                                        } border-2 focus:outline-none focus:border-blue-500`}
-                                    autoFocus
-                                    onKeyDown={(e) => e.key === "Enter" && isStepValid() && handleNext()}
-                                />
-                                <span className={`absolute right-8 top-1/2 -translate-y-1/2 text-lg font-medium ${darkMode ? "text-slate-500" : "text-slate-400"}`}>
-                                    years
-                                </span>
+                            <div className="max-w-sm mx-auto">
+                                {/* Age selector with buttons */}
+                                <div className={`flex items-center justify-center gap-4 p-4 rounded-2xl ${darkMode ? "bg-slate-800/50" : "bg-slate-100/50"}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLifeExpectancy(prev => Math.max(50, parseInt(prev) - 5))}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold transition-all hover:scale-110 ${darkMode 
+                                            ? "bg-slate-700 text-white hover:bg-slate-600" 
+                                            : "bg-white text-slate-700 hover:bg-slate-50 shadow-md"}`}
+                                    >
+                                        −
+                                    </button>
+                                    <div className="text-center min-w-[120px]">
+                                        <div className={`text-5xl font-black ${darkMode ? "text-white" : "text-slate-900"}`}>
+                                            {lifeExpectancy}
+                                        </div>
+                                        <div className={`text-sm font-medium mt-1 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                                            years
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLifeExpectancy(prev => Math.min(120, parseInt(prev) + 5))}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold transition-all hover:scale-110 ${darkMode 
+                                            ? "bg-slate-700 text-white hover:bg-slate-600" 
+                                            : "bg-white text-slate-700 hover:bg-slate-50 shadow-md"}`}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                {/* Quick select presets */}
+                                <div className="flex justify-center gap-2 mt-4">
+                                    {[70, 80, 90, 100].map((age) => (
+                                        <button
+                                            key={age}
+                                            type="button"
+                                            onClick={() => setLifeExpectancy(age.toString())}
+                                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                                parseInt(lifeExpectancy) === age
+                                                    ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg`
+                                                    : darkMode
+                                                        ? "bg-slate-700/50 text-slate-300 hover:bg-slate-700"
+                                                        : "bg-white text-slate-600 hover:bg-slate-50 shadow-sm"
+                                            }`}
+                                        >
+                                            {age}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </motion.div>
                     )}

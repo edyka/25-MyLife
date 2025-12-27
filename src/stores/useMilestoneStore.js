@@ -13,8 +13,9 @@ export const useMilestoneStore = create(
       milestones: {},
       customCategories: {},
       customMoods: {}, // Store customized mood configurations
+      deletedMoods: [], // Track deleted predefined moods
       goals: [],
-      
+
       // Actions for milestones
       setMilestones: (milestones) => {
         // Support both direct value and updater function
@@ -26,7 +27,7 @@ export const useMilestoneStore = create(
           set({ milestones });
         }
       },
-      
+
       updateMilestone: (weekNumber, milestone) => {
         const { milestones } = get();
         set({
@@ -36,16 +37,16 @@ export const useMilestoneStore = create(
           }
         });
       },
-      
+
       deleteMilestone: (weekNumber) => {
         const { milestones } = get();
         const newMilestones = { ...milestones };
         delete newMilestones[weekNumber];
         set({ milestones: newMilestones });
       },
-      
+
       clearMilestones: () => set({ milestones: {} }),
-      
+
       // Actions for custom categories
       setCustomCategories: (categories) => set({ customCategories: categories }),
 
@@ -61,7 +62,7 @@ export const useMilestoneStore = create(
           }
         });
       },
-      
+
       addCustomCategory: (key, category) => {
         const { customCategories } = get();
         set({
@@ -71,50 +72,65 @@ export const useMilestoneStore = create(
           }
         });
       },
-      
+
       removeCustomCategory: (key) => {
         const { customCategories } = get();
         const newCategories = { ...customCategories };
         delete newCategories[key];
         set({ customCategories: newCategories });
       },
-      
+
+      deleteMood: (key) => {
+        const { customCategories, deletedMoods } = get();
+        // If it's a custom category, remove it
+        if (customCategories[key]) {
+          const newCategories = { ...customCategories };
+          delete newCategories[key];
+          set({ customCategories: newCategories });
+        } else {
+          // If it's a predefined mood, add to deletedMoods
+          if (!deletedMoods.includes(key)) {
+            set({ deletedMoods: [...deletedMoods, key] });
+          }
+        }
+      },
+
       // Actions for goals
       setGoals: (goals) => set({ goals }),
-      
+
       addGoal: (goal) => {
         const { goals } = get();
         set({ goals: [...goals, goal] });
       },
-      
+
       updateGoal: (index, updatedGoal) => {
         const { goals } = get();
         const newGoals = [...goals];
         newGoals[index] = updatedGoal;
         set({ goals: newGoals });
       },
-      
+
       deleteGoal: (index) => {
         const { goals } = get();
         set({ goals: goals.filter((_, i) => i !== index) });
       },
-      
+
       // Computed getters
       getColorOptions: () => {
         const { customCategories } = get();
         return getColorOptions(customCategories);
       },
-      
+
       getAllCategories: () => {
         const { customCategories } = get();
         return getAllCategories(customCategories);
       },
-      
+
       getMilestoneByWeek: (weekNumber) => {
         const { milestones } = get();
         return milestones[weekNumber] || null;
       },
-      
+
       getMilestonesByCategory: (category) => {
         const { milestones } = get();
         return Object.entries(milestones)
@@ -124,7 +140,7 @@ export const useMilestoneStore = create(
             return acc;
           }, {});
       },
-      
+
       getMilestonesInRange: (startWeek, endWeek) => {
         const { milestones } = get();
         return Object.entries(milestones)
@@ -145,6 +161,7 @@ export const useMilestoneStore = create(
         milestones: state.milestones,
         customCategories: state.customCategories,
         customMoods: state.customMoods,
+        deletedMoods: state.deletedMoods,
         goals: state.goals
       })
     }

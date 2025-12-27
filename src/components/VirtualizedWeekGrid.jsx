@@ -3,6 +3,7 @@ import { FixedSizeList as List } from "react-window";
 import { lifeStages } from "../utils/constants";
 import WeekBox from "./WeekBox";
 import { useRenderPerformance } from "../utils/performanceMonitor";
+import { useUIStore } from "../stores/useUIStore";
 
 const VirtualizedWeekGrid = memo(
   ({
@@ -89,6 +90,7 @@ const VirtualizedWeekGrid = memo(
       showWeeks,
       rangeStart,
       isInRangeMode,
+      setTooltip: useUIStore.getState().setTooltip,
     }), [
       currentWeek, milestones, selectedWeek, selectedColor, selectedWeeks,
       handleWeekClick, handleWeekMouseDown, handleWeekMouseEnter,
@@ -103,14 +105,12 @@ const VirtualizedWeekGrid = memo(
       return (
         <div
           style={style}
-          className={`flex items-center w-full justify-start sm:justify-center ${
-            lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
-          }`}
+          className={`flex items-center w-full justify-start sm:justify-center ${lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
+            }`}
         >
           <div
-            className={`text-xs font-medium mr-1 sm:mr-2 flex-shrink-0 text-center ${
-              isMobile ? "w-5 text-[10px]" : "w-8"
-            } ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+            className={`text-xs font-medium mr-1 sm:mr-2 flex-shrink-0 text-center ${isMobile ? "w-5 text-[10px]" : "w-8"
+              } ${darkMode ? "text-gray-400" : "text-gray-600"}`}
             title={lifeStage ? lifeStage.label : `Age ${currentAge}`}
           >
             {yearIndex % 5 === 0 ? yearIndex : ""}
@@ -181,14 +181,12 @@ const VirtualizedWeekGrid = memo(
         {rowData.map(({ yearIndex, currentAge, lifeStage, rowItems }) => (
           <div
             key={yearIndex}
-            className={`flex items-center w-full justify-start sm:justify-center ${
-              lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
-            }`}
+            className={`flex items-center w-full justify-start sm:justify-center ${lifeStage ? `${darkMode ? lifeStage.darkColor : lifeStage.color}` : ''
+              }`}
           >
             <div
-              className={`text-xs font-medium mr-1 sm:mr-2 flex-shrink-0 text-center ${
-                isMobile ? "w-5 text-[10px]" : "w-8"
-              } ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+              className={`text-xs font-medium mr-1 sm:mr-2 flex-shrink-0 text-center ${isMobile ? "w-5 text-[10px]" : "w-8"
+                } ${darkMode ? "text-gray-400" : "text-gray-600"}`}
               title={lifeStage ? lifeStage.label : `Age ${currentAge}`}
             >
               {yearIndex % 5 === 0 ? yearIndex : ""}

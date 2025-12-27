@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { useUIStore } from '../stores/useUIStore';
 import { getTheme } from '../utils/themeConfig';

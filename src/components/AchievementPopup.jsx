@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Trophy, X } from "lucide-react";
 import { useEffect } from "react";
 import { useUIStore } from "../stores/useUIStore";
@@ -21,8 +21,8 @@ const AchievementPopup = ({ badge, onClose }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
             className={`fixed bottom-6 right-6 z-50 max-w-sm w-full p-4 rounded-2xl shadow-2xl border ${darkMode
-                    ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-slate-200"
+                ? "bg-slate-800 border-slate-700"
+                : "bg-white border-slate-200"
                 } flex items-start gap-4`}
         >
             <div className={`p-3 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg`}>

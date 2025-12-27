@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { Plus, Edit3, X, Save } from 'lucide-react';
+import { Plus, Edit3, X, Save, Lock } from 'lucide-react';
+import { usePremiumStore } from '../stores/usePremiumStore';
 
 const MilestonePanel = ({ 
   selectedWeek, 
@@ -14,6 +15,9 @@ const MilestonePanel = ({
   darkMode,
   allCategories
 }) => {
+  const hasMilestones = usePremiumStore((state) => state.hasFeature('milestones'));
+  const setShowUpgradeModal = usePremiumStore((state) => state.setShowUpgradeModal);
+
   const addMilestone = () => {
     if (selectedWeek !== null && newMilestone.title.trim()) {
       setMilestones(prev => ({
@@ -83,12 +87,14 @@ const MilestonePanel = ({
                     {milestones[selectedWeek].title}
                   </h4>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingWeek(selectedWeek)}
-                      className="text-blue-500 hover:text-blue-700"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
+                    {hasMilestones && (
+                      <button
+                        onClick={() => setEditingWeek(selectedWeek)}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => deleteMilestone(selectedWeek)}
                       className="text-red-500 hover:text-red-700"
@@ -116,7 +122,7 @@ const MilestonePanel = ({
                   </p>
                 )}
               </div>
-            ) : (
+            ) : hasMilestones ? (
               <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 <Plus className={`w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-300'}`} />
                 <p className="text-sm">No milestone set</p>
@@ -125,6 +131,17 @@ const MilestonePanel = ({
                   className="mt-2 text-blue-500 hover:text-blue-700 text-sm"
                 >
                   Add Milestone
+                </button>
+              </div>
+            ) : (
+              <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <Lock className={`w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-300'}`} />
+                <p className="text-sm mb-2">Milestones are a Pro feature</p>
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="mt-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-amber-600 hover:to-orange-600 transition-all"
+                >
+                  Upgrade to Pro
                 </button>
               </div>
             )}

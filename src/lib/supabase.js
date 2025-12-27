@@ -147,11 +147,14 @@ export const auth = {
   },
 
   // Sign up with Email
-  signUpWithEmail: async (email, password, firstName, initialData = null) => {
+  // NOTE: We don't save the profile here - it will be saved during onboarding
+  // when the session is fully established. This avoids RLS timing issues.
+  signUpWithEmail: async (email, password, firstName) => {
     const options = {
       emailRedirectTo: `${window.location.origin}/`
     };
 
+    // Store name in user metadata - can be retrieved later during onboarding
     if (firstName) {
       options.data = {
         first_name: firstName,
@@ -165,36 +168,26 @@ export const auth = {
       options
     });
 
-    // If successful and we have a user, create the profile immediately
-    if (data?.user && !error) {
-      // Create initial profile if we have name OR initial data
-      if (firstName || initialData) {
-        const profileData = {};
-
-        if (firstName) {
-          profileData.name = firstName;
-        }
-
-        // Add initial data if available (from LifeCalculator)
-        if (initialData && initialData.birthDate) {
-          // Parse YYYY-MM-DD string directly to avoid timezone issues
-          const [year, month, day] = initialData.birthDate.split('-').map(Number);
-          profileData.birthDay = day;
-          profileData.birthMonth = month;
-          profileData.birthYear = year;
-
-          if (initialData.lifeExpectancy) {
-            profileData.lifeExpectancy = initialData.lifeExpectancy;
-          }
-        }
-
-        if (Object.keys(profileData).length > 0) {
-          await database.saveUserProfile(data.user.id, profileData);
-        }
-      }
-    }
+    // Profile will be created during onboarding, not here
+    // This is because auth.uid() isn't available immediately after signup
 
     return { data, error };
+  },
+
+  // Resend signup confirmation email (useful when email confirmation is enabled)
+  resendSignupEmail: async (email) => {
+    try {
+      const { data, error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+      return { data, error };
+    } catch (err) {
+      return { data: null, error: err };
+    }
   },
 
   // Sign out
@@ -257,27 +250,41 @@ export const auth = {
 export const database = {
   // Save user profile data
   saveUserProfile: async (userId, profileData) => {
-    const updates = {
-      user_id: userId,
-      name: profileData.name,
-      birth_day: profileData.birthDay,
-      birth_month: profileData.birthMonth,
-      birth_year: profileData.birthYear,
-      life_expectancy: profileData.lifeExpectancy,
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const updates = {
+        user_id: userId,
+        name: profileData.name || null,
+        birth_day: profileData.birthDay || null,
+        birth_month: profileData.birthMonth || null,
+        birth_year: profileData.birthYear || null,
+        life_expectancy: profileData.lifeExpectancy || null,
+        updated_at: new Date().toISOString()
+      };
 
-    // Only include engagement_stats if provided
-    if (profileData.engagementStats) {
-      updates.engagement_stats = profileData.engagementStats;
+      // Only include engagement_stats if provided
+      if (profileData.engagementStats) {
+        updates.engagement_stats = profileData.engagementStats;
+      }
+
+      console.log('[Viventiva] Saving user profile:', { userId, profileData: updates });
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert(updates, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('[Viventiva] Error saving user profile:', error);
+        return { data: null, error };
+      }
+
+      console.log('[Viventiva] User profile saved successfully');
+      return { data, error: null };
+    } catch (err) {
+      console.error('[Viventiva] saveUserProfile exception:', err);
+      return { data: null, error: err };
     }
-
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .upsert(updates, {
-        onConflict: 'user_id'
-      });
-    return { data, error };
   },
 
   // Save engagement stats independently

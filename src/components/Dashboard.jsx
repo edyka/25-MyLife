@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { Cake, Edit2, Check, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getTheme } from "../utils/themeConfig";
 import { useUIStore } from "../stores/useUIStore";
-import { useLifeStore } from "../stores/useLifeStore";
 import { usePremiumStore } from "../stores/usePremiumStore";
+import { useProfileEditor } from "../hooks/useProfileEditor";
 import StatsSection from "./StatsSection";
 import PremiumBadge from "./PremiumBadge";
 import UpgradeModal from "./UpgradeModal";
@@ -15,74 +15,27 @@ const Dashboard = ({ stats, darkMode }) => {
   const hasAdvancedStats = usePremiumStore((state) => state.hasFeature('advancedStats'));
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Get birth data from store
-  const birthDay = useLifeStore(state => state.birthDay);
-  const birthMonth = useLifeStore(state => state.birthMonth);
-  const birthYear = useLifeStore(state => state.birthYear);
-  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy);
-  const userName = useLifeStore(state => state.userName);
-  const setBirthData = useLifeStore(state => state.setBirthData);
-  const setLifeExpectancy = useLifeStore(state => state.setLifeExpectancy);
-
-  // Local state for editing
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(userName || '');
-  const [editDay, setEditDay] = useState(birthDay || 1);
-  const [editMonth, setEditMonth] = useState(birthMonth || 1);
-  const [editYear, setEditYear] = useState(birthYear || 2000);
-  const [editExpectancy, setEditExpectancy] = useState(lifeExpectancy || 80);
-
-  // Sync editName with userName when it loads
-  useEffect(() => {
-    setEditName(userName || '');
-  }, [userName]);
-
-  const handleSave = async () => {
-    const day = editDay || 1;
-    const month = editMonth || 1;
-    const year = editYear || 2000;
-    const expectancy = editExpectancy || 80;
-    const name = editName || '';
-
-    // Use store directly to ensure methods are available
-    const store = useLifeStore.getState();
-
-    if (store.setBirthData && store.setLifeExpectancy && store.setUserName) {
-      store.setBirthData(day, month, year);
-      store.setLifeExpectancy(expectancy);
-      store.setUserName(name);
-      setIsEditing(false);
-
-      // Sync to Supabase if authenticated
-      try {
-        const { auth, database } = await import('../lib/supabase');
-        const { user } = await auth.getCurrentUser();
-        if (user) {
-          await database.saveUserProfile(user.id, {
-            name: name,
-            birthDay: day,
-            birthMonth: month,
-            birthYear: year,
-            lifeExpectancy: expectancy
-          });
-          console.log('Profile saved to Supabase');
-        }
-      } catch (error) {
-        console.error('Error syncing profile to Supabase:', error);
-      }
-    } else {
-      console.error('Store methods not available:', store);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditName(userName);
-    setEditDay(birthDay);
-    setEditMonth(birthMonth);
-    setEditYear(birthYear);
-    setEditExpectancy(lifeExpectancy);
-    setIsEditing(false);
-  };
+  const {
+    isEditing,
+    setIsEditing,
+    editName,
+    setEditName,
+    editDay,
+    setEditDay,
+    editMonth,
+    setEditMonth,
+    editYear,
+    setEditYear,
+    editExpectancy,
+    setEditExpectancy,
+    saveProfile,
+    cancelEdit,
+    userName,
+    birthDay,
+    birthMonth,
+    birthYear,
+    lifeExpectancy
+  } = useProfileEditor();
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -90,39 +43,39 @@ const Dashboard = ({ stats, darkMode }) => {
   ];
 
   return (
-    <div className="space-y-12 max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Welcome Header */}
+    <div className="space-y-6 sm:space-y-12 max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8">
+      {/* Welcome Header - Compact on mobile */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-16"
+        className="text-center mb-6 sm:mb-16"
       >
-        <h1 className={`text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
-          Welcome to Your Life{userName ? `, ${userName}` : ''}
+        <h1 className={`text-2xl sm:text-4xl md:text-5xl font-black mb-2 sm:mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
+          Welcome{userName ? `, ${userName}` : ' to Your Life'}
         </h1>
-        <p className={`text-lg ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-          Track your journey, celebrate your moments, live vividly
+        <p className={`text-sm sm:text-lg ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+          Track your journey, celebrate your moments
         </p>
       </motion.div>
 
-      {/* Birth Information Card */}
+      {/* Birth Information Card - Hidden on mobile, simplified */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className={`rounded-2xl p-6 md:p-8 ${darkMode ? "premium-card-dark" : "premium-card"
+        className={`hidden sm:block rounded-2xl p-4 sm:p-6 md:p-8 ${darkMode ? "premium-card-dark" : "premium-card"
           }`}
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-xl bg-gradient-to-br ${theme.primary} shadow-lg`}>
-              <Cake className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br ${theme.primary} shadow-lg`}>
+              <Cake className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <h2 className={`text-2xl font-bold ${darkMode ? "text-white" : "text-slate-900"}`}>
+              <h2 className={`text-lg sm:text-2xl font-bold ${darkMode ? "text-white" : "text-slate-900"}`}>
                 Life Information
               </h2>
-              <p className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+              <p className={`text-xs sm:text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
                 Your life's starting point
               </p>
             </div>
@@ -142,14 +95,14 @@ const Dashboard = ({ stats, darkMode }) => {
           ) : (
             <div className="flex gap-2">
               <button
-                onClick={handleSave}
+                onClick={saveProfile}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white transition-all"
               >
                 <Check className="w-4 h-4" />
                 Save
               </button>
               <button
-                onClick={handleCancel}
+                onClick={cancelEdit}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${darkMode
                   ? "bg-slate-700 hover:bg-slate-600 text-white"
                   : "bg-slate-200 hover:bg-slate-300 text-slate-700"
@@ -322,33 +275,33 @@ const Dashboard = ({ stats, darkMode }) => {
         )}
       </motion.div>
 
-      {/* Stats Section */}
+      {/* Stats Section - Compact on mobile */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="relative mt-16"
+        className="relative mt-8 sm:mt-16"
       >
         <StatsSection stats={stats} darkMode={darkMode} />
 
-        {/* Premium Overlay for Free Users */}
+        {/* Premium Overlay for Free Users - Compact on mobile */}
         {!hasAdvancedStats && (
           <div className="absolute inset-0 backdrop-blur-sm bg-black/20 rounded-2xl flex items-center justify-center">
-            <div className={`text-center p-8 rounded-2xl ${darkMode ? "bg-slate-900/90" : "bg-white/90"} shadow-2xl max-w-md`}>
-              <div className="mb-4">
-                <PremiumBadge size="lg" onClick={() => setShowUpgradeModal(true)} />
+            <div className={`text-center p-4 sm:p-8 rounded-xl sm:rounded-2xl ${darkMode ? "bg-slate-900/90" : "bg-white/90"} shadow-2xl max-w-sm sm:max-w-md mx-4`}>
+              <div className="mb-2 sm:mb-4">
+                <PremiumBadge size="md" onClick={() => setShowUpgradeModal(true)} />
               </div>
-              <h3 className={`text-2xl font-bold mb-2 ${darkMode ? "text-white" : "text-slate-900"}`}>
+              <h3 className={`text-lg sm:text-2xl font-bold mb-1 sm:mb-2 ${darkMode ? "text-white" : "text-slate-900"}`}>
                 Advanced Analytics
               </h3>
-              <p className={`text-sm mb-6 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+              <p className={`text-xs sm:text-sm mb-3 sm:mb-6 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
                 Unlock detailed insights, charts, and trend analysis to understand your life's patterns.
               </p>
               <motion.button
                 onClick={() => setShowUpgradeModal(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`px-6 py-3 rounded-xl font-bold bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl transition-all`}
+                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl transition-all`}
               >
                 Upgrade to Premium
               </motion.button>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus,
   Palette,
@@ -16,16 +17,33 @@ import {
   Plane,
   Music,
   Camera,
+  Lock,
 } from "lucide-react";
+import { usePremiumStore } from "../stores/usePremiumStore";
+import UpgradeModal from "./UpgradeModal";
 
-const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
+const CustomMoodCreator = ({ darkMode, onAddCustomMood, customMoodsCount = 0 }) => {
   const [showCreator, setShowCreator] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [newMood, setNewMood] = useState({
     name: "",
     label: "",
     color: "bg-purple-400",
     icon: "Heart",
   });
+
+  // Feature gating
+  const customMoodLimit = usePremiumStore((state) => state.getFeatureLimit('customMoodLimit'));
+  const hasUnlimitedMoods = customMoodLimit === Infinity;
+  const isAtLimit = !hasUnlimitedMoods && customMoodsCount >= customMoodLimit;
+
+  const handleOpenCreator = () => {
+    if (isAtLimit) {
+      setShowUpgradeModal(true);
+    } else {
+      setShowCreator(true);
+    }
+  };
 
   // Preset custom mood suggestions
   const presetMoods = [
@@ -78,9 +96,15 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
 
   const handleSave = () => {
     if (newMood.name && newMood.label) {
+      // Find the selected color object to get both hex and class
+      const colorObj = availableColors.find(c => c.value === newMood.color) || availableColors[0];
+
       const customMood = {
         ...newMood,
+        color: colorObj.value, // For WeekBox (Tailwind class)
+        hex: colorObj.preview, // For Palette (Hex code)
         icon: availableIcons[newMood.icon].component,
+        iconName: newMood.icon // Save icon name for persistence
       };
       onAddCustomMood(newMood.name, customMood);
       setNewMood({
@@ -95,6 +119,7 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
 
   const handlePresetClick = (preset) => {
     const name = preset.label.toLowerCase().replace(/\s+/g, "");
+
     setNewMood({
       name,
       label: preset.label,
@@ -107,210 +132,247 @@ const CustomMoodCreator = ({ darkMode, onAddCustomMood }) => {
 
   return (
     <div>
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature="Unlimited Custom Moods"
+      />
+
       {/* Add Custom Color Button */}
       <button
-        onClick={() => setShowCreator(true)}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
-          darkMode
-            ? "border-gray-500 bg-gray-700 hover:border-gray-400 hover:bg-gray-600 text-gray-300"
-            : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100 text-gray-600"
-        }`}
+        onClick={handleOpenCreator}
+        className={`group relative p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300 overflow-visible cursor-pointer hover:scale-105 hover:shadow-xl flex flex-col items-center gap-1 sm:gap-2 ${isAtLimit
+          ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-400/50"
+          : darkMode
+            ? "bg-slate-800 border border-slate-700 border-dashed hover:border-slate-500"
+            : "bg-slate-50 border border-slate-200 border-dashed hover:border-slate-400"
+          }`}
+        style={{ height: '100%' }}
       >
-        <Plus className="w-4 h-4" />
-        <span className="text-sm font-medium">Add Custom Color</span>
+        <div
+          className={`w-7 h-7 sm:w-10 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center transition-all duration-300 shadow-md ${isAtLimit
+            ? "bg-gradient-to-br from-amber-500 to-orange-500"
+            : darkMode ? "bg-slate-700" : "bg-white"
+            }`}
+        >
+          {isAtLimit
+            ? <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            : <Plus className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? "text-slate-400" : "text-slate-600"}`} />
+          }
+        </div>
+        <div className="text-center">
+          <p className={`text-[10px] sm:text-sm font-bold ${isAtLimit ? "text-amber-500" : darkMode ? "text-white" : "text-slate-900"}`}>
+            {isAtLimit ? "Upgrade" : "New"}
+          </p>
+          {!isAtLimit && (
+            <p className={`text-[8px] sm:text-xs mt-0 sm:mt-0.5 font-medium hidden sm:block ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+              Custom
+            </p>
+          )}
+          {!hasUnlimitedMoods && (
+            <p className={`text-[8px] sm:text-[9px] ${darkMode ? "text-slate-500" : "text-slate-400"}`}>
+              {customMoodsCount}/{customMoodLimit}
+            </p>
+          )}
+        </div>
       </button>
 
-      {/* Custom Mood Creator - Positioned below grid */}
-      {showCreator && (
+      {/* Custom Mood Creator - Modal via Portal */}
+      {showCreator && createPortal(
         <div
-          className={`mt-4 rounded-2xl shadow-2xl p-6 w-full border-2 ${
-            darkMode
+          className="fixed inset-0 flex items-center justify-center p-4 z-[99999]"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowCreator(false);
+          }}
+        >
+          <div
+            className={`relative w-full max-w-lg rounded-2xl shadow-2xl p-6 border-2 ${darkMode
               ? "bg-gray-800 border-gray-700"
               : "bg-white border-gray-200"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <Palette
-                className={`w-5 h-5 ${darkMode ? "text-purple-400" : "text-purple-600"}`}
-              />
-              <h3
-                className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}
-              >
-                Create Custom Mood
-              </h3>
-            </div>
-            <button
-              onClick={() => setShowCreator(false)}
-              className={`p-1 rounded ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-            >
-              <X
-                className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-              />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {/* Preset Suggestions */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Quick Suggestions
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {presetMoods.map((preset) => {
-                  const PresetIcon = availableIcons[preset.icon].component;
-                  return (
-                    <button
-                      key={preset.label}
-                      onClick={() => handlePresetClick(preset)}
-                      className={`${preset.color} p-3 rounded-lg transition-all duration-200 hover:scale-105 group relative`}
-                      title={preset.label}
-                    >
-                      <PresetIcon className="w-5 h-5 text-white mx-auto mb-1" />
-                      <span className="text-[10px] font-semibold text-white leading-none">
-                        {preset.label}
-                      </span>
-                    </button>
-                  );
-                })}
+              }`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Palette
+                  className={`w-5 h-5 ${darkMode ? "text-purple-400" : "text-purple-600"}`}
+                />
+                <h3
+                  className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-800"}`}
+                >
+                  Create Custom Mood
+                </h3>
               </div>
-              <p
-                className={`text-xs mt-2 ${darkMode ? "text-gray-500" : "text-gray-500"}`}
+              <button
+                onClick={() => setShowCreator(false)}
+                className={`p-1 rounded ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
               >
-                Click a suggestion or create your own below
-              </p>
+                <X
+                  className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+                />
+              </button>
             </div>
 
-            {/* Label Field */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Label
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Peaceful, Inspired, Grateful"
-                value={newMood.label}
-                onChange={(e) => {
-                  const label = e.target.value;
-                  const name = label.toLowerCase().replace(/\s+/g, "");
-                  setNewMood({ ...newMood, label, name });
-                }}
-                className={`w-full p-3 rounded-lg border ${
-                  darkMode
+            <div className="space-y-4">
+              {/* Preset Suggestions */}
+              <div>
+                <label
+                  className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Quick Suggestions
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {presetMoods.map((preset) => {
+                    const PresetIcon = availableIcons[preset.icon].component;
+                    return (
+                      <button
+                        key={preset.label}
+                        onClick={() => handlePresetClick(preset)}
+                        className={`${preset.color} p-3 rounded-lg transition-all duration-200 hover:scale-105 group relative`}
+                        title={preset.label}
+                      >
+                        <PresetIcon className="w-5 h-5 text-white mx-auto mb-1" />
+                        <span className="text-[10px] font-semibold text-white leading-none">
+                          {preset.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p
+                  className={`text-xs mt-2 ${darkMode ? "text-gray-500" : "text-gray-500"}`}
+                >
+                  Click a suggestion or create your own below
+                </p>
+              </div>
+
+              {/* Label Field */}
+              <div>
+                <label
+                  className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Label
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Peaceful, Inspired, Grateful"
+                  value={newMood.label}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    const name = label.toLowerCase().replace(/\s+/g, "");
+                    setNewMood({ ...newMood, label, name });
+                  }}
+                  className={`w-full p-3 rounded-lg border ${darkMode
                     ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 placeholder-gray-500"
-                }`}
-              />
-            </div>
+                    }`}
+                />
+              </div>
 
-            {/* Color Selection */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Choose Color
-              </label>
-              <div className="grid grid-cols-8 gap-2">
-                {availableColors.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() =>
-                      setNewMood({ ...newMood, color: color.value })
-                    }
-                    className={`w-8 h-8 rounded-lg border-2 transition-all ${
-                      newMood.color === color.value
+              {/* Color Selection */}
+              <div>
+                <label
+                  className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Choose Color
+                </label>
+                <div className="grid grid-cols-8 gap-2">
+                  {availableColors.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() =>
+                        setNewMood({ ...newMood, color: color.value })
+                      }
+                      className={`w-8 h-8 rounded-lg border-2 transition-all ${newMood.color === color.value
                         ? "border-gray-800 scale-110 shadow-lg"
                         : "border-gray-300 hover:scale-105"
-                    }`}
-                    style={{ backgroundColor: color.preview }}
-                    title={color.name}
-                  />
-                ))}
+                        }`}
+                      style={{ backgroundColor: color.preview }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Icon Selection */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Choose Icon
-              </label>
-              <div className="grid grid-cols-7 gap-2">
-                {Object.entries(availableIcons).map(([key, iconData]) => {
-                  const IconComp = iconData.component;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setNewMood({ ...newMood, icon: key })}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        newMood.icon === key
+              {/* Icon Selection */}
+              <div>
+                <label
+                  className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Choose Icon
+                </label>
+                <div className="grid grid-cols-7 gap-2">
+                  {Object.entries(availableIcons).map(([key, iconData]) => {
+                    const IconComp = iconData.component;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setNewMood({ ...newMood, icon: key })}
+                        className={`p-3 rounded-lg border-2 transition-all ${newMood.icon === key
                           ? darkMode
                             ? "border-blue-400 bg-blue-900/30"
                             : "border-blue-500 bg-blue-50"
                           : darkMode
                             ? "border-gray-600 hover:border-gray-500"
                             : "border-gray-300 hover:border-gray-400"
-                      }`}
-                      title={iconData.name}
-                    >
-                      <IconComp
-                        className={`w-4 h-4 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
-                      />
-                    </button>
-                  );
-                })}
+                          }`}
+                        title={iconData.name}
+                      >
+                        <IconComp
+                          className={`w-4 h-4 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div>
+                <label
+                  className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Preview
+                </label>
+                <div
+                  className={`flex items-center gap-2 p-3 rounded-lg border-2 ${newMood.color} border-gray-300`}
+                >
+                  <SelectedIcon className="w-4 h-4 text-white" />
+                  <span className="text-sm font-medium text-white">
+                    {newMood.label || "Your Custom Color"}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Preview */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}
-              >
-                Preview
-              </label>
-              <div
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 ${newMood.color} border-gray-300`}
-              >
-                <SelectedIcon className="w-4 h-4 text-white" />
-                <span className="text-sm font-medium text-white">
-                  {newMood.label || "Your Custom Color"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={handleSave}
-              disabled={!newMood.label}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${
-                !newMood.label
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSave}
+                disabled={!newMood.label}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${!newMood.label
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-green-500 hover:bg-green-600 text-white"
-              }`}
-            >
-              <Save className="w-4 h-4" />
-              Create Color
-            </button>
-            <button
-              onClick={() => setShowCreator(false)}
-              className={`px-4 py-3 rounded-lg font-medium transition-colors ${
-                darkMode
+                  }`}
+              >
+                <Save className="w-4 h-4" />
+                Create Color
+              </button>
+              <button
+                onClick={() => setShowCreator(false)}
+                className={`px-4 py-3 rounded-lg font-medium transition-colors ${darkMode
                   ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
                   : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-              }`}
-            >
-              Cancel
-            </button>
+                  }`}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

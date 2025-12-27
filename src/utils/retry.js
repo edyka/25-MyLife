@@ -54,7 +54,7 @@ export const retryWithBackoff = async (fn, options = {}) => {
 
       console.warn(
         `[Retry] Attempt ${attempt + 1}/${maxRetries + 1} failed, retrying in ${Math.round(backoffDelay)}ms:`,
-        error.message || error
+        _error.message || _error
       );
 
       await new Promise((resolve) => setTimeout(resolve, backoffDelay));
@@ -121,7 +121,7 @@ class SyncQueue {
         // Success - remove from queue
         console.log(`[SyncQueue] Successfully synced ${operation.type}`);
         this.queue.shift();
-      } catch (error) {
+      } catch {
         operation.retryCount++;
 
         // If max retries exceeded, remove from queue

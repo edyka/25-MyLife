@@ -10,6 +10,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
   const themePreset = useUIStore((state) => state.themePreset);
   const theme = getTheme(themePreset);
   const darkMode = useUIStore((state) => state.darkMode);
+  const setCurrentPage = useUIStore((state) => state.setCurrentPage);
 
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
@@ -20,6 +21,9 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
   const [loading, setLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
   const [error, setError] = useState("");
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   // Update isSignUp when initialMode changes
   useEffect(() => {
@@ -27,11 +31,14 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       setIsSignUp(initialMode === 'signup');
       setShowEmailForm(false);
       setError("");
+      setSignupSuccess(false);
       setFirstName(initialData?.name || "");
       setEmail("");
       setPassword("");
       setShowPassword(false);
       setLoadingProvider(null);
+      setResendLoading(false);
+      setResendSent(false);
     }
   }, [isOpen, initialMode, initialData]);
 
@@ -107,9 +114,10 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       setLoading(true);
       setError("");
 
-      const { checkRateLimit, resetRateLimit } = await import('../utils/rateLimiter');
+      const { checkRateLimit } = await import('../utils/rateLimiter');
       const action = isSignUp ? 'signup' : 'login';
-      const identifier = email.toLowerCase();
+      const cleanEmail = email.trim();
+      const identifier = cleanEmail.toLowerCase();
 
       const rateLimitCheck = checkRateLimit(action, identifier);
 
@@ -125,43 +133,75 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       }
 
       let result;
+      const cleanPassword = password.trim();
       if (isSignUp) {
-        result = await auth.signUpWithEmail(email, password, firstName, initialData);
+        // Pass first name to metadata so the Supabase trigger can pick it up
+        result = await auth.signUpWithEmail(cleanEmail, cleanPassword, firstName);
       } else {
-        result = await auth.signInWithEmail(email, password);
+        result = await auth.signInWithEmail(cleanEmail, cleanPassword);
       }
 
       if (!mountedRef.current) return;
 
       if (result.error) {
-        setError(result.error.message);
+        try {
+          const { getUserFriendlyError } = await import('../utils/errorMessages');
+          setError(getUserFriendlyError(result.error));
+        } catch {
+          setError(result.error.message);
+        }
         setLoading(false);
       } else {
-        console.log('[Viventiva LoginModal] Email login successful, waiting for session...');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // For SIGNUP: user needs to confirm email before session is established
+        if (isSignUp) {
+          console.log('[Viventiva LoginModal] Signup successful - user may need to confirm email');
 
-        if (!mountedRef.current) return;
+          // Check if email confirmation is required (no session yet)
+          const { user } = await auth.getCurrentUser();
 
-        const { auth } = await import('../lib/supabase');
-        const { user, error: userError } = await auth.getCurrentUser();
-
-        if (!mountedRef.current) return;
-
-        if (user && !userError) {
-          console.log('[Viventiva LoginModal] User confirmed, calling onLogin');
-
-          const { resetRateLimit } = await import('../utils/rateLimiter');
-          resetRateLimit(action, identifier);
-
-          const { trackUserAction } = await import('../utils/analytics');
-          trackUserAction(isSignUp ? 'user_signup' : 'user_login', {
-            method: 'email',
-          });
-          onLogin();
+          if (user) {
+            // Session established immediately (email confirmation disabled in Supabase)
+            console.log('[Viventiva LoginModal] Session established, proceeding...');
+            const { resetRateLimit } = await import('../utils/rateLimiter');
+            resetRateLimit(action, identifier);
+            onLogin();
+          } else {
+            // Email confirmation required - show styled success message
+            console.log('[Viventiva LoginModal] Email confirmation required');
+            setError(''); // Clear any errors
+            setSignupSuccess(true);
+            setLoading(false);
+          }
         } else {
-          console.error('[Viventiva LoginModal] User not found after login:', userError);
-          setError('Login successful but session not established. Please try again.');
-          setLoading(false);
+          // For LOGIN: session should be established
+          console.log('[Viventiva LoginModal] Email login successful, waiting for session...');
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+          if (!mountedRef.current) return;
+
+          const { user, error: userError } = await auth.getCurrentUser();
+
+          if (!mountedRef.current) return;
+
+          if (user && !userError) {
+            console.log('[Viventiva LoginModal] User confirmed, calling onLogin');
+
+            const { resetRateLimit } = await import('../utils/rateLimiter');
+            resetRateLimit(action, identifier);
+
+            const { trackUserAction } = await import('../utils/analytics');
+            trackUserAction('user_login', { method: 'email' });
+            onLogin();
+          } else {
+            console.error('[Viventiva LoginModal] User not found after login:', userError);
+            try {
+              const { getUserFriendlyError } = await import('../utils/errorMessages');
+              setError(getUserFriendlyError(userError || new Error('Login failed')));
+            } catch {
+              setError('Login failed. Please check your credentials and try again.');
+            }
+            setLoading(false);
+          }
         }
       }
     } catch (err) {
@@ -241,7 +281,98 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
               </motion.div>
             )}
 
-            {!showEmailForm ? (
+            {/* Signup Success Message */}
+            {signupSuccess && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-6 p-6 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30"
+              >
+                <div className="flex flex-col items-center text-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                      Account Created! ✨
+                    </h3>
+                    <p className={`text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                      Check your email for a confirmation link.
+                      <br />
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                        {email}
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSignupSuccess(false);
+                      setIsSignUp(false);
+                    }}
+                    className="mt-2 px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg shadow-emerald-500/25"
+                  >
+                    Got it! Take me to login →
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      let didSucceed = false;
+                      try {
+                        setResendSent(false);
+                        setResendLoading(true);
+                        setError("");
+
+                        const emailToResend = (email || '').trim();
+                        const res = await auth.resendSignupEmail(emailToResend);
+                        if (res?.error) throw res.error;
+                        didSucceed = true;
+                        try {
+                          const { toast } = await import('../utils/toast');
+                          toast.success('Confirmation email resent!');
+                        } catch {
+                          // ignore
+                        }
+                      } catch (e) {
+                        try {
+                          const { getUserFriendlyError } = await import('../utils/errorMessages');
+                          setError(getUserFriendlyError(e));
+                        } catch {
+                          setError(e?.message || 'Failed to resend confirmation email.');
+                        }
+                      } finally {
+                        setResendLoading(false);
+                        if (didSucceed) setResendSent(true);
+                      }
+                    }}
+                    disabled={resendLoading || !email}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-sm border ${darkMode
+                      ? "bg-slate-800/50 text-white hover:bg-slate-700/70 border-slate-700/50"
+                      : "bg-white/60 text-slate-900 hover:bg-white/80 border-slate-200"
+                      } disabled:opacity-50`}
+                  >
+                    {resendLoading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Sending…
+                      </span>
+                    ) : (
+                      'Resend confirmation email'
+                    )}
+                  </button>
+
+                  {resendSent && !resendLoading && (
+                    <p className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                      Sent. If you don’t see it, check spam/junk and search for “Viventiva”.
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+
+            {!signupSuccess && !showEmailForm ? (
               <div className="space-y-3">
                 {/* Google */}
                 <motion.button
@@ -281,7 +412,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
                   Continue with Email
                 </motion.button>
               </div>
-            ) : (
+            ) : !signupSuccess && (
               <form onSubmit={handleEmailLogin} className="space-y-5">
                 {isSignUp && (
                   <motion.div
@@ -403,7 +534,20 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
             {/* Footer */}
             <div className={`mt-8 pt-6 border-t ${darkMode ? "border-slate-800" : "border-slate-200"} text-center`}>
               <p className={`text-xs leading-relaxed ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
-                By continuing, you agree to our <span className="underline">Terms</span> and <span className="underline">Privacy Policy</span>
+                By continuing, you agree to our{' '}
+                <button 
+                  onClick={() => { onClose(); setCurrentPage('terms'); }}
+                  className="underline hover:no-underline"
+                >
+                  Terms
+                </button>
+                {' '}and{' '}
+                <button 
+                  onClick={() => { onClose(); setCurrentPage('privacy'); }}
+                  className="underline hover:no-underline"
+                >
+                  Privacy Policy
+                </button>
               </p>
               <p className={`mt-2 text-xs font-medium ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
                 🔒 Your data is 100% private and secure

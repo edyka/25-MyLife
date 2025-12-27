@@ -11,15 +11,15 @@ const MoodPalette = ({
   selectedWeeks,
   _setSelectedWeeks,
   pinnedWeeks = new Set(),
-  _setPinnedWeeks = () => {},
+  _setPinnedWeeks = () => { },
   _lifeExpectancy,
   darkMode,
   onAddCustomMood,
   customCategories = {},
   isInRangeMode = false,
   rangeStart = null,
-  resetRangeSelection = () => {},
-  clearPinnedWeeks = () => {},
+  resetRangeSelection = () => { },
+  clearPinnedWeeks = () => { },
 }) => {
   const themePreset = useUIStore((state) => state.themePreset);
   const theme = getTheme(themePreset);
@@ -45,7 +45,6 @@ const MoodPalette = ({
       ...customCategories
     };
 
-    console.log('MoodPalette allCats:', Object.keys(combined).length, combined);
     return combined;
   }, [customCategories]);
 
@@ -104,25 +103,23 @@ const MoodPalette = ({
         {/* Clear button */}
         <button
           onClick={() => handleColorSelect("none")}
-          className={`group relative aspect-square rounded-lg transition-all duration-200 ${
-            selectedColor === "none"
+          className={`group relative aspect-square rounded-lg transition-all duration-200 ${selectedColor === "none"
               ? darkMode
                 ? 'bg-red-500/20 scale-95 ring-1 ring-red-500/50'
                 : 'bg-red-50 scale-95 ring-1 ring-red-200'
               : darkMode
                 ? 'bg-white/5 hover:bg-white/10 hover:scale-95'
                 : 'bg-slate-100/50 hover:bg-slate-200/50 hover:scale-95'
-          }`}
+            }`}
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <X
-              className={`w-4 h-4 transition-colors ${
-                selectedColor === "none"
+              className={`w-4 h-4 transition-colors ${selectedColor === "none"
                   ? 'text-red-500'
                   : darkMode
                     ? 'text-slate-500 group-hover:text-slate-300'
                     : 'text-slate-400 group-hover:text-slate-600'
-              }`}
+                }`}
             />
           </div>
         </button>
@@ -130,9 +127,7 @@ const MoodPalette = ({
         {/* All mood categories */}
         {Object.entries(allCats).map(([key, option]) => {
           const IconComponent = option?.icon;
-          console.log('Mood:', key, 'icon:', IconComponent, 'type:', typeof IconComponent);
           if (!IconComponent || typeof IconComponent !== 'function') {
-            console.log('Filtering out:', key);
             return null;
           }
           const isActive = selectedColor === key;
@@ -141,9 +136,8 @@ const MoodPalette = ({
             <button
               key={key}
               onClick={() => handleColorSelect(key)}
-              className={`${option.color} group relative aspect-square rounded-lg transition-all duration-200 overflow-hidden ${
-                isActive ? 'scale-95 ring-2 ring-offset-2' : 'hover:scale-95'
-              } ${darkMode ? 'ring-offset-slate-900' : 'ring-offset-white'}`}
+              className={`${option.color} group relative aspect-square rounded-lg transition-all duration-200 overflow-hidden ${isActive ? 'scale-95 ring-2 ring-offset-2' : 'hover:scale-95'
+                } ${darkMode ? 'ring-offset-slate-900' : 'ring-offset-white'}`}
               style={{
                 ringColor: isActive ? theme.colors.primary : undefined,
               }}
@@ -160,20 +154,18 @@ const MoodPalette = ({
         {!showAddNew ? (
           <button
             onClick={() => setShowAddNew(true)}
-            className={`group relative aspect-square rounded-lg border-2 border-dashed transition-all duration-200 ${
-              darkMode
+            className={`group relative aspect-square rounded-lg border-2 border-dashed transition-all duration-200 ${darkMode
                 ? 'border-slate-600 bg-slate-800/50 hover:bg-slate-700/50 hover:border-slate-500'
                 : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400'
-            }`}
+              }`}
           >
             <div className="absolute inset-0 flex items-center justify-center">
               <Plus className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
             </div>
           </button>
         ) : (
-          <div className={`col-span-full p-3 rounded-lg border-2 ${
-            darkMode ? 'border-slate-600 bg-slate-800' : 'border-slate-300 bg-white'
-          }`}>
+          <div className={`col-span-full p-3 rounded-lg border-2 ${darkMode ? 'border-slate-600 bg-slate-800' : 'border-slate-300 bg-white'
+            }`}>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -182,30 +174,27 @@ const MoodPalette = ({
                 onChange={(e) => setNewMoodLabel(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddMood()}
                 autoFocus
-                className={`flex-1 px-3 py-2 rounded-lg text-sm ${
-                  darkMode
+                className={`flex-1 px-3 py-2 rounded-lg text-sm ${darkMode
                     ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
                     : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500'
-                } border focus:outline-none focus:ring-2 focus:ring-${themePreset}-500`}
+                  } border focus:outline-none focus:ring-2 focus:ring-${themePreset}-500`}
               />
               <button
                 onClick={handleAddMood}
                 disabled={!newMoodLabel.trim()}
-                className={`p-2 rounded-lg transition-colors ${
-                  newMoodLabel.trim()
+                className={`p-2 rounded-lg transition-colors ${newMoodLabel.trim()
                     ? 'bg-green-500 hover:bg-green-600 text-white'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <Check className="w-4 h-4" />
               </button>
               <button
                 onClick={() => { setShowAddNew(false); setNewMoodLabel(""); }}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode
+                className={`p-2 rounded-lg transition-colors ${darkMode
                     ? 'bg-slate-700 hover:bg-slate-600 text-slate-300'
                     : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                }`}
+                  }`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -217,11 +206,10 @@ const MoodPalette = ({
       {/* Selection Info - Only show when needed, ultra-subtle */}
       {hasActiveSelection && (
         <div
-          className={`p-3 rounded-xl flex items-center justify-between border ${
-            darkMode
+          className={`p-3 rounded-xl flex items-center justify-between border ${darkMode
               ? 'bg-white/5 border-white/10'
               : 'bg-slate-50 border-slate-200/50'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
             {selectedColor && (
@@ -249,15 +237,15 @@ const MoodPalette = ({
                 {isInRangeMode
                   ? `Week ${rangeStart} → ?`
                   : selectedColor === "none"
-                  ? "Clear mode"
-                  : "Paint mode"}
+                    ? "Clear mode"
+                    : "Paint mode"}
               </p>
               <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                 {isInRangeMode
                   ? "Click end week"
                   : selectedColor === "none"
-                  ? "Click to erase"
-                  : "Click start & end"}
+                    ? "Click to erase"
+                    : "Click start & end"}
               </p>
             </div>
           </div>
@@ -265,11 +253,10 @@ const MoodPalette = ({
           {(pinnedWeeks.size > 0 || selectedWeeks.size > 0) && (
             <button
               onClick={() => { clearPinnedWeeks(); resetRangeSelection(); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                darkMode
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${darkMode
                   ? "bg-white/10 hover:bg-white/15 text-slate-300"
                   : "bg-slate-900/5 hover:bg-slate-900/10 text-slate-700"
-              }`}
+                }`}
             >
               Clear ({pinnedWeeks.size || selectedWeeks.size})
             </button>

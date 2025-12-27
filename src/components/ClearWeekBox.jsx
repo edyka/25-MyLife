@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
-import { getQuarterFromWeek, getYearFromWeek } from "../utils/dateUtils";
+import { getYearFromWeek } from "../utils/dateUtils";
+import { useUIStore } from "../stores/useUIStore";
 
 const ClearWeekBox = memo(({
   weekNum,
@@ -9,6 +10,7 @@ const ClearWeekBox = memo(({
   handleTouchStart,
   handleTouchMove,
   handleTouchEnd,
+  handleDoubleClick,
   isDragging,
   // Performance optimization: receive store data as props
   currentWeek,
@@ -19,7 +21,7 @@ const ClearWeekBox = memo(({
   selectedColor,
   isMobile = false,
   darkMode = false,
-  pastWeekStyle = "faded"
+  _pastWeekStyle = "faded"
 }) => {
   const weekState = useMemo(() => {
     const isPast = weekNum < currentWeek;
@@ -66,18 +68,48 @@ const ClearWeekBox = memo(({
     borderColor = `border ${borderColor}`;
   }
 
+  // Get tooltip setter from store
+  const setTooltip = useUIStore(state => state.setTooltip);
+
   return (
     <div
       data-week-num={weekNum}
-      className={`week-square relative w-full h-full ${baseBg} ${borderColor} ${shadowClass} ${
-        isWeekSelected ? "ring-2 ring-blue-400/60" : ""
-      } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""
-      } rounded-none overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${
-        selectedColor ? "hover:shadow-xl" : ""
-      } active:scale-95`}
+      className={`week-square relative w-full h-full ${baseBg} ${borderColor} ${shadowClass} ${isWeekSelected ? "ring-2 ring-blue-400/60" : ""
+        } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""
+        } rounded-none overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${selectedColor ? "hover:shadow-xl" : ""
+        } active:scale-95`}
       onMouseDown={(e) => { e.preventDefault(); handleWeekMouseDown(weekNum); }}
-      onMouseEnter={() => handleWeekMouseEnter(weekNum)}
+      onMouseEnter={() => {
+        handleWeekMouseEnter(weekNum);
+        // Show custom tooltip
+        const ageText = `Age ${getYearFromWeek(weekNum)} years`;
+
+        if (hasMilestone) {
+          const categoryLabel = allCategories[hasMilestone.category]?.label || 'Unknown';
+          const milestoneTitle = hasMilestone.title || '';
+          setTooltip({
+            visible: true,
+            label: milestoneTitle || categoryLabel,
+            content: milestoneTitle ? `${categoryLabel} · Week ${weekNum} · ${ageText}` : `Week ${weekNum} · ${ageText}`,
+            color: allCategories[hasMilestone.category]?.color || null
+          });
+        } else {
+          setTooltip({
+            visible: true,
+            label: `Week ${weekNum}`,
+            content: ageText,
+            color: null
+          });
+        }
+      }}
+      onMouseLeave={() => {
+        setTooltip({ visible: false });
+      }}
       onClick={() => { if (!isDragging) handleWeekClick(weekNum); }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (handleDoubleClick) handleDoubleClick(weekNum, e);
+      }}
       onTouchStart={(e) => { if (isMobile && handleTouchStart) handleTouchStart(weekNum, e); }}
       onTouchMove={(e) => { if (isMobile && handleTouchMove && isDragging) { e.preventDefault(); handleTouchMove(weekNum); } }}
       onTouchEnd={(e) => { if (isMobile && handleTouchEnd) { e.preventDefault(); handleTouchEnd(); } }}
@@ -88,9 +120,8 @@ const ClearWeekBox = memo(({
           if (!isDragging) handleWeekClick(weekNum);
         }
       }}
-      title={`Week ${weekNum} - Age ${getYearFromWeek(weekNum)} years, ${getQuarterFromWeek(weekNum)}`}
       role="button"
-      aria-label={`Week ${weekNum}, Age ${getYearFromWeek(weekNum)}, ${hasMilestone ? `marked as ${hasMilestone.category}` : 'unmarked'}`}
+      aria-label={`Week ${weekNum}, Age ${getYearFromWeek(weekNum)} years. ${hasMilestone ? `${hasMilestone.title ? hasMilestone.title + ' - ' : ''}${allCategories[hasMilestone.category]?.label || "Unknown"}` : 'No mood set'}`}
       aria-pressed={isWeekSelected}
       tabIndex={0}
     >
@@ -107,6 +138,22 @@ const ClearWeekBox = memo(({
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 rounded-none border-2 border-red-400 animate-pulse"></div>
           <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-400 rounded-none animate-ping"></div>
+        </div>
+      )}
+
+      {/* Flag indicator for weeks with milestones */}
+      {hasMilestone && (
+        <div className="absolute top-0 right-0 pointer-events-none">
+          <div className={`w-0 h-0 border-l-[5px] border-l-transparent border-t-[5px] ${
+            hasMilestone.isMilestone ? 'border-t-yellow-400' : 'border-t-white/80'
+          }`} />
+        </div>
+      )}
+
+      {/* Diamond Milestone Indicator for important milestones */}
+      {hasMilestone?.isMilestone && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-1.5 h-1.5 bg-yellow-400 rotate-45 shadow-sm border-[0.5px] border-yellow-600/30" />
         </div>
       )}
 

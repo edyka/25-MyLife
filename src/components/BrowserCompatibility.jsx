@@ -22,7 +22,8 @@ const BrowserCompatibility = ({ darkMode }) => {
     }
 
     if (isBrave) {
-      setShowBraveWarning(true);
+      // Disabled: Brave warning is not necessary for most users
+      // setShowBraveWarning(true);
 
       // Use a safer approach to detect blocked requests
       // Instead of monkey-patching fetch, listen for actual errors
