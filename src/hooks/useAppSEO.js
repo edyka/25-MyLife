@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useUIStore } from '../stores/useUIStore'
 
 const hasAuthTokensInHash = (hash = '') => {
   const h = (hash || '').toLowerCase()
@@ -21,6 +22,13 @@ const getSafePathForTracking = () => {
 
 export const useAppSEO = (currentPage, user) => {
   const historyInitialized = useRef(false)
+  const isNavigatingBack = useRef(false)
+  const prevState = useRef({ page: currentPage, tab: 'home' })
+
+  // Get tab state from store
+  const currentTab = useUIStore(state => state.currentTab)
+  const setCurrentTab = useUIStore(state => state.setCurrentTab)
+  const setCurrentPage = useUIStore(state => state.setCurrentPage)
 
   // Hash sanitation and history management for OAuth flow
   useEffect(() => {
@@ -32,22 +40,45 @@ export const useAppSEO = (currentPage, user) => {
       try {
         // Clean the hash from URL
         window.history.replaceState(
-          { viventiva: true, page: 'main' },
+          { viventiva: true, page: 'main', tab: 'home' },
           document.title,
           window.location.pathname + window.location.search
         )
         // Push a new state so back button stays in app
         window.history.pushState(
-          { viventiva: true, page: 'main' },
+          { viventiva: true, page: 'main', tab: 'home' },
           document.title,
           window.location.pathname
         )
         historyInitialized.current = true
+        prevState.current = { page: 'main', tab: 'home' }
       } catch {
         /* ignore */
       }
     }
   }, [])
+
+  // Push history state when page or tab changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (isNavigatingBack.current) {
+      isNavigatingBack.current = false
+      return
+    }
+
+    const newState = { page: currentPage, tab: currentTab }
+    const prev = prevState.current
+
+    // Only push if something actually changed
+    if (prev.page !== currentPage || prev.tab !== currentTab) {
+      window.history.pushState(
+        { viventiva: true, ...newState },
+        document.title,
+        window.location.pathname
+      )
+      prevState.current = newState
+    }
+  }, [currentPage, currentTab])
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -59,11 +90,25 @@ export const useAppSEO = (currentPage, user) => {
       if (!event.state?.viventiva) {
         // Push state to prevent leaving the app
         window.history.pushState(
-          { viventiva: true, page: currentPage },
+          { viventiva: true, page: currentPage, tab: currentTab },
           document.title,
           window.location.pathname
         )
+        return
       }
+
+      // Navigate to the previous state
+      isNavigatingBack.current = true
+      const { page, tab } = event.state
+
+      if (page && page !== currentPage) {
+        setCurrentPage(page)
+      }
+      if (tab && tab !== currentTab) {
+        setCurrentTab(tab)
+      }
+
+      prevState.current = { page: page || currentPage, tab: tab || currentTab }
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -71,15 +116,16 @@ export const useAppSEO = (currentPage, user) => {
     // Initialize history state if not already done (for direct visits)
     if (!historyInitialized.current && !window.history.state?.viventiva) {
       window.history.replaceState(
-        { viventiva: true, page: currentPage },
+        { viventiva: true, page: currentPage, tab: currentTab },
         document.title,
         window.location.pathname + window.location.search
       )
       historyInitialized.current = true
+      prevState.current = { page: currentPage, tab: currentTab }
     }
 
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [currentPage])
+  }, [currentPage, currentTab, setCurrentPage, setCurrentTab])
 
   // SEO and Analytics
   useEffect(() => {
