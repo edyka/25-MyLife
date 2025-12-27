@@ -1,12 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Share2, Instagram, Twitter, Facebook, Copy, Check } from 'lucide-react';
-import { toPng } from 'html-to-image';
-import { modernMoods } from '../utils/constants';
-import { useLifeStore } from '../stores/useLifeStore';
-import { useMilestoneStore } from '../stores/useMilestoneStore';
-import { useSelectionStore } from '../stores/useSelectionStore';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Download, Instagram, Twitter, Facebook, Copy, Check } from 'lucide-react'
+import { toPng } from 'html-to-image'
+import { modernMoods } from '../utils/constants'
+import { useLifeStore } from '../stores/useLifeStore'
+import { useMilestoneStore } from '../stores/useMilestoneStore'
 
 // Map Tailwind bg classes to actual hex colors for canvas rendering
 const colorMap = {
@@ -27,44 +26,43 @@ const colorMap = {
   'bg-orange-400': '#fb923c',
   'bg-blue-300': '#93c5fd',
   'bg-gray-400': '#9ca3af',
-};
+}
 
 const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [previewDataUrl, setPreviewDataUrl] = useState(null);
-  const posterRef = useRef(null);
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [previewDataUrl, setPreviewDataUrl] = useState(null)
+  const posterRef = useRef(null)
 
   // Get data from stores
-  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy);
-  const currentWeek = useLifeStore(state => state.currentWeek);
-  const birthYear = useLifeStore(state => state.birthYear);
-  const milestones = useMilestoneStore(state => state.milestones);
-  const customMoods = useMilestoneStore(state => state.customMoods);
-  const selectedWeeks = useSelectionStore(state => state.selectedWeeks);
+  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy)
+  const currentWeek = useLifeStore(state => state.currentWeek)
+  const birthYear = useLifeStore(state => state.birthYear)
+  const milestones = useMilestoneStore(state => state.milestones)
+  const customMoods = useMilestoneStore(state => state.customMoods)
 
-  // Get all categories including custom
-  const allMoods = { ...modernMoods, ...customMoods };
+  // Get all categories including custom - memoized to prevent re-renders
+  const allMoods = useMemo(() => ({ ...modernMoods, ...customMoods }), [customMoods])
 
   // Find which moods are actually used in the grid
   const usedMoods = useCallback(() => {
-    const used = new Set();
+    const used = new Set()
     Object.values(milestones || {}).forEach(m => {
       if (m?.category && allMoods[m.category]) {
-        used.add(m.category);
+        used.add(m.category)
       }
-    });
+    })
     return Array.from(used).map(key => ({
       key,
-      ...allMoods[key]
-    }));
-  }, [milestones, allMoods]);
+      ...allMoods[key],
+    }))
+  }, [milestones, allMoods])
 
   // Generate poster image
   const generatePoster = useCallback(async () => {
-    if (!posterRef.current) return null;
+    if (!posterRef.current) return null
 
-    setIsGenerating(true);
+    setIsGenerating(true)
     try {
       const dataUrl = await toPng(posterRef.current, {
         quality: 1,
@@ -72,103 +70,100 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
         backgroundColor: '#ffffff',
         width: 1080,
         height: 1920,
-      });
-      setPreviewDataUrl(dataUrl);
-      return dataUrl;
+      })
+      setPreviewDataUrl(dataUrl)
+      return dataUrl
     } catch (error) {
-      console.error('Error generating poster:', error);
-      return null;
+      console.error('Error generating poster:', error)
+      return null
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(false)
     }
-  }, []);
+  }, [])
 
   // Generate preview on open
   useEffect(() => {
     if (isOpen) {
       // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
-        generatePoster();
-      }, 100);
-      return () => clearTimeout(timer);
+        generatePoster()
+      }, 100)
+      return () => clearTimeout(timer)
     }
-  }, [isOpen, generatePoster]);
+  }, [isOpen, generatePoster])
 
   // Download handler
   const handleDownload = async () => {
-    const dataUrl = previewDataUrl || await generatePoster();
-    if (!dataUrl) return;
+    const dataUrl = previewDataUrl || (await generatePoster())
+    if (!dataUrl) return
 
-    const link = document.createElement('a');
-    link.download = `viventiva-life-grid-${new Date().toISOString().split('T')[0]}.png`;
-    link.href = dataUrl;
-    link.click();
-  };
+    const link = document.createElement('a')
+    link.download = `viventiva-life-grid-${new Date().toISOString().split('T')[0]}.png`
+    link.href = dataUrl
+    link.click()
+  }
 
   // Share handlers
   const handleShareTwitter = async () => {
-    const text = `My life in weeks - visualized with @viventiva_app 🗓️✨\n\nHow will you spend your remaining weeks?`;
-    const url = 'https://viventiva.com';
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-  };
+    const text = `My life in weeks - visualized with @viventiva_app 🗓️✨\n\nHow will you spend your remaining weeks?`
+    const url = 'https://viventiva.com'
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      '_blank'
+    )
+  }
 
   const handleShareFacebook = () => {
-    const url = 'https://viventiva.com';
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-  };
+    const url = 'https://viventiva.com'
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank')
+  }
 
   const handleShareInstagram = async () => {
     // Download the image first, then show instructions
-    await handleDownload();
-    alert('Image downloaded! Open Instagram and share it from your camera roll. Don\'t forget to tag @viventiva!');
-  };
+    await handleDownload()
+    alert(
+      "Image downloaded! Open Instagram and share it from your camera roll. Don't forget to tag @viventiva!"
+    )
+  }
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText('https://viventiva.com');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    navigator.clipboard.writeText('https://viventiva.com')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   // Render mini grid for poster
   const renderMiniGrid = () => {
-    const weeks = lifeExpectancy * 52;
-    const cols = 52;
-    const rows = Math.ceil(weeks / cols);
-    const cellSize = 12;
-    const gap = 2;
+    const weeks = lifeExpectancy * 52
+    const cols = 52
+    const rows = Math.ceil(weeks / cols)
+    const cellSize = 12
+    const gap = 2
 
-    const cells = [];
+    const cells = []
     for (let i = 0; i < weeks; i++) {
-      const milestone = milestones?.[i];
-      const isPast = i < currentWeek;
-      const isCurrent = i === currentWeek;
+      const milestone = milestones?.[i]
+      const isPast = i < currentWeek
+      const isCurrent = i === currentWeek
 
-      let bgColor = '#e5e7eb'; // gray-200 for future
+      let bgColor = '#e5e7eb' // gray-200 for future
       if (isPast) {
-        bgColor = '#d1d5db'; // gray-300 for past
+        bgColor = '#d1d5db' // gray-300 for past
       }
       if (milestone?.category && allMoods[milestone.category]) {
-        const moodColor = allMoods[milestone.category].color;
-        bgColor = colorMap[moodColor] || bgColor;
+        const moodColor = allMoods[milestone.category].color
+        bgColor = colorMap[moodColor] || bgColor
       }
       if (isCurrent) {
-        bgColor = '#1f2937'; // Current week marker
+        bgColor = '#1f2937' // Current week marker
       }
 
-      const x = (i % cols) * (cellSize + gap);
-      const y = Math.floor(i / cols) * (cellSize + gap);
+      const x = (i % cols) * (cellSize + gap)
+      const y = Math.floor(i / cols) * (cellSize + gap)
 
       cells.push(
-        <rect
-          key={i}
-          x={x}
-          y={y}
-          width={cellSize}
-          height={cellSize}
-          rx={2}
-          fill={bgColor}
-        />
-      );
+        <rect key={i} x={x} y={y} width={cellSize} height={cellSize} rx={2} fill={bgColor} />
+      )
     }
 
     return (
@@ -179,16 +174,16 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
       >
         {cells}
       </svg>
-    );
-  };
+    )
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
-  const displayName = userName || 'My';
-  const currentAge = birthYear ? new Date().getFullYear() - birthYear : 0;
-  const weeksLived = currentWeek || 0;
-  const weeksRemaining = (lifeExpectancy * 52) - weeksLived;
-  const moodsUsed = usedMoods();
+  const displayName = userName || 'My'
+  const currentAge = birthYear ? new Date().getFullYear() - birthYear : 0
+  const weeksLived = currentWeek || 0
+  const weeksRemaining = lifeExpectancy * 52 - weeksLived
+  const moodsUsed = usedMoods()
 
   return createPortal(
     <AnimatePresence>
@@ -226,7 +221,14 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
               >
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                  <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
+                  <div
+                    style={{
+                      fontSize: '48px',
+                      fontWeight: 'bold',
+                      color: '#1f2937',
+                      marginBottom: '8px',
+                    }}
+                  >
                     {displayName}'s Life in Weeks
                   </div>
                   <div style={{ fontSize: '24px', color: '#6b7280' }}>
@@ -235,19 +237,43 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
                 </div>
 
                 {/* Grid Container */}
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   {renderMiniGrid()}
                 </div>
 
                 {/* Legend */}
                 {moodsUsed.length > 0 && (
                   <div style={{ marginTop: '40px', marginBottom: '40px' }}>
-                    <div style={{ fontSize: '18px', color: '#9ca3af', marginBottom: '16px', textAlign: 'center' }}>
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        color: '#9ca3af',
+                        marginBottom: '16px',
+                        textAlign: 'center',
+                      }}
+                    >
                       LEGEND
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        gap: '16px',
+                      }}
+                    >
                       {moodsUsed.map(mood => (
-                        <div key={mood.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          key={mood.key}
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
                           <div
                             style={{
                               width: '20px',
@@ -264,8 +290,21 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
                 )}
 
                 {/* Footer Branding */}
-                <div style={{ textAlign: 'center', paddingTop: '30px', borderTop: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#6366f1', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    textAlign: 'center',
+                    paddingTop: '30px',
+                    borderTop: '1px solid #e5e7eb',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '32px',
+                      fontWeight: 'bold',
+                      color: '#6366f1',
+                      marginBottom: '8px',
+                    }}
+                  >
                     VIVENTIVA
                   </div>
                   <div style={{ fontSize: '18px', color: '#9ca3af' }}>
@@ -276,7 +315,10 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
             </div>
 
             {/* Visible Preview (scaled down) */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden mx-auto" style={{ maxWidth: '280px', aspectRatio: '9/16' }}>
+            <div
+              className="bg-white rounded-2xl shadow-lg overflow-hidden mx-auto"
+              style={{ maxWidth: '280px', aspectRatio: '9/16' }}
+            >
               {previewDataUrl ? (
                 <img src={previewDataUrl} alt="Preview" className="w-full h-full object-contain" />
               ) : (
@@ -327,8 +369,7 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
                 onClick={handleShareTwitter}
                 className="py-3 px-4 bg-black text-white font-medium rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
               >
-                <Twitter className="w-5 h-5" />
-                X / Twitter
+                <Twitter className="w-5 h-5" />X / Twitter
               </button>
               <button
                 onClick={handleShareFacebook}
@@ -341,7 +382,11 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
                 onClick={handleCopyLink}
                 className="py-3 px-4 bg-slate-200 text-slate-700 font-medium rounded-xl flex items-center justify-center gap-2 hover:bg-slate-300 transition-colors"
               >
-                {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                {copied ? (
+                  <Check className="w-5 h-5 text-green-600" />
+                ) : (
+                  <Copy className="w-5 h-5" />
+                )}
                 {copied ? 'Copied!' : 'Copy Link'}
               </button>
             </div>
@@ -365,7 +410,7 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
       </motion.div>
     </AnimatePresence>,
     document.body
-  );
-};
+  )
+}
 
-export default ShareModal;
+export default ShareModal

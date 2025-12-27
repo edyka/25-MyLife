@@ -1,169 +1,228 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-  <meta charset="UTF-8" />
+    <!-- Primary Meta Tags -->
+    <title>Viventiva - Visualize Your Life in Weeks</title>
+    <meta name="title" content="Viventiva - Visualize Your Life in Weeks" />
+    <meta
+      name="description"
+      content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose. Remember to live - memento vivere."
+    />
+    <meta
+      name="keywords"
+      content="life visualization, life calendar, weeks of life, life tracker, memento mori, intentional living, life planning, personal growth, life goals, time visualization"
+    />
+    <meta name="author" content="Viventiva" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
 
-  <!-- Primary Meta Tags -->
-  <title>Viventiva - Visualize Your Life in Weeks</title>
-  <meta name="title" content="Viventiva - Visualize Your Life in Weeks" />
-  <meta name="description"
-    content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose. Remember to live - memento vivere." />
-  <meta name="keywords"
-    content="life visualization, life calendar, weeks of life, life tracker, memento mori, intentional living, life planning, personal growth, life goals, time visualization" />
-  <meta name="author" content="Viventiva" />
-  <meta name="robots" content="index, follow" />
-  <meta name="language" content="English" />
+    <!-- Favicon -->
 
-  <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
 
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-  <link rel="shortcut icon" href="/favicon.ico" />
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
 
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Theme and Mobile -->
+    <meta name="theme-color" content="#111827" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover"
+    />
 
-  <!-- Theme and Mobile -->
-  <meta name="theme-color" content="#111827" />
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <!-- iOS Specific -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Viventiva" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
 
-  <!-- iOS Specific -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Viventiva" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+    <!-- Prevent iOS text size adjustment -->
+    <meta name="format-detection" content="telephone=no" />
 
-  <!-- Prevent iOS text size adjustment -->
-  <meta name="format-detection" content="telephone=no" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://viventiva.com/" />
+    <meta property="og:title" content="Viventiva - Visualize Your Life in Weeks" />
+    <meta
+      property="og:description"
+      content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose."
+    />
+    <meta property="og:image" content="https://viventiva.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Viventiva" />
+    <meta property="og:locale" content="en_US" />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://viventiva.com/" />
-  <meta property="og:title" content="Viventiva - Visualize Your Life in Weeks" />
-  <meta property="og:description"
-    content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose." />
-  <meta property="og:image" content="https://viventiva.com/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:site_name" content="Viventiva" />
-  <meta property="og:locale" content="en_US" />
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://viventiva.com/" />
+    <meta property="twitter:title" content="Viventiva - Visualize Your Life in Weeks" />
+    <meta
+      property="twitter:description"
+      content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose."
+    />
+    <meta property="twitter:image" content="https://viventiva.com/og-image.png" />
 
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://viventiva.com/" />
-  <meta property="twitter:title" content="Viventiva - Visualize Your Life in Weeks" />
-  <meta property="twitter:description"
-    content="A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose." />
-  <meta property="twitter:image" content="https://viventiva.com/og-image.png" />
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://viventiva.com/" />
 
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://viventiva.com/" />
-  <style>
-    * {
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-    }
+    <!-- Hreflang for international SEO -->
+    <link rel="alternate" hreflang="en" href="https://viventiva.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://viventiva.com/" />
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: none;
-      /* Prevent pull-to-refresh on iOS */
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+    <!-- DNS Prefetch for faster external resource loading -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//www.google-analytics.com" />
+    <link rel="dns-prefetch" href="//www.googletagmanager.com" />
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
 
-    #root {
-      min-height: 100vh;
-      height: 100%;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+          'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: none;
+        /* Prevent pull-to-refresh on iOS */
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
 
-    /* Fix iOS input zoom */
-    input,
-    select,
-    textarea {
-      font-size: 16px !important;
-    }
-  </style>
+      #root {
+        min-height: 100vh;
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
 
-  <!-- Preconnect hints for performance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://www.googletagmanager.com">
+      /* Fix iOS input zoom */
+      input,
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+    </style>
 
-  <!-- Structured Data (JSON-LD) for SEO -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Viventiva",
-    "alternateName": "Life Grid Visualization",
-    "description": "A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose.",
-    "url": "https://viventiva.com",
-    "applicationCategory": "LifestyleApplication",
-    "operatingSystem": "Any",
-    "browserRequirements": "Requires JavaScript. Requires HTML5.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "author": {
-      "@type": "Organization",
-      "name": "Viventiva",
-      "url": "https://viventiva.com"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "100"
-    },
-    "featureList": [
-      "Life visualization in weeks",
-      "Mood tracking and journaling",
-      "Goal setting and progress tracking",
-      "Milestone celebrations",
-      "Dark mode support",
-      "Mobile responsive design"
-    ]
-  }
-  </script>
+    <!-- Preconnect hints for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" />
 
-  <!-- Additional SEO meta tags -->
-  <meta name="application-name" content="Viventiva">
-  <meta name="apple-mobile-web-app-title" content="Viventiva">
-  <meta name="msapplication-TileColor" content="#111827">
-  <meta name="msapplication-config" content="/browserconfig.xml">
+    <!-- Structured Data (JSON-LD) for SEO -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://viventiva.com/#website",
+            "url": "https://viventiva.com",
+            "name": "Viventiva",
+            "description": "Visualize your life in weeks. Track milestones, set goals, and live intentionally.",
+            "publisher": {
+              "@id": "https://viventiva.com/#organization"
+            },
+            "inLanguage": "en-US",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://viventiva.com/?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://viventiva.com/#organization",
+            "name": "Viventiva",
+            "url": "https://viventiva.com",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://viventiva.com/logo.png",
+              "width": 512,
+              "height": 512
+            },
+            "sameAs": ["https://twitter.com/viventiva", "https://www.instagram.com/viventiva"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://viventiva.com/#webapp",
+            "name": "Viventiva",
+            "alternateName": "Life Grid Visualization",
+            "description": "A powerful life visualization tool that helps you see your entire life in weeks. Track meaningful moments, set intentions, and live with purpose.",
+            "url": "https://viventiva.com",
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript. Requires HTML5.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            },
+            "author": {
+              "@id": "https://viventiva.com/#organization"
+            },
+            "featureList": [
+              "Life visualization in weeks",
+              "Mood tracking and journaling",
+              "Goal setting and progress tracking",
+              "Milestone celebrations",
+              "Dark mode support",
+              "Mobile responsive design",
+              "Cloud sync across devices",
+              "Privacy-first design"
+            ],
+            "screenshot": "https://viventiva.com/og-image.png"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "Viventiva",
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "Web",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          }
+        ]
+      }
+    </script>
 
-  <!-- Geo targeting -->
-  <meta name="geo.region" content="US">
-  <meta name="geo.placename" content="United States">
+    <!-- Additional SEO meta tags -->
+    <meta name="application-name" content="Viventiva" />
+    <meta name="apple-mobile-web-app-title" content="Viventiva" />
+    <meta name="msapplication-TileColor" content="#111827" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
 
-  <!-- Content type hints -->
-  <meta name="classification" content="Lifestyle, Personal Development, Productivity">
-  <meta name="category" content="Personal Development">
-  <meta name="coverage" content="Worldwide">
-  <meta name="distribution" content="Global">
-  <meta name="rating" content="General">
-  <meta name="revisit-after" content="7 days">
-</head>
+    <!-- Geo targeting -->
+    <meta name="geo.region" content="US" />
+    <meta name="geo.placename" content="United States" />
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+    <!-- Content type hints -->
+    <meta name="classification" content="Lifestyle, Personal Development, Productivity" />
+    <meta name="category" content="Personal Development" />
+    <meta name="coverage" content="Worldwide" />
+    <meta name="distribution" content="Global" />
+    <meta name="rating" content="General" />
+    <meta name="revisit-after" content="7 days" />
+  </head>
 
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
