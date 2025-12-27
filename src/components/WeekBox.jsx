@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { getYearFromWeek } from "../utils/dateUtils";
 import { useRenderPerformance } from "../utils/performanceMonitor";
 
@@ -109,6 +109,9 @@ const WeekBox = memo(({
   // Modern responsive sizing for the week box
   const sizeClass = "w-full h-full rounded-sm";
 
+  // Track if touch was used to prevent click from firing after touch
+  const touchUsedRef = useRef(false);
+
   return (
     <div
       className={`${sizeClass} week-square cursor-pointer relative select-none ${bgColor} ${selectedWeek === weekNum ? "ring-2 ring-blue-500" : ""
@@ -118,9 +121,12 @@ const WeekBox = memo(({
         } ${isWeekInPreview ? "ring-2 ring-blue-400 ring-opacity-60" : ""} ${isInMultiSelectMode ? "ring-1 ring-gray-400 ring-opacity-50" : ""
         } ${shouldShowHoverEffect ? "hover:scale-110 hover:z-10 hover:shadow-[0_0_12px_rgba(59,130,246,0.5)] hover:ring-2 hover:ring-blue-400/50" : ""
         } active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200`}
+      style={{ touchAction: 'manipulation' }}
       onMouseDown={(e) => {
-        e.preventDefault();
-        handleWeekMouseDown(weekNum, e);
+        if (!isMobile) {
+          e.preventDefault();
+          handleWeekMouseDown(weekNum, e);
+        }
       }}
       onMouseEnter={() => {
         handleWeekMouseEnter(weekNum);
@@ -150,6 +156,11 @@ const WeekBox = memo(({
         if (setTooltip) setTooltip({ visible: false });
       }}
       onClick={(e) => {
+        // On mobile, touch events handle interaction - skip click to avoid double-firing
+        if (isMobile && touchUsedRef.current) {
+          touchUsedRef.current = false;
+          return;
+        }
         if (!isDragging) {
           handleWeekClick(weekNum, e);
         }
@@ -162,19 +173,20 @@ const WeekBox = memo(({
       }}
       onTouchStart={(e) => {
         if (isMobile && handleTouchStart) {
+          touchUsedRef.current = true;
           handleTouchStart(weekNum, e);
         }
       }}
       onTouchMove={(e) => {
         if (isMobile && handleTouchMove && isDragging) {
           e.preventDefault();
-          handleTouchMove(weekNum);
+          handleTouchMove(weekNum, e);
         }
       }}
       onTouchEnd={(e) => {
         if (isMobile && handleTouchEnd) {
           e.preventDefault();
-          handleTouchEnd();
+          handleTouchEnd(e);
         }
       }}
       role="button"

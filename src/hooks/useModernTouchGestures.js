@@ -47,14 +47,14 @@ export const useModernTouchGestures = ({
     }
   }, [isMobile, enableHapticFeedback]);
 
-  // Enhanced touch start with better gesture detection
+  // Enhanced touch start with IMMEDIATE response for better mobile UX
   const handleTouchStart = useCallback((weekNum, event) => {
     if (!isMobile) return;
 
     const now = Date.now();
     const touch = event.touches?.[0];
     const position = touch ? { x: touch.clientX, y: touch.clientY } : null;
-    
+
     setTouchStartTime(now);
     setTouchStartPosition(position);
     setIsLongPress(false);
@@ -64,52 +64,28 @@ export const useModernTouchGestures = ({
       clearTimeout(longPressTimerRef.current);
     }
 
-    // Set up long press detection
+    // IMMEDIATE response - handle the tap right away for responsive feel
+    triggerHapticFeedback('light');
+    handleWeekMouseDown(weekNum, event);
+
+    // Set up long press detection (for multi-selection mode)
     longPressTimerRef.current = setTimeout(() => {
       setIsLongPress(true);
       triggerHapticFeedback('medium');
-      
+
       // Long press enters multi-selection mode
       if (selectionMode === 'single') {
         setSelectionMode('multi');
       }
-      
+
       // Select the current week
       setSelectedWeeks(prev => new Set([...prev, weekNum]));
-    }, 500); // 500ms for long press
+    }, 400); // Reduced from 500ms to 400ms
 
-    // Check for double tap with improved timing
-    if (lastTap && now - lastTap < 400) {
-      event?.preventDefault?.();
-      clearTimeout(longPressTimerRef.current);
-      
-      // Double tap - extend selection or start range selection
-      triggerHapticFeedback('double');
-      
-      if (selectedWeeks.size > 0) {
-        const lastWeek = Math.max(...selectedWeeks);
-        const selectionWeeks = getWeeksInSelection(lastWeek, weekNum);
-        paintWeeks(selectionWeeks);
-        setSelectedWeeks(new Set([...selectedWeeks, ...selectionWeeks]));
-      } else {
-        setSelectionMode('range');
-        handleWeekMouseDown(weekNum, event);
-      }
-      
-      setLastTap(null);
-    } else {
-      setLastTap(now);
-      
-      // Single tap
-      if (!isDragging) {
-        triggerHapticFeedback('light');
-        handleWeekMouseDown(weekNum, event);
-      }
-    }
+    // Track for double tap (handled separately, doesn't block single tap)
+    setLastTap(now);
   }, [
     isMobile,
-    lastTap,
-    selectedWeeks,
     selectionMode,
     isDragging,
     getWeeksInSelection,

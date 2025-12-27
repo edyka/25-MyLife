@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { getYearFromWeek } from "../utils/dateUtils";
 import { useUIStore } from "../stores/useUIStore";
 
@@ -71,6 +71,9 @@ const ClearWeekBox = memo(({
   // Get tooltip setter from store
   const setTooltip = useUIStore(state => state.setTooltip);
 
+  // Track if touch was used to prevent click from firing after touch
+  const touchUsedRef = useRef(false);
+
   return (
     <div
       data-week-num={weekNum}
@@ -78,7 +81,8 @@ const ClearWeekBox = memo(({
         } ${isBeingDragged ? "ring-2 ring-yellow-400/60" : ""
         } rounded-none overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${selectedColor ? "hover:shadow-xl" : ""
         } active:scale-95`}
-      onMouseDown={(e) => { e.preventDefault(); handleWeekMouseDown(weekNum); }}
+      style={{ touchAction: 'manipulation' }}
+      onMouseDown={(e) => { if (!isMobile) { e.preventDefault(); handleWeekMouseDown(weekNum); } }}
       onMouseEnter={() => {
         handleWeekMouseEnter(weekNum);
         // Show custom tooltip
@@ -105,14 +109,36 @@ const ClearWeekBox = memo(({
       onMouseLeave={() => {
         setTooltip({ visible: false });
       }}
-      onClick={() => { if (!isDragging) handleWeekClick(weekNum); }}
+      onClick={(e) => {
+        // On mobile, touch events handle interaction - skip click to avoid double-firing
+        if (isMobile && touchUsedRef.current) {
+          touchUsedRef.current = false;
+          return;
+        }
+        if (!isDragging) handleWeekClick(weekNum);
+      }}
       onDoubleClick={(e) => {
         e.stopPropagation();
         if (handleDoubleClick) handleDoubleClick(weekNum, e);
       }}
-      onTouchStart={(e) => { if (isMobile && handleTouchStart) handleTouchStart(weekNum, e); }}
-      onTouchMove={(e) => { if (isMobile && handleTouchMove && isDragging) { e.preventDefault(); handleTouchMove(weekNum); } }}
-      onTouchEnd={(e) => { if (isMobile && handleTouchEnd) { e.preventDefault(); handleTouchEnd(); } }}
+      onTouchStart={(e) => {
+        if (isMobile && handleTouchStart) {
+          touchUsedRef.current = true;
+          handleTouchStart(weekNum, e);
+        }
+      }}
+      onTouchMove={(e) => {
+        if (isMobile && handleTouchMove && isDragging) {
+          e.preventDefault();
+          handleTouchMove(weekNum, e);
+        }
+      }}
+      onTouchEnd={(e) => {
+        if (isMobile && handleTouchEnd) {
+          e.preventDefault();
+          handleTouchEnd(e);
+        }
+      }}
       onKeyDown={(e) => {
         // Keyboard navigation support
         if (e.key === 'Enter' || e.key === ' ') {
