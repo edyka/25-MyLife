@@ -116,6 +116,16 @@
         height: 100%;
         height: 100dvh;
         height: -webkit-fill-available;
+        background-color: #f8fafc; /* Light mode default */
+      }
+
+      /* Dark mode background for safe areas */
+      html.dark {
+        background-color: #0f172a; /* slate-900 */
+      }
+
+      html.dark body {
+        background-color: #0f172a;
       }
 
       /* Fix iOS input zoom */

@@ -50,6 +50,15 @@ const App = () => {
     document.documentElement.setAttribute('data-theme', themePreset)
   }, [themePreset])
 
+  // Set dark mode class on html for safe area background color
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [darkMode])
+
   const handleError = (error, errorInfo) => {
     console.error('App Error:', error, errorInfo)
   }
