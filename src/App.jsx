@@ -160,6 +160,7 @@ const App = () => {
 
       <div
         className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500 ${!isBackendAvailable ? 'pt-20' : ''}`}
+        style={{ paddingTop: !isBackendAvailable ? undefined : 'env(safe-area-inset-top, 0px)' }}
       >
         {authLoading ? (
           <Suspense fallback={<LoadingSpinner message="Checking session..." />}>
