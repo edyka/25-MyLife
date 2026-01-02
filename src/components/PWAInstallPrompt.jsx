@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Download, Smartphone } from 'lucide-react'
+import { X, Download, Smartphone, ExternalLink } from 'lucide-react'
 
 /**
  * PWA Install Prompt - Shows a banner on mobile encouraging users to install the app
@@ -9,6 +9,7 @@ const PWAInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isIOS, setIsIOS] = useState(false)
+  const [isIOSChrome, setIsIOSChrome] = useState(false)
 
   useEffect(() => {
     // Check if already installed or dismissed
@@ -29,6 +30,11 @@ const PWAInstallPrompt = () => {
     // Detect iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
     setIsIOS(iOS)
+
+    // Detect Chrome on iOS (CriOS) or other non-Safari browsers on iOS
+    // Firefox on iOS uses "FxiOS", Edge uses "EdgiOS", Opera uses "OPiOS"
+    const iOSNonSafari = iOS && /CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent)
+    setIsIOSChrome(iOSNonSafari)
 
     // For iOS, show prompt after a delay (iOS doesn't support beforeinstallprompt)
     if (iOS) {
@@ -64,8 +70,13 @@ const PWAInstallPrompt = () => {
         setShowPrompt(false)
       }
       setDeferredPrompt(null)
+    } else if (isIOSChrome) {
+      // Chrome/Firefox/Edge on iOS - need to open in Safari
+      alert(
+        'To install this app, please open viventiva.com in Safari.\n\nChrome and other browsers on iOS cannot install apps to the home screen.'
+      )
     } else if (isIOS) {
-      // iOS - show instructions (can't programmatically install)
+      // Safari on iOS - show instructions (can't programmatically install)
       alert(
         'To install:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"'
       )
@@ -80,19 +91,45 @@ const PWAInstallPrompt = () => {
 
   if (!showPrompt) return null
 
+  // Determine title and subtitle based on browser/platform
+  const getPromptText = () => {
+    if (isIOSChrome) {
+      return {
+        title: 'Open in Safari to Install',
+        subtitle: 'Chrome cannot install apps on iOS',
+        buttonText: 'How to Install',
+        buttonIcon: <ExternalLink className="w-4 h-4" />,
+      }
+    }
+    if (isIOS) {
+      return {
+        title: 'Add to Home Screen',
+        subtitle: 'Open fullscreen without browser bars',
+        buttonText: 'Install',
+        buttonIcon: <Download className="w-4 h-4" />,
+      }
+    }
+    return {
+      title: 'Install Viventiva',
+      subtitle: 'Open fullscreen without browser bars',
+      buttonText: 'Install',
+      buttonIcon: <Download className="w-4 h-4" />,
+    }
+  }
+
+  const promptText = getPromptText()
+
   return (
     <div className={`pwa-install-prompt ${showPrompt ? 'visible' : ''}`}>
       <div className="pwa-install-prompt-content">
         <Smartphone className="w-8 h-8 text-white flex-shrink-0" />
         <div className="pwa-install-prompt-text">
-          <div className="pwa-install-prompt-title">
-            {isIOS ? 'Add to Home Screen' : 'Install Viventiva'}
-          </div>
-          <div className="pwa-install-prompt-subtitle">Open fullscreen without browser bars</div>
+          <div className="pwa-install-prompt-title">{promptText.title}</div>
+          <div className="pwa-install-prompt-subtitle">{promptText.subtitle}</div>
         </div>
         <button onClick={handleInstall} className="pwa-install-btn flex items-center gap-1.5">
-          <Download className="w-4 h-4" />
-          Install
+          {promptText.buttonIcon}
+          {promptText.buttonText}
         </button>
         <button onClick={handleDismiss} className="pwa-install-close" aria-label="Dismiss">
           <X className="w-5 h-5" />
