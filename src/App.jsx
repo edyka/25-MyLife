@@ -1,36 +1,37 @@
-import { lazy, Suspense, useEffect } from "react";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { useShallow } from "zustand/shallow";
+import { lazy, Suspense, useEffect } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
+import { useShallow } from 'zustand/shallow'
 
 // Lazy load page components for code splitting
-const SettingsPage = lazy(() => import("./components/SettingsPage"));
-const MainApp = lazy(() => import("./components/MainApp"));
-const HomePage = lazy(() => import("./components/HomePage"));
-const OnboardingWizard = lazy(() => import("./components/OnboardingWizard"));
-const About = lazy(() => import("./components/About"));
-const AppPolicy = lazy(() => import("./components/AppPolicy"));
-const TermsOfService = lazy(() => import("./components/TermsOfService"));
-import LoadingSpinner from "./components/LoadingSpinner";
-import BrowserCompatibility from "./components/BrowserCompatibility";
-import ConsentBanner from "./components/ConsentBanner";
+const SettingsPage = lazy(() => import('./components/SettingsPage'))
+const MainApp = lazy(() => import('./components/MainApp'))
+const HomePage = lazy(() => import('./components/HomePage'))
+const OnboardingWizard = lazy(() => import('./components/OnboardingWizard'))
+const About = lazy(() => import('./components/About'))
+const AppPolicy = lazy(() => import('./components/AppPolicy'))
+const TermsOfService = lazy(() => import('./components/TermsOfService'))
+const PWAInstallPrompt = lazy(() => import('./components/PWAInstallPrompt'))
+import LoadingSpinner from './components/LoadingSpinner'
+import BrowserCompatibility from './components/BrowserCompatibility'
+import ConsentBanner from './components/ConsentBanner'
 
 // Import optimized Zustand selectors
-import { useUIStore } from "./stores/useUIStore";
-import HoverTooltip from './components/HoverTooltip';
-import { WAITLIST_MODE } from "./utils/constants";
-import { useAppAuth } from "./hooks/useAppAuth";
-import { useAppSEO } from "./hooks/useAppSEO";
+import { useUIStore } from './stores/useUIStore'
+import HoverTooltip from './components/HoverTooltip'
+import { WAITLIST_MODE } from './utils/constants'
+import { useAppAuth } from './hooks/useAppAuth'
+import { useAppSEO } from './hooks/useAppSEO'
 
 const App = () => {
   // Use optimized Zustand selectors to prevent unnecessary re-renders
   const { darkMode, themePreset, currentPage, setCurrentPage } = useUIStore(
-    useShallow((state) => ({
+    useShallow(state => ({
       darkMode: state.darkMode,
       themePreset: state.themePreset,
       currentPage: state.currentPage,
       setCurrentPage: state.setCurrentPage,
     }))
-  );
+  )
 
   const {
     user,
@@ -39,63 +40,60 @@ const App = () => {
     needsProfileSetup,
     isBackendAvailable,
     handleLogin,
-    handleProfileComplete
-  } = useAppAuth(setCurrentPage);
+    handleProfileComplete,
+  } = useAppAuth(setCurrentPage)
 
-  useAppSEO(currentPage, user);
+  useAppSEO(currentPage, user)
 
   // Set theme data attribute
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', themePreset);
-  }, [themePreset]);
+    document.documentElement.setAttribute('data-theme', themePreset)
+  }, [themePreset])
 
   const handleError = (error, errorInfo) => {
-    console.error("App Error:", error, errorInfo);
-  };
+    console.error('App Error:', error, errorInfo)
+  }
 
   // Render Logic
-  if (currentPage === "settings") {
+  if (currentPage === 'settings') {
     return (
       <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
         <Suspense fallback={<LoadingSpinner message="Loading settings..." />}>
           <SettingsPage darkMode={darkMode} />
         </Suspense>
       </ErrorBoundary>
-    );
+    )
   }
 
-  if (currentPage === "about") {
+  if (currentPage === 'about') {
     return (
       <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
         <HoverTooltip />
         <Suspense fallback={<LoadingSpinner message="Loading about page..." />}>
-          <About onBack={() => setCurrentPage("main")} />
+          <About onBack={() => setCurrentPage('main')} />
         </Suspense>
       </ErrorBoundary>
-    );
+    )
   }
 
-  if (currentPage === "privacy") {
+  if (currentPage === 'privacy') {
     return (
       <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
         <Suspense fallback={<LoadingSpinner message="Loading privacy policy..." />}>
-          <AppPolicy darkMode={darkMode} onBack={() => setCurrentPage("main")} />
+          <AppPolicy darkMode={darkMode} onBack={() => setCurrentPage('main')} />
         </Suspense>
       </ErrorBoundary>
-    );
+    )
   }
 
-  if (currentPage === "terms") {
+  if (currentPage === 'terms') {
     return (
       <ErrorBoundary darkMode={darkMode} themePreset={themePreset} onError={handleError}>
         <Suspense fallback={<LoadingSpinner message="Loading terms of service..." />}>
-          <TermsOfService
-            darkMode={darkMode}
-            onBack={() => setCurrentPage("main")}
-          />
+          <TermsOfService darkMode={darkMode} onBack={() => setCurrentPage('main')} />
         </Suspense>
       </ErrorBoundary>
-    );
+    )
   }
 
   return (
@@ -103,21 +101,31 @@ const App = () => {
       <HoverTooltip />
       <BrowserCompatibility darkMode={darkMode} />
       {/* Don't show cookie banner on landing/waitlist page */}
-      {currentPage !== "landing" && !WAITLIST_MODE && <ConsentBanner />}
-
+      {currentPage !== 'landing' && !WAITLIST_MODE && <ConsentBanner />}
 
       {/* Backend Offline Warning Banner */}
       {!isBackendAvailable && (
         <div className="fixed top-0 left-0 w-full bg-red-600 text-white z-[100] p-4 shadow-lg">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="w-8 h-8 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <div>
                 <h3 className="font-bold text-lg">System Offline</h3>
                 <p className="text-white/90 text-sm">
-                  The backend server is currently unreachable (Error 521). Login and data saving are disabled.
+                  The backend server is currently unreachable (Error 521). Login and data saving are
+                  disabled.
                 </p>
               </div>
             </div>
@@ -141,7 +149,9 @@ const App = () => {
         </div>
       )}
 
-      <div className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500 ${!isBackendAvailable ? 'pt-20' : ''}`}>
+      <div
+        className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500 ${!isBackendAvailable ? 'pt-20' : ''}`}
+      >
         {authLoading ? (
           <Suspense fallback={<LoadingSpinner message="Checking session..." />}>
             <LoadingSpinner message="Checking session..." />
@@ -164,8 +174,13 @@ const App = () => {
           </Suspense>
         )}
       </div>
-    </ErrorBoundary>
-  );
-};
 
-export default App;
+      {/* PWA Install Prompt - shows on mobile to encourage app installation for fullscreen experience */}
+      <Suspense fallback={null}>
+        <PWAInstallPrompt />
+      </Suspense>
+    </ErrorBoundary>
+  )
+}
+
+export default App
