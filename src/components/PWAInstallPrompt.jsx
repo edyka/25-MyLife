@@ -12,6 +12,15 @@ const PWAInstallPrompt = () => {
   const [isIOSChrome, setIsIOSChrome] = useState(false)
 
   useEffect(() => {
+    // Only show on mobile devices - not on desktop
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth <= 768
+
+    if (!isMobile) {
+      return // Don't show PWA prompt on desktop
+    }
+
     // Check if already installed or dismissed
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
