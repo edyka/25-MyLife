@@ -10,7 +10,6 @@ const OnboardingWizard = lazy(() => import('./components/OnboardingWizard'))
 const About = lazy(() => import('./components/About'))
 const AppPolicy = lazy(() => import('./components/AppPolicy'))
 const TermsOfService = lazy(() => import('./components/TermsOfService'))
-const PWAInstallPrompt = lazy(() => import('./components/PWAInstallPrompt'))
 import LoadingSpinner from './components/LoadingSpinner'
 import BrowserCompatibility from './components/BrowserCompatibility'
 import ConsentBanner from './components/ConsentBanner'
@@ -185,10 +184,6 @@ const App = () => {
         )}
       </div>
 
-      {/* PWA Install Prompt - shows on mobile to encourage app installation for fullscreen experience */}
-      <Suspense fallback={null}>
-        <PWAInstallPrompt />
-      </Suspense>
     </ErrorBoundary>
   )
 }

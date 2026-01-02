@@ -266,6 +266,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
     handleWeekMouseDown: handleWeekMouseDown || (() => {}),
     handleWeekMouseEnter: handleWeekMouseEnter || (() => {}),
     handleMouseUp: handleMouseUp || (() => {}),
+    handleWeekClick: handleWeekClick || (() => {}),
   })
 
   // Handle custom mood creation - memoized to prevent unnecessary re-renders

@@ -9,6 +9,7 @@ export const useModernTouchGestures = ({
   handleWeekMouseDown,
   handleWeekMouseEnter,
   handleMouseUp,
+  handleWeekClick,
 }) => {
   const [touchStartTime, setTouchStartTime] = useState(null)
   const [touchStartPosition, setTouchStartPosition] = useState(null)
@@ -63,7 +64,12 @@ export const useModernTouchGestures = ({
 
       // IMMEDIATE response - handle the tap right away for responsive feel
       triggerHapticFeedback('light')
-      handleWeekMouseDown(weekNum, event)
+      // On mobile, use handleWeekClick which handles coloring (handleWeekMouseDown is desktop-only)
+      if (handleWeekClick) {
+        handleWeekClick(weekNum, event)
+      } else {
+        handleWeekMouseDown(weekNum, event)
+      }
 
       // Set up long press detection (for multi-selection mode)
       longPressTimerRef.current = setTimeout(() => {
@@ -88,6 +94,7 @@ export const useModernTouchGestures = ({
       setSelectedWeeks,
       setSelectionMode,
       handleWeekMouseDown,
+      handleWeekClick,
       triggerHapticFeedback,
     ]
   )
