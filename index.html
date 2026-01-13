@@ -332,7 +332,59 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <!-- SEO: Initial content for search engines (replaced by React) -->
+    <div id="root">
+      <!-- This content is visible to search crawlers and users before JS loads -->
+      <div style="font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; text-align: center;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1e293b;">
+          Viventiva - Visualize Your Life in Weeks
+        </h1>
+        <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
+          See your entire life at a glance. Each square represents one week of your ~4,000 week journey.
+          Track milestones, set meaningful goals, and live with intention.
+        </p>
+
+        <h2 style="font-size: 1.5rem; color: #334155; margin-bottom: 1rem;">Why Viventiva?</h2>
+        <ul style="text-align: left; max-width: 500px; margin: 0 auto 2rem; color: #475569; line-height: 1.8;">
+          <li><strong>Life Visualization</strong> - See your entire life in a beautiful grid of weeks</li>
+          <li><strong>Milestone Tracking</strong> - Record and celebrate meaningful moments</li>
+          <li><strong>Goal Setting</strong> - Set intentions and track progress over time</li>
+          <li><strong>Mood Journaling</strong> - Color your weeks with emotions and reflections</li>
+          <li><strong>Privacy First</strong> - Your data stays yours, always</li>
+        </ul>
+
+        <h2 style="font-size: 1.5rem; color: #334155; margin-bottom: 1rem;">The Power of Perspective</h2>
+        <p style="color: #64748b; margin-bottom: 2rem;">
+          The average human life spans about 4,000 weeks. Viventiva helps you visualize this finite
+          time, inspiring you to make every week count. Based on the concept of "memento vivere"
+          (remember to live), our tool transforms abstract time into a tangible, actionable format.
+        </p>
+
+        <p style="color: #94a3b8; font-style: italic;">
+          "The trouble is, you think you have time." — Buddha
+        </p>
+      </div>
+    </div>
+
+    <!-- Noscript fallback for users without JavaScript -->
+    <noscript>
+      <div style="font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; text-align: center;">
+        <h1>Viventiva - Life Visualization Tool</h1>
+        <p>Viventiva requires JavaScript to run. Please enable JavaScript in your browser to use this application.</p>
+        <p>Viventiva is a powerful life visualization tool that helps you see your entire life in weeks.
+           Track meaningful moments, set intentions, and live with purpose.</p>
+        <h2>Features</h2>
+        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+          <li>Visualize your life in weeks (approximately 4,000 weeks)</li>
+          <li>Track milestones and meaningful moments</li>
+          <li>Set and achieve life goals</li>
+          <li>Journal your emotions with mood tracking</li>
+          <li>Sync across all your devices</li>
+        </ul>
+        <p><a href="mailto:contact@viventiva.com">Contact us</a> for more information.</p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -5,6 +5,25 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Enable Netlify Prerendering for SEO (serves static HTML to bots)
+[build.processing]
+  skip_processing = false
+
+[build.processing.html]
+  pretty_urls = true
+
+# Prerendering for search engine bots (critical for React SPA SEO)
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+
+# Redirects - SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin", "user"]}
+
+# Bot detection - serve prerendered content
 [[redirects]]
   from = "/*"
   to = "/index.html"
