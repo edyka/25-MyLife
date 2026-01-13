@@ -310,7 +310,6 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
       className={`min-h-screen flex flex-col transition-all duration-500 ${
         darkMode ? 'modern-bg-dark' : 'modern-bg'
       }`}
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <TabNavigation
         currentTab={currentTab}
