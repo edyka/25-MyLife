@@ -457,8 +457,20 @@ code {
   transform: scale(1.1) translateZ(10px);
 }
 
-/* Mobile Viewport Height - Uses dynamic viewport height for better mobile experience */
-/* This accounts for mobile browser chrome (URL bar, etc.) */
+/* ============================================
+   Modern Viewport Units (2025 Standards)
+   svh = Small Viewport Height (stable, browser UI visible)
+   lvh = Large Viewport Height (browser UI hidden)
+   dvh = Dynamic Viewport Height (adapts in real-time)
+   ============================================ */
+
+/* Use svh for stable layouts that shouldn't jump */
+.min-h-screen-stable {
+  min-height: 100vh; /* Fallback */
+  min-height: 100svh;
+}
+
+/* Use dvh for full-screen content that adapts to browser chrome */
 @supports (height: 100dvh) {
   .min-h-screen {
     min-height: 100dvh !important;
@@ -467,12 +479,34 @@ code {
   .h-screen {
     height: 100dvh !important;
   }
+
+  /* Full height accounting for safe areas */
+  .h-screen-safe {
+    height: calc(100dvh - var(--sat, 0px) - var(--sab, 0px)) !important;
+  }
 }
 
-/* Fallback for browsers that don't support dvh */
+/* Use svh for elements that need consistent sizing */
+@supports (height: 100svh) {
+  .min-h-screen-svh {
+    min-height: 100svh !important;
+  }
+
+  .h-screen-svh {
+    height: 100svh !important;
+  }
+}
+
+/* Fallback for browsers that don't support modern units */
 @supports not (height: 100dvh) {
   .min-h-screen {
+    min-height: 100vh;
     min-height: -webkit-fill-available;
+  }
+
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
   }
 }
 
@@ -547,16 +581,60 @@ code {
   margin-left: 0.5rem;
 }
 
-/* Safe area padding for iOS devices with notch/home indicator */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+/* ============================================
+   Safe Area Utilities (iOS Notch/Dynamic Island/Home Indicator)
+   ============================================ */
+
+/* Safe area CSS custom properties (also defined in index.html) */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
 }
 
+/* Padding utilities */
 .safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--sat);
 }
 
-/* Standalone mode detection (when app is installed) */
+.safe-area-bottom {
+  padding-bottom: var(--sab);
+}
+
+.safe-area-left {
+  padding-left: var(--sal);
+}
+
+.safe-area-right {
+  padding-right: var(--sar);
+}
+
+.safe-area-all {
+  padding: var(--sat) var(--sar) var(--sab) var(--sal);
+}
+
+/* Margin utilities */
+.safe-margin-top {
+  margin-top: var(--sat);
+}
+
+.safe-margin-bottom {
+  margin-bottom: var(--sab);
+}
+
+/* Position utilities for fixed/sticky elements */
+.fixed-safe-top {
+  top: var(--sat);
+}
+
+.fixed-safe-bottom {
+  bottom: var(--sab);
+}
+
+/* ============================================
+   PWA Standalone Mode Optimizations
+   ============================================ */
 @media (display-mode: standalone) {
   .pwa-install-prompt {
     display: none !important;
@@ -564,6 +642,61 @@ code {
 
   /* Extra bottom padding in standalone mode for home indicator */
   .standalone-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+    padding-bottom: var(--sab, 20px);
+  }
+
+  /* Hide browser-only UI in standalone mode */
+  .browser-only {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   Modern Touch & Interaction Utilities
+   ============================================ */
+
+/* Improve touch targets (minimum 44x44px recommended by Apple) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Disable double-tap zoom on interactive elements */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Prevent text selection on UI elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Enable text selection */
+.select-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Momentum scrolling for scroll containers */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Prevent overscroll/bounce */
+.no-overscroll {
+  overscroll-behavior: none;
+}
+
+/* Hardware accelerated scrolling */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-smooth {
+    scroll-behavior: auto;
   }
 }
