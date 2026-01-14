@@ -120,44 +120,67 @@ const HomePage = ({ darkMode, onLogin }) => {
         />
       </div>
 
-      {/* Top Right Navigation */}
-      <motion.div
+      {/* Top Header Bar - Not floating */}
+      <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed right-4 z-[60] flex items-center gap-3"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
+        className={`sticky top-0 z-[60] w-full border-b ${
+          darkMode
+            ? 'bg-slate-900/95 border-slate-800 backdrop-blur-lg'
+            : 'bg-white/95 border-slate-200 backdrop-blur-lg'
+        }`}
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className={`p-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
-            darkMode
-              ? 'bg-slate-800/80 backdrop-blur-xl text-yellow-400 hover:bg-slate-700 border border-slate-700'
-              : 'bg-white/80 backdrop-blur-xl text-slate-700 hover:bg-white border border-slate-200'
-          } shadow-lg hover:shadow-xl`}
-          aria-label="Toggle dark mode"
-        >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 bg-gradient-to-br ${theme.iconBg} rounded-xl shadow-lg flex items-center justify-center`}>
+              <div className="grid grid-cols-3 gap-0.5 w-4 h-4">
+                {[...Array(9)].map((_, i) => (
+                  <div key={i} className="bg-white/90 rounded-[1px]"></div>
+                ))}
+              </div>
+            </div>
+            <span className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              Viventiva
+            </span>
+          </div>
 
-        <button
-          onClick={e => {
-            e.preventDefault()
-            e.stopPropagation()
-            handleLoginClick()
-          }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
-            darkMode
-              ? 'bg-slate-800/80 backdrop-blur-xl text-white hover:bg-slate-700 border border-slate-700'
-              : 'bg-white/80 backdrop-blur-xl text-slate-900 hover:bg-white border border-slate-200'
-          } shadow-lg hover:shadow-xl`}
-        >
-          <LogIn className="w-4 h-4" />
-          Log In
-        </button>
-      </motion.div>
+          {/* Right side buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-2.5 rounded-xl transition-all duration-300 ${
+                darkMode
+                  ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            <button
+              onClick={e => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleLoginClick()
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                darkMode
+                  ? 'bg-slate-800 text-white hover:bg-slate-700'
+                  : 'bg-slate-900 text-white hover:bg-slate-800'
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              Log In
+            </button>
+          </div>
+        </div>
+      </motion.header>
 
       {/* SECTION 1: HERO */}
-      <section className="relative z-10 w-full min-h-screen flex items-center justify-center pt-20 pb-20 px-4 sm:px-6 overflow-hidden">
+      <section className="relative z-10 w-full min-h-[calc(100vh-60px)] flex items-center justify-center py-12 px-4 sm:px-6 overflow-hidden">
         {/* Floating Week Squares Background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(15)].map((_, i) => (
