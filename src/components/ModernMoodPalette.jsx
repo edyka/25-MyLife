@@ -164,12 +164,12 @@ const INITIAL_MOODS = [
 const ModernMoodPalette = ({
   selectedColor,
   setSelectedColor,
-  selectedWeeks,
-  pinnedWeeks = new Set(),
-  isInRangeMode = false,
-  rangeStart = null,
+  _selectedWeeks,
+  _pinnedWeeks = new Set(),
+  _isInRangeMode = false,
+  _rangeStart = null,
   resetRangeSelection = () => {},
-  clearPinnedWeeks = () => {},
+  _clearPinnedWeeks = () => {},
   onAddCustomMood = () => {},
   onToggleMilestone = () => {},
 }) => {
@@ -327,9 +327,6 @@ const ModernMoodPalette = ({
     setEditForm({ label: '', description: '', color: '', icon: null })
   }
 
-  const hasActiveSelection = selectedColor || pinnedWeeks.size > 0 || selectedWeeks.size > 0
-  const totalSelected = pinnedWeeks.size || selectedWeeks.size
-
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -420,8 +417,8 @@ const ModernMoodPalette = ({
         )}
       </div>
 
-      {/* Modern Mood Grid - More columns on mobile */}
-      <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-6 gap-1.5 sm:gap-2">
+      {/* Modern Mood Grid - Compact on desktop, 4 cols on mobile */}
+      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-1.5">
         {/* Custom Mood Creator (New Button) */}
         <CustomMoodCreator
           darkMode={darkMode}
@@ -431,7 +428,7 @@ const ModernMoodPalette = ({
 
         <button
           onClick={onToggleMilestone}
-          className={`group relative p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300 overflow-visible cursor-pointer hover:scale-105 hover:shadow-xl flex flex-col items-center gap-1 sm:gap-2 ${
+          className={`group relative p-2 sm:p-2 rounded-lg sm:rounded-lg transition-all duration-200 overflow-visible cursor-pointer hover:scale-105 hover:shadow-lg flex flex-col items-center gap-1 ${
             darkMode
               ? 'bg-slate-800 border border-slate-700 border-dashed hover:border-slate-500'
               : 'bg-slate-50 border border-slate-200 border-dashed hover:border-slate-400'
@@ -439,31 +436,24 @@ const ModernMoodPalette = ({
           style={{ height: '100%' }}
         >
           <div
-            className={`w-7 h-7 sm:w-10 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center transition-all duration-300 shadow-md ${
+            className={`w-7 h-7 sm:w-7 sm:h-7 rounded-md flex items-center justify-center transition-all duration-200 shadow-sm ${
               darkMode ? 'bg-slate-700' : 'bg-white'
             }`}
           >
-            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rotate-45 shadow-sm border-[0.5px] border-black/20" />
+            <div className="w-2 h-2 bg-white rotate-45 shadow-sm border-[0.5px] border-black/20" />
           </div>
-          <div className="text-center">
-            <p
-              className={`text-[10px] sm:text-sm font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}
-            >
-              Mark
-            </p>
-            <p
-              className={`text-[8px] sm:text-xs mt-0 sm:mt-0.5 font-medium hidden sm:block ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
-            >
-              Milestone
-            </p>
-          </div>
+          <p
+            className={`text-[10px] sm:text-[10px] font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}
+          >
+            Mark
+          </p>
         </button>
         {/* Clear/Eraser Tool */}
         <div
-          className={`group relative p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300 overflow-visible cursor-pointer ${
+          className={`group relative p-2 sm:p-2 rounded-lg sm:rounded-lg transition-all duration-200 overflow-visible cursor-pointer ${
             selectedColor === 'none'
-              ? 'scale-105 shadow-2xl ring-2 sm:ring-4 ring-slate-500'
-              : 'hover:scale-105 hover:shadow-xl'
+              ? 'scale-105 shadow-lg ring-2 ring-slate-500'
+              : 'hover:scale-105 hover:shadow-lg'
           }`}
           style={{
             backgroundColor:
@@ -492,19 +482,19 @@ const ModernMoodPalette = ({
           }}
         >
           {/* Content */}
-          <div className="relative flex flex-col items-center gap-1 sm:gap-2">
+          <div className="relative flex flex-col items-center gap-1">
             {/* Icon Container */}
             <div
-              className={`w-7 h-7 sm:w-10 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center transition-all duration-300 shadow-md ${
+              className={`w-7 h-7 sm:w-7 sm:h-7 rounded-md flex items-center justify-center transition-all duration-200 shadow-sm ${
                 selectedColor === 'none'
-                  ? 'bg-slate-600 shadow-lg'
+                  ? 'bg-slate-600 shadow-md'
                   : darkMode
                     ? 'bg-slate-700'
                     : 'bg-white'
               }`}
             >
               <Icons.Eraser
-                className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                className={`w-4 h-4 ${
                   selectedColor === 'none'
                     ? 'text-white'
                     : darkMode
@@ -515,22 +505,13 @@ const ModernMoodPalette = ({
             </div>
 
             {/* Label */}
-            <div className="text-center">
-              <p
-                className={`text-[10px] sm:text-sm font-bold ${
-                  darkMode ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                Erase
-              </p>
-              <p
-                className={`text-[8px] sm:text-xs mt-0 sm:mt-0.5 font-medium hidden sm:block ${
-                  darkMode ? 'text-slate-400' : 'text-slate-600'
-                }`}
-              >
-                Clear weeks
-              </p>
-            </div>
+            <p
+              className={`text-[10px] sm:text-[10px] font-semibold ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              Erase
+            </p>
           </div>
         </div>
 
@@ -543,10 +524,8 @@ const ModernMoodPalette = ({
           return (
             <div
               key={mood.key}
-              className={`group relative p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300 overflow-visible cursor-pointer ${
-                isActive
-                  ? 'scale-105 shadow-2xl ring-2 sm:ring-4'
-                  : 'hover:scale-105 hover:shadow-xl'
+              className={`group relative p-2 sm:p-2 rounded-lg sm:rounded-lg transition-all duration-200 overflow-visible cursor-pointer ${
+                isActive ? 'scale-105 shadow-lg ring-2' : 'hover:scale-105 hover:shadow-lg'
               } ${isLocked ? 'opacity-60' : ''}`}
               style={{
                 backgroundColor: isActive
@@ -590,10 +569,10 @@ const ModernMoodPalette = ({
               />
 
               {/* Content */}
-              <div className="relative flex flex-col items-center gap-1 sm:gap-2">
+              <div className="relative flex flex-col items-center gap-1">
                 {/* Icon Container */}
                 <div
-                  className={`w-7 h-7 sm:w-10 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center transition-all duration-300 shadow-md ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center transition-all duration-300 shadow-md ${
                     isActive || isHovered ? 'scale-110 shadow-lg' : ''
                   }`}
                   style={{
@@ -603,7 +582,7 @@ const ModernMoodPalette = ({
                   }}
                 >
                   <Icon
-                    className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-300`}
+                    className={`w-4 h-4 transition-colors duration-300`}
                     style={{
                       color: isActive ? '#fff' : mood.color,
                       filter: isActive ? 'none' : 'brightness(0.8)',
@@ -611,21 +590,14 @@ const ModernMoodPalette = ({
                   />
                 </div>
 
-                {/* Label and Description */}
+                {/* Label */}
                 <div className="text-center">
                   <p
-                    className={`text-[10px] sm:text-sm font-bold ${
+                    className={`text-[10px] sm:text-xs font-semibold ${
                       darkMode ? 'text-white' : 'text-slate-900'
                     }`}
                   >
                     {mood.label}
-                  </p>
-                  <p
-                    className={`text-[8px] sm:text-xs mt-0 sm:mt-0.5 font-medium hidden sm:block ${
-                      darkMode ? 'text-slate-400' : 'text-slate-600'
-                    }`}
-                  >
-                    {mood.description}
                   </p>
                 </div>
 
