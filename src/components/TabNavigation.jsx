@@ -1,4 +1,4 @@
-import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown, Zap, Settings, Grid3X3, Calendar } from 'lucide-react'
+import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown, Settings } from 'lucide-react'
 import { Switch } from '@headlessui/react'
 
 // Import optimized life selectors
@@ -43,24 +43,6 @@ const TabNavigation = ({
   // Get subscription tier
   const tier = usePremiumStore(state => state.tier)
   const subscriptionLoading = usePremiumStore(state => state.subscriptionLoading)
-
-  // Tier badge config
-  const tierConfig = {
-    free: { label: 'FREE', icon: null, color: 'bg-slate-500', textColor: 'text-slate-500' },
-    pro: {
-      label: 'PRO',
-      icon: Zap,
-      color: 'bg-gradient-to-r from-blue-500 to-purple-500',
-      textColor: 'text-blue-500',
-    },
-    life: {
-      label: 'LIFETIME',
-      icon: Crown,
-      color: 'bg-gradient-to-r from-amber-500 to-orange-500',
-      textColor: 'text-amber-500',
-    },
-  }
-  const currentTier = tierConfig[tier] || tierConfig.free
 
   const handleLogout = async () => {
     console.log('[Viventiva] Logout initiated')
@@ -404,7 +386,7 @@ const TabNavigation = ({
         </div>
       </nav>
 
-      {/* Mobile Bottom Navigation - Clean single row (Instagram/Spotify style) */}
+      {/* Mobile Bottom Navigation - Compact with user info */}
       <nav
         className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t ${
           darkMode
@@ -413,23 +395,43 @@ const TabNavigation = ({
         }`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-1.5">
+          {/* User info as first "tab" */}
+          <div className="flex flex-col items-center justify-center py-1 px-2">
+            <div
+              className={`w-6 h-6 bg-gradient-to-br ${theme.iconBg} rounded-lg flex items-center justify-center`}
+            >
+              <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
+                {[...Array(9)].map((_, i) => (
+                  <div key={i} className="bg-white/90 rounded-[0.5px]"></div>
+                ))}
+              </div>
+            </div>
+            <span
+              className={`text-[9px] font-semibold mt-0.5 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}
+            >
+              {userName || 'You'}
+              {!subscriptionLoading && tier !== 'free' && (tier === 'life' ? ' 👑' : ' ⚡')}
+            </span>
+          </div>
+
+          {/* Navigation tabs */}
           {MOBILE_TABS.map(({ key, label, icon: Icon }) => {
             const isActive = currentTab === key
             return (
               <button
                 key={key}
                 onClick={() => setCurrentTab(key)}
-                className={`flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg scale-105`
+                    ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
                     : darkMode
-                      ? 'text-slate-400 active:text-white active:bg-slate-800/50'
-                      : 'text-slate-500 active:text-slate-900 active:bg-slate-100'
+                      ? 'text-slate-400 active:text-white'
+                      : 'text-slate-500 active:text-slate-900'
                 }`}
               >
-                <Icon className={`w-6 h-6 ${isActive ? '' : ''}`} />
-                <span className={`text-[10px] font-semibold mt-1 ${isActive ? 'text-white' : ''}`}>
+                <Icon className="w-5 h-5" />
+                <span className={`text-[9px] font-semibold mt-0.5 ${isActive ? 'text-white' : ''}`}>
                   {label}
                 </span>
               </button>
@@ -437,50 +439,6 @@ const TabNavigation = ({
           })}
         </div>
       </nav>
-
-      {/* Mobile Floating Action Buttons - Quick toggles */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-3 py-2"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
-      >
-        {/* User badge */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
-          darkMode ? 'bg-slate-800/80 backdrop-blur-lg' : 'bg-white/80 backdrop-blur-lg shadow-sm'
-        }`}>
-          <div className={`w-5 h-5 bg-gradient-to-br ${theme.iconBg} rounded-md flex items-center justify-center`}>
-            <div className="grid grid-cols-3 gap-[1px] w-2.5 h-2.5">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="bg-white/90 rounded-[0.5px]"></div>
-              ))}
-            </div>
-          </div>
-          <span className={`text-xs font-semibold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-            {userName || 'Viventiva'}
-          </span>
-          {!subscriptionLoading && tier !== 'free' && (
-            <span className="text-xs">{tier === 'life' ? '👑' : '⚡'}</span>
-          )}
-        </div>
-
-        {/* Quick toggles */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowWeeks(!showWeeks)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-              darkMode ? 'bg-slate-800/80 text-white backdrop-blur-lg' : 'bg-white/80 text-slate-700 backdrop-blur-lg shadow-sm'
-            }`}
-          >
-            {showWeeks ? 'Weeks' : 'Months'}
-          </button>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-full ${
-              darkMode ? 'bg-slate-800/80 text-yellow-400 backdrop-blur-lg' : 'bg-white/80 text-slate-600 backdrop-blur-lg shadow-sm'
-            }`}
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
     </>
   )
 }
