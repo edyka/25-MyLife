@@ -1,4 +1,4 @@
-import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown, Settings } from 'lucide-react'
+import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown } from 'lucide-react'
 import { Switch } from '@headlessui/react'
 
 // Import optimized life selectors
@@ -8,12 +8,11 @@ import { usePremiumStore } from '../stores/usePremiumStore'
 import { getTheme } from '../utils/themeConfig'
 import { auth, database } from '../lib/supabase'
 
-// Mobile uses 4 tabs: Home, Goals, Premium, Settings
+// Mobile uses 3 tabs: Home, Goals, Premium (Settings via user icon)
 const MOBILE_TABS = [
   { key: 'home', label: 'Home', icon: Home },
   { key: 'goals', label: 'Goals', icon: Target },
   { key: 'premium', label: 'Pro', icon: Sparkles },
-  { key: 'settings', label: 'Settings', icon: Settings },
 ]
 
 // Desktop uses 3 tabs (settings is in top bar)
@@ -396,10 +395,19 @@ const TabNavigation = ({
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around py-1.5">
-          {/* User info as first "tab" */}
-          <div className="flex flex-col items-center justify-center py-1 px-2">
+          {/* User icon - navigates to Settings */}
+          <button
+            onClick={() => setCurrentTab('settings')}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 ${
+              currentTab === 'settings'
+                ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
+                : darkMode
+                  ? 'text-slate-400 active:text-white'
+                  : 'text-slate-500 active:text-slate-900'
+            }`}
+          >
             <div
-              className={`w-6 h-6 bg-gradient-to-br ${theme.iconBg} rounded-lg flex items-center justify-center`}
+              className={`w-6 h-6 ${currentTab === 'settings' ? 'bg-white/20' : `bg-gradient-to-br ${theme.iconBg}`} rounded-lg flex items-center justify-center`}
             >
               <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
                 {[...Array(9)].map((_, i) => (
@@ -408,12 +416,12 @@ const TabNavigation = ({
               </div>
             </div>
             <span
-              className={`text-[9px] font-semibold mt-0.5 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}
+              className={`text-[9px] font-semibold mt-0.5 ${currentTab === 'settings' ? 'text-white' : ''}`}
             >
               {userName || 'You'}
               {!subscriptionLoading && tier !== 'free' && (tier === 'life' ? ' 👑' : ' ⚡')}
             </span>
-          </div>
+          </button>
 
           {/* Navigation tabs */}
           {MOBILE_TABS.map(({ key, label, icon: Icon }) => {
