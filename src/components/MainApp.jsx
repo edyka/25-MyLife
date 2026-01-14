@@ -358,7 +358,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
               <Dashboard stats={stats} darkMode={darkMode} />
 
               {/* Life Grid Section */}
-              <div id="life-grid" className={`relative overflow-visible space-y-6 sm:space-y-8`}>
+              <div id="life-grid" className={`relative overflow-visible space-y-8 sm:space-y-10`}>
                 {/* Modern Mood Palette - Sticky on mobile only */}
                 <div
                   className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element md:relative sticky top-0 z-40`}

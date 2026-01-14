@@ -153,7 +153,7 @@ const CustomMoodCreator = ({
           style={{ touchAction: 'manipulation' }}
         >
           <div
-            className={`relative p-[3px] rounded-full transition-all duration-300 hover:scale-105`}
+            className={`relative p-[2px] rounded-full transition-all duration-300 hover:scale-105`}
             style={{
               background: isAtLimit
                 ? 'linear-gradient(45deg, #fbbf24, #f59e0b, #fbbf24)'
@@ -163,12 +163,12 @@ const CustomMoodCreator = ({
             }}
           >
             <div
-              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
                 darkMode ? 'bg-slate-900' : 'bg-white'
               }`}
             >
               <div
-                className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center border-2 border-dashed transition-all duration-300 ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center border-2 border-dashed transition-all duration-300 ${
                   isAtLimit
                     ? 'border-amber-400 bg-amber-500/20'
                     : darkMode
@@ -177,9 +177,9 @@ const CustomMoodCreator = ({
                 }`}
               >
                 {isAtLimit ? (
-                  <Lock className={`w-5 h-5 ${darkMode ? 'text-amber-400' : 'text-amber-500'}`} />
+                  <Lock className={`w-4 h-4 ${darkMode ? 'text-amber-400' : 'text-amber-500'}`} />
                 ) : (
-                  <Plus className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+                  <Plus className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                 )}
               </div>
             </div>

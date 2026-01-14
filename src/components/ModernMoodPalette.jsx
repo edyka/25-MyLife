@@ -203,8 +203,8 @@ const StoryCircle = ({ mood, isActive, isLocked, darkMode, onClick, onLongPress 
     >
       {/* Gradient Ring Container */}
       <div
-        className={`relative p-[3px] rounded-full transition-all duration-300 ${
-          isPressed ? 'scale-95' : isActive ? 'scale-110' : 'hover:scale-105'
+        className={`relative p-[2px] rounded-full transition-all duration-300 ${
+          isPressed ? 'scale-95' : isActive ? 'scale-105' : 'hover:scale-105'
         }`}
         style={{
           background: isActive
@@ -214,22 +214,22 @@ const StoryCircle = ({ mood, isActive, isLocked, darkMode, onClick, onLongPress 
       >
         {/* Inner Circle */}
         <div
-          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+          className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
             darkMode ? 'bg-slate-900' : 'bg-white'
           }`}
           style={{
-            boxShadow: isActive ? `0 0 20px ${mood.color}50` : 'none',
+            boxShadow: isActive ? `0 0 12px ${mood.color}50` : 'none',
           }}
         >
           {/* Icon Background */}
           <div
-            className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center transition-all duration-300`}
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-300`}
             style={{
               backgroundColor: isActive ? mood.color : `${mood.color}25`,
             }}
           >
             <Icon
-              className="w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300"
+              className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-colors duration-300"
               style={{
                 color: isActive ? '#fff' : mood.color,
               }}
@@ -249,13 +249,13 @@ const StoryCircle = ({ mood, isActive, isLocked, darkMode, onClick, onLongPress 
         {/* Active checkmark */}
         {isActive && !isLocked && (
           <div
-            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center border-2"
+            className="absolute -bottom-0 -right-0 w-4 h-4 rounded-full flex items-center justify-center border-2"
             style={{
               backgroundColor: mood.color,
               borderColor: darkMode ? '#0f172a' : '#fff',
             }}
           >
-            <Icons.Check className="w-3 h-3 text-white" />
+            <Icons.Check className="w-2.5 h-2.5 text-white" />
           </div>
         )}
       </div>
@@ -289,13 +289,13 @@ const ActionCircle = ({
 }) => {
   return (
     <div
-      className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer select-none"
+      className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer select-none"
       onClick={onClick}
       style={{ touchAction: 'manipulation' }}
     >
       <div
-        className={`relative p-[3px] rounded-full transition-all duration-300 ${
-          isActive ? 'scale-110' : 'hover:scale-105'
+        className={`relative p-[2px] rounded-full transition-all duration-300 ${
+          isActive ? 'scale-105' : 'hover:scale-105'
         }`}
         style={{
           background: isActive
@@ -306,12 +306,12 @@ const ActionCircle = ({
         }}
       >
         <div
-          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+          className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
             darkMode ? 'bg-slate-900' : 'bg-white'
           }`}
         >
           <div
-            className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center border-2 border-dashed transition-all duration-300 ${
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center border-2 border-dashed transition-all duration-300 ${
               isActive
                 ? 'border-slate-400 bg-slate-600'
                 : darkMode
@@ -582,7 +582,7 @@ const ModernMoodPalette = ({
 
         {/* Mark Milestone */}
         <ActionCircle
-          icon={<div className="w-3 h-3 bg-yellow-400 rotate-45 shadow-sm" />}
+          icon={<div className="w-2.5 h-2.5 bg-yellow-400 rotate-45 shadow-sm" />}
           label="Mark"
           isActive={false}
           darkMode={darkMode}
@@ -594,7 +594,7 @@ const ModernMoodPalette = ({
         <ActionCircle
           icon={
             <Icons.Eraser
-              className={`w-5 h-5 ${selectedColor === 'none' ? 'text-white' : darkMode ? 'text-slate-400' : 'text-slate-500'}`}
+              className={`w-4 h-4 ${selectedColor === 'none' ? 'text-white' : darkMode ? 'text-slate-400' : 'text-slate-500'}`}
             />
           }
           label="Erase"
@@ -606,7 +606,7 @@ const ModernMoodPalette = ({
 
         {/* Divider */}
         <div
-          className={`w-px h-16 sm:h-[72px] self-center flex-shrink-0 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}
+          className={`w-px h-12 sm:h-14 self-center flex-shrink-0 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}
         />
 
         {/* Mood Stories */}
