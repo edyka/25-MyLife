@@ -75,12 +75,18 @@ export const useWeekInteractionsZustand = () => {
 
   const handleWeekClick = useCallback(
     (weekNum, event) => {
+      // Get fresh state from store to avoid stale closure values
+      const currentState = useSelectionStore.getState()
+      const currentRangeStart = currentState.rangeStart
+      const currentIsInRangeMode = currentState.isInRangeMode
+      const currentSelectedColor = currentState.selectedColor
+
       setSelectedWeek(weekNum)
 
       // Handle shift+click for rectangular selection (power user feature)
-      if (selectionMode === 'rectangular' && event?.shiftKey && rangeStart) {
-        const newSelection = selectRectangularArea(rangeStart, weekNum)
-        if (selectedColor) {
+      if (selectionMode === 'rectangular' && event?.shiftKey && currentRangeStart) {
+        const newSelection = selectRectangularArea(currentRangeStart, weekNum)
+        if (currentSelectedColor) {
           paintWeeks(newSelection)
         }
         resetRangeSelection()
@@ -88,14 +94,14 @@ export const useWeekInteractionsZustand = () => {
       }
 
       // If no color selected, just select the week
-      if (!selectedColor) {
+      if (!currentSelectedColor) {
         return
       }
 
       // Range selection: if we already have a range start, complete the range
-      if (isInRangeMode && rangeStart !== null) {
+      if (currentIsInRangeMode && currentRangeStart !== null) {
         // Get all weeks in the range and paint them
-        const rangeWeeks = getWeeksInRange(rangeStart, weekNum)
+        const rangeWeeks = getWeeksInRange(currentRangeStart, weekNum)
         paintWeeks(rangeWeeks)
         // Complete range selection (resets rangeStart)
         completeRangeSelection(weekNum)
@@ -109,9 +115,6 @@ export const useWeekInteractionsZustand = () => {
     [
       setSelectedWeek,
       selectionMode,
-      rangeStart,
-      isInRangeMode,
-      selectedColor,
       selectRectangularArea,
       getWeeksInRange,
       startRangeSelection,
