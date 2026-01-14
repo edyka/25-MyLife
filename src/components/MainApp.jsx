@@ -357,9 +357,14 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                   onAddCustomMood={handleAddCustomMood}
                   onToggleMilestone={handleToggleMilestone}
                 />
-
+              </div>
+              <div
+                className={`${
+                  darkMode ? 'premium-card-dark' : 'premium-card'
+                } p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl`}
+              >
                 {/* Weeks/Months Toggle - Mobile only (desktop has it in nav) */}
-                <div className="md:hidden flex justify-center mt-4">
+                <div className="md:hidden flex justify-center mb-4">
                   <div
                     className={`inline-flex items-center gap-1 p-1 rounded-xl ${
                       darkMode ? 'bg-slate-700/50' : 'bg-slate-200/50'
@@ -391,12 +396,6 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                     </button>
                   </div>
                 </div>
-              </div>
-              <div
-                className={`${
-                  darkMode ? 'premium-card-dark' : 'premium-card'
-                } p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl`}
-              >
                 <ClearLifeGrid
                   lifeExpectancy={lifeExpectancy}
                   currentWeek={currentWeek}
