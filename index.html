@@ -337,10 +337,10 @@
   </head>
 
   <body>
-    <!-- SEO: Initial content for search engines (replaced by React) -->
+    <!-- SEO: Initial content for search engines (hidden visually, replaced by React) -->
     <div id="root">
-      <!-- This content is visible to search crawlers and users before JS loads -->
-      <div style="font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; text-align: center;">
+      <!-- This content is for search crawlers - hidden from users, React replaces it -->
+      <div id="seo-content" style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;">
         <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1e293b;">
           Viventiva - Visualize Your Life in Weeks
         </h1>
