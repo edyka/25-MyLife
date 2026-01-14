@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import * as Icons from './icons'
 import { Lock } from 'lucide-react'
@@ -71,6 +71,7 @@ const AVAILABLE_COLORS = [
   },
   { name: 'Cyan', hex: '#06b6d4', bg: 'bg-cyan-500', light: 'bg-cyan-50', dark: 'bg-cyan-950' },
 ]
+
 import { useUIStore } from '../stores/useUIStore'
 import { useMilestoneStore } from '../stores/useMilestoneStore'
 
@@ -83,7 +84,7 @@ const INITIAL_MOODS = [
     key: 'happy',
     label: 'Happy',
     icon: Icons.Smile,
-    color: '#10b981', // emerald-500
+    color: '#10b981',
     bg: 'bg-emerald-500',
     lightBg: 'bg-emerald-50',
     darkBg: 'bg-emerald-950',
@@ -93,7 +94,7 @@ const INITIAL_MOODS = [
     key: 'inlove',
     label: 'In Love',
     icon: Icons.Heart,
-    color: '#ec4899', // pink-500
+    color: '#ec4899',
     bg: 'bg-pink-500',
     lightBg: 'bg-pink-50',
     darkBg: 'bg-pink-950',
@@ -103,7 +104,7 @@ const INITIAL_MOODS = [
     key: 'focused',
     label: 'Focused',
     icon: Icons.Target,
-    color: '#3b82f6', // blue-500
+    color: '#3b82f6',
     bg: 'bg-blue-500',
     lightBg: 'bg-blue-50',
     darkBg: 'bg-blue-950',
@@ -113,7 +114,7 @@ const INITIAL_MOODS = [
     key: 'sad',
     label: 'Sad',
     icon: Icons.Frown,
-    color: '#6366f1', // indigo-500
+    color: '#6366f1',
     bg: 'bg-indigo-500',
     lightBg: 'bg-indigo-50',
     darkBg: 'bg-indigo-950',
@@ -123,7 +124,7 @@ const INITIAL_MOODS = [
     key: 'peaceful',
     label: 'Peaceful',
     icon: Icons.Flower2,
-    color: '#14b8a6', // teal-500
+    color: '#14b8a6',
     bg: 'bg-teal-500',
     lightBg: 'bg-teal-50',
     darkBg: 'bg-teal-950',
@@ -133,7 +134,7 @@ const INITIAL_MOODS = [
     key: 'energetic',
     label: 'Energetic',
     icon: Icons.Zap,
-    color: '#f59e0b', // amber-500
+    color: '#f59e0b',
     bg: 'bg-amber-500',
     lightBg: 'bg-amber-50',
     darkBg: 'bg-amber-950',
@@ -143,7 +144,7 @@ const INITIAL_MOODS = [
     key: 'creative',
     label: 'Creative',
     icon: Icons.Sparkles,
-    color: '#a855f7', // purple-500
+    color: '#a855f7',
     bg: 'bg-purple-500',
     lightBg: 'bg-purple-50',
     darkBg: 'bg-purple-950',
@@ -153,13 +154,185 @@ const INITIAL_MOODS = [
     key: 'grateful',
     label: 'Grateful',
     icon: Icons.Wind,
-    color: '#f97316', // orange-500
+    color: '#f97316',
     bg: 'bg-orange-500',
     lightBg: 'bg-orange-50',
     darkBg: 'bg-orange-950',
     description: 'Thankful moments',
   },
 ]
+
+// Story Circle Component - Instagram style
+const StoryCircle = ({ mood, isActive, isLocked, darkMode, onClick, onLongPress }) => {
+  const Icon = mood.icon
+  const longPressTimer = useRef(null)
+  const [isPressed, setIsPressed] = useState(false)
+
+  const handleTouchStart = () => {
+    setIsPressed(true)
+    longPressTimer.current = setTimeout(() => {
+      if (onLongPress) onLongPress()
+    }, 500)
+  }
+
+  const handleTouchEnd = e => {
+    setIsPressed(false)
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      // If released before long press, treat as click
+      onClick()
+    }
+    e.preventDefault()
+  }
+
+  const handleTouchCancel = () => {
+    setIsPressed(false)
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+    }
+  }
+
+  return (
+    <div
+      className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer select-none"
+      onClick={onClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
+      style={{ touchAction: 'manipulation' }}
+    >
+      {/* Gradient Ring Container */}
+      <div
+        className={`relative p-[3px] rounded-full transition-all duration-300 ${
+          isPressed ? 'scale-95' : isActive ? 'scale-110' : 'hover:scale-105'
+        }`}
+        style={{
+          background: isActive
+            ? `linear-gradient(45deg, ${mood.color}, ${mood.color}cc, ${mood.color})`
+            : `linear-gradient(45deg, ${mood.color}60, ${mood.color}30, ${mood.color}60)`,
+        }}
+      >
+        {/* Inner Circle */}
+        <div
+          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+            darkMode ? 'bg-slate-900' : 'bg-white'
+          }`}
+          style={{
+            boxShadow: isActive ? `0 0 20px ${mood.color}50` : 'none',
+          }}
+        >
+          {/* Icon Background */}
+          <div
+            className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center transition-all duration-300`}
+            style={{
+              backgroundColor: isActive ? mood.color : `${mood.color}25`,
+            }}
+          >
+            <Icon
+              className="w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300"
+              style={{
+                color: isActive ? '#fff' : mood.color,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Lock overlay */}
+        {isLocked && (
+          <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
+            <div className={`p-1.5 rounded-full ${darkMode ? 'bg-slate-800/90' : 'bg-white/90'}`}>
+              <Lock className={`w-3 h-3 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+            </div>
+          </div>
+        )}
+
+        {/* Active checkmark */}
+        {isActive && !isLocked && (
+          <div
+            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center border-2"
+            style={{
+              backgroundColor: mood.color,
+              borderColor: darkMode ? '#0f172a' : '#fff',
+            }}
+          >
+            <Icons.Check className="w-3 h-3 text-white" />
+          </div>
+        )}
+      </div>
+
+      {/* Label */}
+      <span
+        className={`text-[10px] sm:text-xs font-medium text-center max-w-[60px] sm:max-w-[70px] truncate ${
+          isActive
+            ? darkMode
+              ? 'text-white'
+              : 'text-slate-900'
+            : darkMode
+              ? 'text-slate-400'
+              : 'text-slate-600'
+        }`}
+      >
+        {mood.label}
+      </span>
+    </div>
+  )
+}
+
+// Special action circle (Add, Mark, Erase)
+const ActionCircle = ({
+  icon: IconComponent,
+  label,
+  isActive,
+  darkMode,
+  onClick,
+  gradientColors,
+}) => {
+  return (
+    <div
+      className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer select-none"
+      onClick={onClick}
+      style={{ touchAction: 'manipulation' }}
+    >
+      <div
+        className={`relative p-[3px] rounded-full transition-all duration-300 ${
+          isActive ? 'scale-110' : 'hover:scale-105'
+        }`}
+        style={{
+          background: isActive
+            ? `linear-gradient(45deg, ${gradientColors})`
+            : darkMode
+              ? 'linear-gradient(45deg, #475569, #334155, #475569)'
+              : 'linear-gradient(45deg, #cbd5e1, #94a3b8, #cbd5e1)',
+        }}
+      >
+        <div
+          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+            darkMode ? 'bg-slate-900' : 'bg-white'
+          }`}
+        >
+          <div
+            className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center border-2 border-dashed transition-all duration-300 ${
+              isActive
+                ? 'border-slate-400 bg-slate-600'
+                : darkMode
+                  ? 'border-slate-600 bg-slate-800'
+                  : 'border-slate-300 bg-slate-100'
+            }`}
+          >
+            {IconComponent}
+          </div>
+        </div>
+      </div>
+      <span
+        className={`text-[10px] sm:text-xs font-medium ${
+          darkMode ? 'text-slate-400' : 'text-slate-600'
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  )
+}
 
 const ModernMoodPalette = ({
   selectedColor,
@@ -174,6 +347,10 @@ const ModernMoodPalette = ({
   onToggleMilestone = () => {},
 }) => {
   const darkMode = useUIStore(state => state.darkMode)
+  const scrollContainerRef = useRef(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeft, setScrollLeft] = useState(0)
 
   // Premium state for mood gating
   const hasUnlimitedMoods = usePremiumStore(state => state.hasFeature('customMoods'))
@@ -186,7 +363,7 @@ const ModernMoodPalette = ({
   const deleteMood = useMilestoneStore(state => state.deleteMood)
   const deletedMoods = useMilestoneStore(state => state.deletedMoods || [])
 
-  // 1. Process predefined moods (handling overrides from customMoods)
+  // Process predefined moods
   const predefinedMoods = INITIAL_MOODS.map(mood => {
     const customMood = customMoods[mood.key]
     if (customMood) {
@@ -205,11 +382,9 @@ const ModernMoodPalette = ({
     return mood
   })
 
-  // Helper to get hex from tailwind class (fallback for older data)
+  // Helper to get hex from tailwind class
   const getHexFromClass = className => {
-    if (!className) return '#a855f7' // Default purple
-
-    // Map of Tailwind classes to Hex codes (matching CustomMoodCreator)
+    if (!className) return '#a855f7'
     const colorMap = {
       'bg-purple-400': '#a855f7',
       'bg-pink-400': '#f472b6',
@@ -228,56 +403,41 @@ const ModernMoodPalette = ({
       'bg-indigo-400': '#818cf8',
       'bg-violet-400': '#a78bfa',
     }
-
     return colorMap[className] || '#a855f7'
   }
 
-  // 2. Process purely new custom categories (created via CustomMoodCreator)
-  // Filter out any that match predefined keys to avoid duplicates
+  // Process custom categories
   const newCustomMoods = Object.values(customCategories || {})
     .filter(cat => !INITIAL_MOODS.some(m => m.key === cat.name))
     .map(cat => {
-      // Find icon component
       const iconMatch = AVAILABLE_ICONS.find(i => i.name === cat.iconName)
-      // Fallback icon if not found
       const IconComp = iconMatch ? iconMatch.component : Icons.Star
-
-      // Determine color: use saved hex, or derive from class, or fallback
       const colorHex = cat.hex || getHexFromClass(cat.color)
-
       return {
         key: cat.name,
         label: cat.label,
-        description: 'Custom Mood', // Custom categories might not have description yet
-        color: colorHex, // Use hex for palette
-        bg: cat.color, // Tailwind class for WeekBox
+        description: 'Custom Mood',
+        color: colorHex,
+        bg: cat.color,
         icon: IconComp,
       }
     })
 
-  // Combine them and filter deleted ones
   const moods = [...predefinedMoods, ...newCustomMoods].filter(
     mood => !deletedMoods.includes(mood.key)
   )
-  const [hoveredMood, setHoveredMood] = useState(null)
+
   const [editingMood, setEditingMood] = useState(null)
   const [deletingMood, setDeletingMood] = useState(null)
   const [showMenu, setShowMenu] = useState(null)
-  const [editForm, setEditForm] = useState({
-    label: '',
-    description: '',
-    color: '',
-    icon: null,
-  })
+  const [editForm, setEditForm] = useState({ label: '', description: '', color: '', icon: null })
 
-  // Check if a mood is locked (premium only)
   const isMoodLocked = moodKey => {
     if (hasUnlimitedMoods) return false
     return !FREE_MOODS.includes(moodKey)
   }
 
   const handleMoodSelect = moodKey => {
-    // Check if mood is locked for free users
     if (isMoodLocked(moodKey)) {
       setShowUpgradeModal(true)
       return
@@ -286,27 +446,32 @@ const ModernMoodPalette = ({
     setSelectedColor(selectedColor === moodKey ? null : moodKey)
   }
 
-  const handleMenuToggle = (moodKey, e) => {
-    e.stopPropagation()
-    setShowMenu(showMenu === moodKey ? null : moodKey)
+  // Mouse drag scrolling for desktop
+  const handleMouseDown = e => {
+    setIsDragging(true)
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft)
+    setScrollLeft(scrollContainerRef.current.scrollLeft)
   }
 
-  const handleDeleteClick = moodKey => {
-    setDeletingMood(moodKey)
-    setShowMenu(null)
+  const handleMouseMove = e => {
+    if (!isDragging) return
+    e.preventDefault()
+    const x = e.pageX - scrollContainerRef.current.offsetLeft
+    const walk = (x - startX) * 2
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk
   }
 
-  const confirmDelete = () => {
-    if (deletingMood) {
-      deleteMood(deletingMood)
-      setDeletingMood(null)
-    }
+  const handleMouseUp = () => {
+    setIsDragging(false)
   }
+
+  const handleMouseLeave = () => {
+    setIsDragging(false)
+  }
+
   const handleSaveEdit = e => {
     if (e) e.stopPropagation()
     if (!editForm.label.trim()) return
-
-    // Save to store (which persists to localStorage and will sync to Supabase)
     updateCustomMood(editingMood, {
       label: editForm.label.trim(),
       description: editForm.description.trim(),
@@ -316,7 +481,6 @@ const ModernMoodPalette = ({
       darkBg: editForm.color.dark,
       iconName: editForm.icon.name,
     })
-
     setEditingMood(null)
     setEditForm({ label: '', description: '', color: '', icon: null })
   }
@@ -327,26 +491,27 @@ const ModernMoodPalette = ({
     setEditForm({ label: '', description: '', color: '', icon: null })
   }
 
-  // Close menu when clicking outside
+  const confirmDelete = () => {
+    if (deletingMood) {
+      deleteMood(deletingMood)
+      setDeletingMood(null)
+    }
+  }
+
   useEffect(() => {
     const handleClickOutside = () => {
       if (showMenu) setShowMenu(null)
     }
-
     if (showMenu) {
       document.addEventListener('click', handleClickOutside)
       return () => document.removeEventListener('click', handleClickOutside)
     }
   }, [showMenu])
 
-  // Close modal on ESC key
   useEffect(() => {
     const handleEscKey = e => {
-      if (e.key === 'Escape' && editingMood) {
-        handleCancelEdit()
-      }
+      if (e.key === 'Escape' && editingMood) handleCancelEdit()
     }
-
     if (editingMood) {
       document.addEventListener('keydown', handleEscKey)
       return () => document.removeEventListener('keydown', handleEscKey)
@@ -354,328 +519,127 @@ const ModernMoodPalette = ({
   }, [editingMood])
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Modern Header - Compact on mobile */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2
-            className={`text-lg sm:text-2xl font-bold tracking-tight ${
-              darkMode ? 'text-white' : 'text-slate-900'
-            }`}
-          >
-            Paint Your Life
-          </h2>
-          <p
-            className={`text-xs sm:text-sm mt-0.5 sm:mt-1 ${
-              darkMode ? 'text-slate-400' : 'text-slate-600'
-            }`}
-          >
-            Color your weeks with emotions
-          </p>
-        </div>
-
-        {/* Active Selection Badge */}
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between px-1">
+        <h2
+          className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}
+        >
+          Paint Your Life
+        </h2>
         {selectedColor && (
           <div
-            className={`px-4 py-2 rounded-full flex items-center gap-2 ${
-              darkMode ? 'bg-white/10' : 'bg-slate-100'
+            className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
+              darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'
             }`}
           >
             {selectedColor === 'none' ? (
               <>
-                <Icons.Eraser
-                  className={`w-4 h-4 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}
-                />
-                <span
-                  className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}
-                >
-                  Eraser Active
-                </span>
+                <Icons.Eraser className="w-3 h-3" />
+                <span>Erasing</span>
               </>
             ) : (
-              (() => {
-                const mood = moods.find(m => m.key === selectedColor)
-                if (!mood) return null
-                return (
-                  <>
-                    <div
-                      className="w-2 h-2 rounded-sm animate-pulse"
-                      style={{ backgroundColor: mood.color }}
-                    />
-                    <span
-                      className={`text-sm font-medium ${
-                        darkMode ? 'text-white' : 'text-slate-900'
-                      }`}
-                    >
-                      {mood.label}
-                    </span>
-                  </>
-                )
-              })()
+              <>
+                <div
+                  className="w-2 h-2 rounded-full animate-pulse"
+                  style={{ backgroundColor: moods.find(m => m.key === selectedColor)?.color }}
+                />
+                <span>{moods.find(m => m.key === selectedColor)?.label}</span>
+              </>
             )}
           </div>
         )}
       </div>
 
-      {/* Modern Mood Grid - Compact on desktop, 4 cols on mobile */}
-      <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-1.5">
-        {/* Custom Mood Creator (New Button) */}
-        <CustomMoodCreator
-          darkMode={darkMode}
-          onAddCustomMood={onAddCustomMood}
-          customMoodsCount={Object.keys(customCategories || {}).length}
-        />
-
-        <button
-          onClick={onToggleMilestone}
-          className={`group relative p-2 sm:p-2 rounded-lg sm:rounded-lg transition-all duration-200 overflow-visible cursor-pointer hover:scale-105 hover:shadow-lg flex flex-col items-center gap-1 ${
-            darkMode
-              ? 'bg-slate-800 border border-slate-700 border-dashed hover:border-slate-500'
-              : 'bg-slate-50 border border-slate-200 border-dashed hover:border-slate-400'
-          }`}
-          style={{ height: '100%' }}
-        >
-          <div
-            className={`w-7 h-7 sm:w-7 sm:h-7 rounded-md flex items-center justify-center transition-all duration-200 shadow-sm ${
-              darkMode ? 'bg-slate-700' : 'bg-white'
-            }`}
+      {/* Stories-style horizontal scroll */}
+      <div
+        ref={scrollContainerRef}
+        className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 px-1 scrollbar-hide cursor-grab active:cursor-grabbing"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Add New */}
+        <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+          <CustomMoodCreator
+            darkMode={darkMode}
+            onAddCustomMood={onAddCustomMood}
+            customMoodsCount={Object.keys(customCategories || {}).length}
+            storyStyle={true}
+          />
+          <span
+            className={`text-[10px] sm:text-xs font-medium ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
           >
-            <div className="w-2 h-2 bg-white rotate-45 shadow-sm border-[0.5px] border-black/20" />
-          </div>
-          <p
-            className={`text-[10px] sm:text-[10px] font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}
-          >
-            Mark
-          </p>
-        </button>
-        {/* Clear/Eraser Tool */}
-        <div
-          className={`group relative p-2 sm:p-2 rounded-lg sm:rounded-lg transition-all duration-200 overflow-visible cursor-pointer ${
-            selectedColor === 'none'
-              ? 'scale-105 shadow-lg ring-2 ring-slate-500'
-              : 'hover:scale-105 hover:shadow-lg'
-          }`}
-          style={{
-            backgroundColor:
-              selectedColor === 'none'
-                ? darkMode
-                  ? '#475569'
-                  : '#e2e8f0'
-                : darkMode
-                  ? '#1e293b'
-                  : '#f1f5f9',
-            borderWidth: '1px',
-            borderColor:
-              selectedColor === 'none'
-                ? darkMode
-                  ? '#64748b'
-                  : '#94a3b8'
-                : darkMode
-                  ? '#334155'
-                  : '#cbd5e1',
-            touchAction: 'manipulation',
-          }}
-          onClick={() => handleMoodSelect('none')}
-          onTouchEnd={e => {
-            e.preventDefault()
-            handleMoodSelect('none')
-          }}
-        >
-          {/* Content */}
-          <div className="relative flex flex-col items-center gap-1">
-            {/* Icon Container */}
-            <div
-              className={`w-7 h-7 sm:w-7 sm:h-7 rounded-md flex items-center justify-center transition-all duration-200 shadow-sm ${
-                selectedColor === 'none'
-                  ? 'bg-slate-600 shadow-md'
-                  : darkMode
-                    ? 'bg-slate-700'
-                    : 'bg-white'
-              }`}
-            >
-              <Icons.Eraser
-                className={`w-4 h-4 ${
-                  selectedColor === 'none'
-                    ? 'text-white'
-                    : darkMode
-                      ? 'text-slate-300'
-                      : 'text-slate-600'
-                }`}
-              />
-            </div>
-
-            {/* Label */}
-            <p
-              className={`text-[10px] sm:text-[10px] font-semibold ${
-                darkMode ? 'text-white' : 'text-slate-900'
-              }`}
-            >
-              Erase
-            </p>
-          </div>
+            Add
+          </span>
         </div>
 
-        {moods.map(mood => {
-          const Icon = mood.icon
-          const isActive = selectedColor === mood.key
-          const isHovered = hoveredMood === mood.key
-          const isLocked = isMoodLocked(mood.key)
+        {/* Mark Milestone */}
+        <ActionCircle
+          icon={<div className="w-3 h-3 bg-yellow-400 rotate-45 shadow-sm" />}
+          label="Mark"
+          isActive={false}
+          darkMode={darkMode}
+          onClick={onToggleMilestone}
+          gradientColors="#fbbf24, #f59e0b, #fbbf24"
+        />
 
-          return (
-            <div
-              key={mood.key}
-              className={`group relative p-2 sm:p-2 rounded-lg sm:rounded-lg transition-all duration-200 overflow-visible cursor-pointer ${
-                isActive ? 'scale-105 shadow-lg ring-2' : 'hover:scale-105 hover:shadow-lg'
-              } ${isLocked ? 'opacity-60' : ''}`}
-              style={{
-                backgroundColor: isActive
-                  ? `${mood.color}30`
-                  : darkMode
-                    ? `${mood.color}20`
-                    : `${mood.color}15`,
-                borderWidth: '1px',
-                borderColor: isActive ? mood.color : `${mood.color}40`,
-                ringColor: isActive ? mood.color : undefined,
-                filter: isLocked ? 'grayscale(30%)' : 'none',
-                touchAction: 'manipulation',
-              }}
-              onClick={() => handleMoodSelect(mood.key)}
-              onTouchEnd={e => {
-                e.preventDefault()
-                handleMoodSelect(mood.key)
-              }}
-              onMouseEnter={() => setHoveredMood(mood.key)}
-              onMouseLeave={() => setHoveredMood(null)}
-            >
-              {/* Lock Overlay for Premium Moods */}
-              {isLocked && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg sm:rounded-xl bg-black/20 backdrop-blur-[1px]">
-                  <div
-                    className={`p-1.5 rounded-full ${darkMode ? 'bg-slate-800/90' : 'bg-white/90'} shadow-lg`}
-                  >
-                    <Lock
-                      className={`w-3 h-3 sm:w-4 sm:h-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}
-                    />
-                  </div>
-                </div>
-              )}
+        {/* Eraser */}
+        <ActionCircle
+          icon={
+            <Icons.Eraser
+              className={`w-5 h-5 ${selectedColor === 'none' ? 'text-white' : darkMode ? 'text-slate-400' : 'text-slate-500'}`}
+            />
+          }
+          label="Erase"
+          isActive={selectedColor === 'none'}
+          darkMode={darkMode}
+          onClick={() => handleMoodSelect('none')}
+          gradientColors="#64748b, #475569, #64748b"
+        />
 
-              {/* Background Gradient */}
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background: `linear-gradient(135deg, ${mood.color}10 0%, ${mood.color}05 100%)`,
-                }}
-              />
+        {/* Divider */}
+        <div
+          className={`w-px h-16 sm:h-[72px] self-center flex-shrink-0 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}
+        />
 
-              {/* Content */}
-              <div className="relative flex flex-col items-center gap-1">
-                {/* Icon Container */}
-                <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center transition-all duration-300 shadow-md ${
-                    isActive || isHovered ? 'scale-110 shadow-lg' : ''
-                  }`}
-                  style={{
-                    backgroundColor: isActive
-                      ? mood.color
-                      : `${mood.color}${isHovered ? '50' : '40'}`,
-                  }}
-                >
-                  <Icon
-                    className={`w-4 h-4 transition-colors duration-300`}
-                    style={{
-                      color: isActive ? '#fff' : mood.color,
-                      filter: isActive ? 'none' : 'brightness(0.8)',
-                    }}
-                  />
-                </div>
-
-                {/* Label */}
-                <div className="text-center">
-                  <p
-                    className={`text-[10px] sm:text-xs font-semibold ${
-                      darkMode ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    {mood.label}
-                  </p>
-                </div>
-
-                {/* Three-dot Menu Button - Only show for unlocked moods */}
-                {!isLocked && (
-                  <button
-                    onClick={e => handleMenuToggle(mood.key, e)}
-                    className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
-                      darkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-white hover:bg-slate-100'
-                    }`}
-                  >
-                    <Icons.MoreVertical
-                      className={`w-3 h-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
-                    />
-                  </button>
-                )}
-
-                {/* Dropdown Menu */}
-                {showMenu === mood.key && (
-                  <div
-                    className={`absolute top-10 right-2 z-50 rounded-lg shadow-xl border ${
-                      darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
-                    }`}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        setEditingMood(mood.key)
-                        setEditForm({
-                          label: mood.label,
-                          description: mood.description || '',
-                          color: mood.color,
-                          bg: mood.bg,
-                          iconName: mood.icon.displayName || 'Star',
-                        })
-                        setShowMenu(null)
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2 text-sm w-full rounded-t-lg transition-colors ${
-                        darkMode
-                          ? 'hover:bg-slate-700 text-white'
-                          : 'hover:bg-slate-100 text-slate-900'
-                      }`}
-                    >
-                      <Icons.Edit2 className="w-4 h-4" />
-                      Rename
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        handleDeleteClick(mood.key)
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2 text-sm w-full rounded-b-lg transition-colors ${
-                        darkMode ? 'hover:bg-red-900 text-red-400' : 'hover:bg-red-50 text-red-600'
-                      }`}
-                    >
-                      <Icons.Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </div>
-                )}
-
-                {/* Active Indicator */}
-                {isActive && (
-                  <div className="absolute top-2 left-2">
-                    <div
-                      className="w-5 h-5 rounded-sm flex items-center justify-center"
-                      style={{ backgroundColor: mood.color }}
-                    >
-                      <Icons.Check className="w-3 h-3 text-white" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
+        {/* Mood Stories */}
+        {moods.map(mood => (
+          <StoryCircle
+            key={mood.key}
+            mood={mood}
+            isActive={selectedColor === mood.key}
+            isLocked={isMoodLocked(mood.key)}
+            darkMode={darkMode}
+            onClick={() => handleMoodSelect(mood.key)}
+            onLongPress={() => {
+              if (!isMoodLocked(mood.key)) {
+                setEditingMood(mood.key)
+                setEditForm({
+                  label: mood.label,
+                  description: mood.description || '',
+                  color: mood.color,
+                  bg: mood.bg,
+                  iconName: mood.icon.displayName || 'Star',
+                })
+              }
+            }}
+          />
+        ))}
       </div>
+
+      {/* Scroll hint for mobile */}
+      <p
+        className={`text-[10px] text-center sm:hidden ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}
+      >
+        ← Swipe to see more →
+      </p>
 
       {/* Upgrade Modal */}
       <UpgradeModal
@@ -684,29 +648,21 @@ const ModernMoodPalette = ({
         feature="Additional moods"
       />
 
-      {/* Edit Modal - Rendered via Portal */}
+      {/* Edit Modal */}
       {editingMood &&
         createPortal(
           <div
             className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
-            style={{
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              zIndex: 99999,
-            }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 99999 }}
             onMouseDown={e => {
-              if (e.target === e.currentTarget) {
-                handleCancelEdit(e)
-              }
+              if (e.target === e.currentTarget) handleCancelEdit(e)
             }}
           >
             <div
-              className={`relative w-full max-w-lg my-8 rounded-xl shadow-2xl ${
-                darkMode ? 'bg-slate-800' : 'bg-white'
-              }`}
+              className={`relative w-full max-w-lg my-8 rounded-xl shadow-2xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}
               style={{ zIndex: 100000 }}
               onClick={e => e.stopPropagation()}
             >
-              {/* Modal Header */}
               <div className={`p-4 border-b ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                 <div className="flex items-center justify-between">
                   <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -714,9 +670,7 @@ const ModernMoodPalette = ({
                   </h3>
                   <button
                     onClick={handleCancelEdit}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
-                    }`}
+                    className={`p-1.5 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
                   >
                     <Icons.X
                       className={`w-4 h-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
@@ -724,15 +678,10 @@ const ModernMoodPalette = ({
                   </button>
                 </div>
               </div>
-
-              {/* Modal Body */}
               <div className="p-4 space-y-4">
-                {/* Name */}
                 <div>
                   <label
-                    className={`block text-xs font-medium mb-1.5 ${
-                      darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}
+                    className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                   >
                     Mood Name
                   </label>
@@ -740,21 +689,13 @@ const ModernMoodPalette = ({
                     type="text"
                     value={editForm.label}
                     onChange={e => setEditForm({ ...editForm, label: e.target.value })}
-                    className={`w-full px-3 py-2 rounded-lg text-sm font-semibold ${
-                      darkMode
-                        ? 'bg-slate-700 text-white border-slate-600'
-                        : 'bg-slate-50 text-slate-900 border-slate-300'
-                    } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    className={`w-full px-3 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-50 text-slate-900 border-slate-300'} border focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     placeholder="e.g., Happy, Focused..."
                   />
                 </div>
-
-                {/* Description */}
                 <div>
                   <label
-                    className={`block text-xs font-medium mb-1.5 ${
-                      darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}
+                    className={`block text-xs font-medium mb-1.5 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                   >
                     Description
                   </label>
@@ -762,21 +703,13 @@ const ModernMoodPalette = ({
                     type="text"
                     value={editForm.description}
                     onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                    className={`w-full px-3 py-2 rounded-lg text-sm ${
-                      darkMode
-                        ? 'bg-slate-700 text-white border-slate-600'
-                        : 'bg-slate-50 text-slate-900 border-slate-300'
-                    } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    className={`w-full px-3 py-2 rounded-lg text-sm ${darkMode ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-50 text-slate-900 border-slate-300'} border focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     placeholder="e.g., Joyful moments..."
                   />
                 </div>
-
-                {/* Color Picker */}
                 <div>
                   <label
-                    className={`block text-xs font-medium mb-2 ${
-                      darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}
+                    className={`block text-xs font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                   >
                     Color
                   </label>
@@ -785,13 +718,7 @@ const ModernMoodPalette = ({
                       <button
                         key={color.hex}
                         onClick={() => setEditForm({ ...editForm, color })}
-                        className={`relative w-full aspect-square rounded-md transition-all ${
-                          color.bg
-                        } ${
-                          editForm.color?.hex === color.hex
-                            ? 'ring-2 ring-offset-1 ring-blue-500'
-                            : 'hover:scale-105'
-                        } ${darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'}`}
+                        className={`relative w-full aspect-square rounded-full transition-all ${color.bg} ${editForm.color?.hex === color.hex ? 'ring-2 ring-offset-1 ring-blue-500' : 'hover:scale-105'} ${darkMode ? 'ring-offset-slate-800' : 'ring-offset-white'}`}
                         title={color.name}
                       >
                         {editForm.color?.hex === color.hex && (
@@ -801,119 +728,80 @@ const ModernMoodPalette = ({
                     ))}
                   </div>
                 </div>
-
-                {/* Icon Picker */}
                 <div>
                   <label
-                    className={`block text-xs font-medium mb-2 ${
-                      darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}
+                    className={`block text-xs font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                   >
                     Icon
                   </label>
-                  <div className="grid grid-cols-10 gap-1.5">
+                  <div className="grid grid-cols-8 gap-1.5">
                     {AVAILABLE_ICONS.map(iconItem => {
                       const IconComp = iconItem.component
                       return (
                         <button
                           key={iconItem.name}
                           onClick={() => setEditForm({ ...editForm, icon: iconItem })}
-                          className={`relative w-full aspect-square rounded-md transition-all flex items-center justify-center ${
-                            darkMode
-                              ? 'bg-slate-700 hover:bg-slate-600'
-                              : 'bg-slate-100 hover:bg-slate-200'
-                          } ${
-                            editForm.icon?.name === iconItem.name
-                              ? 'ring-2 ring-blue-500'
-                              : 'hover:scale-105'
-                          }`}
+                          className={`relative w-full aspect-square rounded-full transition-all flex items-center justify-center ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200'} ${editForm.icon?.name === iconItem.name ? 'ring-2 ring-blue-500' : 'hover:scale-105'}`}
                           title={iconItem.name}
                         >
                           <IconComp
-                            className={`w-3.5 h-3.5 ${
-                              editForm.icon?.name === iconItem.name
-                                ? 'text-blue-500'
-                                : darkMode
-                                  ? 'text-slate-300'
-                                  : 'text-slate-700'
-                            }`}
+                            className={`w-3.5 h-3.5 ${editForm.icon?.name === iconItem.name ? 'text-blue-500' : darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                           />
                         </button>
                       )
                     })}
                   </div>
                 </div>
-
-                {/* Preview */}
                 <div>
                   <label
-                    className={`block text-xs font-medium mb-2 ${
-                      darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}
+                    className={`block text-xs font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                   >
                     Preview
                   </label>
-                  <div
-                    className={`p-3 rounded-lg ${
-                      darkMode ? editForm.color?.dark + '/20' : editForm.color?.light
-                    }`}
-                    style={{ borderWidth: '2px', borderColor: editForm.color?.hex }}
-                  >
-                    <div className="flex items-center gap-3">
+                  <div className="flex justify-center">
+                    <div className="flex flex-col items-center gap-2">
                       <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: editForm.color?.hex }}
+                        className="p-[3px] rounded-full"
+                        style={{
+                          background: `linear-gradient(45deg, ${editForm.color?.hex || '#a855f7'}, ${editForm.color?.hex || '#a855f7'}cc)`,
+                        }}
                       >
-                        {editForm.icon &&
-                          React.createElement(editForm.icon.component, {
-                            className: 'w-5 h-5 text-white',
-                          })}
-                      </div>
-                      <div className="min-w-0">
-                        <p
-                          className={`text-sm font-semibold truncate ${
-                            darkMode ? 'text-white' : 'text-slate-900'
-                          }`}
+                        <div
+                          className={`w-16 h-16 rounded-full flex items-center justify-center ${darkMode ? 'bg-slate-900' : 'bg-white'}`}
                         >
-                          {editForm.label || 'Mood Name'}
-                        </p>
-                        <p
-                          className={`text-xs truncate ${
-                            darkMode ? 'text-slate-400' : 'text-slate-600'
-                          }`}
-                        >
-                          {editForm.description || 'Description'}
-                        </p>
+                          <div
+                            className="w-13 h-13 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: editForm.color?.hex || '#a855f7' }}
+                          >
+                            {editForm.icon &&
+                              React.createElement(editForm.icon.component, {
+                                className: 'w-6 h-6 text-white',
+                              })}
+                          </div>
+                        </div>
                       </div>
+                      <span
+                        className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}
+                      >
+                        {editForm.label || 'Mood Name'}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Modal Footer */}
               <div
-                className={`p-3 border-t flex gap-2 justify-end ${
-                  darkMode ? 'border-slate-700' : 'border-slate-200'
-                }`}
+                className={`p-3 border-t flex gap-2 justify-end ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}
               >
                 <button
                   onClick={handleCancelEdit}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    darkMode
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                      : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'}`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={!editForm.label.trim()}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    editForm.label.trim()
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                      : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${editForm.label.trim() ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
                 >
                   Save
                 </button>
@@ -922,6 +810,7 @@ const ModernMoodPalette = ({
           </div>,
           document.body
         )}
+
       {/* Delete Confirmation Modal */}
       {deletingMood &&
         createPortal(
@@ -933,9 +822,7 @@ const ModernMoodPalette = ({
             }}
           >
             <div
-              className={`relative w-full max-w-sm rounded-2xl shadow-2xl p-6 border-2 ${
-                darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-              }`}
+              className={`relative w-full max-w-sm rounded-2xl shadow-2xl p-6 border-2 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
               onClick={e => e.stopPropagation()}
             >
               <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -953,11 +840,7 @@ const ModernMoodPalette = ({
                 </button>
                 <button
                   onClick={() => setDeletingMood(null)}
-                  className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-colors ${
-                    darkMode
-                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                  }`}
+                  className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
                 >
                   Cancel
                 </button>
