@@ -19,6 +19,10 @@ export const useWeekInteractionsZustand = () => {
     pinnedWeeks,
     selectionMode,
     rangeStart,
+    isInRangeMode,
+    startRangeSelection,
+    completeRangeSelection,
+    resetRangeSelection,
     clearPinnedWeeks,
     selectRectangularArea,
     toggleWeekSelection,
@@ -27,6 +31,17 @@ export const useWeekInteractionsZustand = () => {
   const { isMobile } = useUIStore()
 
   const allCategories = getAllCategories()
+
+  // Helper to get all weeks between two week numbers (inclusive)
+  const getWeeksInRange = useCallback((start, end) => {
+    const weeks = new Set()
+    const min = Math.min(start, end)
+    const max = Math.max(start, end)
+    for (let i = min; i <= max; i++) {
+      weeks.add(i)
+    }
+    return weeks
+  }, [])
 
   const paintWeek = useCallback(
     weekNum => {
@@ -68,20 +83,40 @@ export const useWeekInteractionsZustand = () => {
         if (selectedColor) {
           paintWeeks(newSelection)
         }
+        resetRangeSelection()
         return
       }
 
-      // Simple single-click coloring - just paint the clicked week
-      if (selectedColor) {
-        paintWeek(weekNum)
+      // If no color selected, just select the week
+      if (!selectedColor) {
+        return
       }
+
+      // Range selection: if we already have a range start, complete the range
+      if (isInRangeMode && rangeStart !== null) {
+        // Get all weeks in the range and paint them
+        const rangeWeeks = getWeeksInRange(rangeStart, weekNum)
+        paintWeeks(rangeWeeks)
+        // Complete range selection (resets rangeStart)
+        completeRangeSelection(weekNum)
+        return
+      }
+
+      // First click: start range selection and paint the first week
+      startRangeSelection(weekNum)
+      paintWeek(weekNum)
     },
     [
       setSelectedWeek,
       selectionMode,
       rangeStart,
+      isInRangeMode,
       selectedColor,
       selectRectangularArea,
+      getWeeksInRange,
+      startRangeSelection,
+      completeRangeSelection,
+      resetRangeSelection,
       paintWeek,
       paintWeeks,
     ]
@@ -172,6 +207,8 @@ export const useWeekInteractionsZustand = () => {
     selectedWeeks,
     pinnedWeeks,
     allCategories,
+    rangeStart,
+    isInRangeMode,
 
     // Event handlers
     handleWeekClick,
@@ -190,5 +227,6 @@ export const useWeekInteractionsZustand = () => {
     // Actions
     clearPinnedWeeks,
     toggleWeekSelection,
+    resetRangeSelection,
   }
 }

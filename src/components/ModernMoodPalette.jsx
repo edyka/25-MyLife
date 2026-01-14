@@ -339,8 +339,8 @@ const ModernMoodPalette = ({
   setSelectedColor,
   _selectedWeeks,
   _pinnedWeeks = new Set(),
-  _isInRangeMode = false,
-  _rangeStart = null,
+  isInRangeMode = false,
+  rangeStart = null,
   resetRangeSelection = () => {},
   _clearPinnedWeeks = () => {},
   onAddCustomMood = () => {},
@@ -527,28 +527,43 @@ const ModernMoodPalette = ({
         >
           Paint Your Life
         </h2>
-        {selectedColor && (
-          <div
-            className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
-              darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'
-            }`}
-          >
-            {selectedColor === 'none' ? (
-              <>
-                <Icons.Eraser className="w-3 h-3" />
-                <span>Erasing</span>
-              </>
-            ) : (
-              <>
-                <div
-                  className="w-2 h-2 rounded-full animate-pulse"
-                  style={{ backgroundColor: moods.find(m => m.key === selectedColor)?.color }}
-                />
-                <span>{moods.find(m => m.key === selectedColor)?.label}</span>
-              </>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Range mode indicator */}
+          {isInRangeMode && rangeStart !== null && (
+            <button
+              onClick={resetRangeSelection}
+              className={`px-2 py-1 rounded-full text-[10px] font-medium flex items-center gap-1 ${
+                darkMode ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              <span>Click 2nd square</span>
+              <Icons.X className="w-3 h-3" />
+            </button>
+          )}
+          {/* Selected color indicator */}
+          {selectedColor && (
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
+                darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {selectedColor === 'none' ? (
+                <>
+                  <Icons.Eraser className="w-3 h-3" />
+                  <span>Erasing</span>
+                </>
+              ) : (
+                <>
+                  <div
+                    className="w-2 h-2 rounded-full animate-pulse"
+                    style={{ backgroundColor: moods.find(m => m.key === selectedColor)?.color }}
+                  />
+                  <span>{moods.find(m => m.key === selectedColor)?.label}</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stories-style horizontal scroll */}
