@@ -333,7 +333,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
       <AchievementPopup badge={newBadge} onClose={() => setNewBadge(null)} />
       <AchievementsPanel isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-4 pt-2 sm:pt-4 pb-20 md:pb-4 overflow-hidden">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-4 pt-2 sm:pt-4 pb-20 md:pb-4">
         {/* Tabbed Navigation Content */}
         {currentTab === 'home' && (
           <div className="space-y-16">
@@ -343,11 +343,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
             <div className={`relative overflow-visible space-y-6 sm:space-y-8`}>
               {/* Modern Mood Palette - Sticky on mobile */}
               <div
-                className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element md:relative sticky top-0 z-40`}
-                style={{
-                  position: isMobile ? 'sticky' : 'relative',
-                  top: isMobile ? '0px' : 'auto',
-                }}
+                className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element md:sticky md:top-20 sticky top-0 z-40`}
               >
                 <ModernMoodPalette
                   selectedColor={selectedColor}
