@@ -339,40 +339,6 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
           <div className="space-y-16">
             <Dashboard stats={stats} darkMode={darkMode} />
 
-            {/* Weeks/Months Toggle - Mobile only (desktop has it in nav) */}
-            <div className="md:hidden flex justify-center mb-4">
-              <div
-                className={`inline-flex items-center gap-1 p-1 rounded-xl ${
-                  darkMode ? 'bg-slate-800' : 'bg-slate-100'
-                }`}
-              >
-                <button
-                  onClick={() => setShowWeeks(true)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    showWeeks
-                      ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
-                      : darkMode
-                        ? 'text-slate-400 hover:text-white'
-                        : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Weeks
-                </button>
-                <button
-                  onClick={() => setShowWeeks(false)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    !showWeeks
-                      ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
-                      : darkMode
-                        ? 'text-slate-400 hover:text-white'
-                        : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Months
-                </button>
-              </div>
-            </div>
-
             {/* Life Grid Section */}
             <div className={`relative overflow-visible space-y-4 sm:space-y-8`}>
               {/* Modern Mood Palette */}
@@ -391,6 +357,40 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                   onAddCustomMood={handleAddCustomMood}
                   onToggleMilestone={handleToggleMilestone}
                 />
+
+                {/* Weeks/Months Toggle - Mobile only (desktop has it in nav) */}
+                <div className="md:hidden flex justify-center mt-4">
+                  <div
+                    className={`inline-flex items-center gap-1 p-1 rounded-xl ${
+                      darkMode ? 'bg-slate-700/50' : 'bg-slate-200/50'
+                    }`}
+                  >
+                    <button
+                      onClick={() => setShowWeeks(true)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        showWeeks
+                          ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
+                          : darkMode
+                            ? 'text-slate-400 hover:text-white'
+                            : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Weeks
+                    </button>
+                    <button
+                      onClick={() => setShowWeeks(false)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        !showWeeks
+                          ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
+                          : darkMode
+                            ? 'text-slate-400 hover:text-white'
+                            : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Months
+                    </button>
+                  </div>
+                </div>
               </div>
               <div
                 className={`${
