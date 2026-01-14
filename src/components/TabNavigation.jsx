@@ -1,4 +1,4 @@
-import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown } from 'lucide-react'
+import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown } from './icons'
 import { Switch } from '@headlessui/react'
 
 // Import optimized life selectors

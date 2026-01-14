@@ -1,6 +1,42 @@
 import { memo, useMemo, useRef } from 'react'
 import { getYearFromWeek } from '../utils/dateUtils'
-import { useUIStore } from '../stores/useUIStore'
+
+// Custom comparison function to prevent re-renders during drag
+// Only re-render if props actually affecting THIS week changed
+const arePropsEqual = (prevProps, nextProps) => {
+  // Quick checks for primitive props that should trigger re-render
+  if (prevProps.weekNum !== nextProps.weekNum) return false
+  if (prevProps.currentWeek !== nextProps.currentWeek) return false
+  if (prevProps.selectedColor !== nextProps.selectedColor) return false
+  if (prevProps.isDragging !== nextProps.isDragging) return false
+  if (prevProps.isMobile !== nextProps.isMobile) return false
+  if (prevProps.darkMode !== nextProps.darkMode) return false
+
+  // For Sets (draggedWeeks, selectedWeeks) - only compare membership for THIS week
+  const weekNum = prevProps.weekNum
+  const prevDragged = prevProps.draggedWeeks?.has(weekNum) ?? false
+  const nextDragged = nextProps.draggedWeeks?.has(weekNum) ?? false
+  if (prevDragged !== nextDragged) return false
+
+  const prevSelected = prevProps.selectedWeeks?.has(weekNum) ?? false
+  const nextSelected = nextProps.selectedWeeks?.has(weekNum) ?? false
+  if (prevSelected !== nextSelected) return false
+
+  // For milestones object - only compare THIS week's milestone
+  const prevMilestone = prevProps.milestones?.[weekNum]
+  const nextMilestone = nextProps.milestones?.[weekNum]
+  if (prevMilestone !== nextMilestone) return false
+
+  // For allCategories - compare the category of this week's milestone (if any)
+  if (prevMilestone && nextMilestone) {
+    const prevCat = prevProps.allCategories?.[prevMilestone.category]
+    const nextCat = nextProps.allCategories?.[nextMilestone.category]
+    if (prevCat !== nextCat) return false
+  }
+
+  // All relevant props are equal - don't re-render
+  return true
+}
 
 const ClearWeekBox = memo(
   ({
@@ -23,6 +59,8 @@ const ClearWeekBox = memo(
     isMobile = false,
     darkMode = false,
     _pastWeekStyle = 'faded',
+    // Lifted from store subscription for performance (4000+ instances)
+    setTooltip,
   }) => {
     const weekState = useMemo(() => {
       const isPast = weekNum < currentWeek
@@ -69,9 +107,6 @@ const ClearWeekBox = memo(
       borderColor = `border ${borderColor}`
     }
 
-    // Get tooltip setter from store
-    const setTooltip = useUIStore(state => state.setTooltip)
-
     // Track if touch was used to prevent click from firing after touch
     const touchUsedRef = useRef(false)
 
@@ -82,7 +117,7 @@ const ClearWeekBox = memo(
           isWeekSelected ? 'ring-2 ring-blue-400/60' : ''
         } ${
           isBeingDragged ? 'ring-2 ring-yellow-400/60' : ''
-        } rounded-none overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 ${
+        } rounded-none overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5 ${
           selectedColor ? 'hover:shadow-xl' : ''
         } active:scale-95`}
         style={{ touchAction: 'manipulation' }}
@@ -227,7 +262,8 @@ const ClearWeekBox = memo(
         )}
       </div>
     )
-  }
+  },
+  arePropsEqual // Custom comparator for performance - prevents re-renders during drag
 )
 
 ClearWeekBox.displayName = 'ClearWeekBox'

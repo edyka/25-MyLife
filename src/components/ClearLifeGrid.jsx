@@ -1,5 +1,6 @@
-import { memo, useMemo, useState, useEffect } from 'react'
+import { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import ClearWeekBox from './ClearWeekBox'
+import { useUIStore } from '../stores/useUIStore'
 
 const ClearLifeGrid = memo(
   ({
@@ -24,6 +25,8 @@ const ClearLifeGrid = memo(
     pastWeekStyle,
     showWeeks = true,
   }) => {
+    // Get setTooltip once at parent level, pass down to all ClearWeekBox children
+    const setTooltip = useUIStore(state => state.setTooltip)
     const totalYears = parseInt(lifeExpectancy) || 80
 
     // On mobile with weeks: use bi-weekly (26 columns) for larger, more tappable cells
@@ -40,12 +43,24 @@ const ClearLifeGrid = memo(
     const [viewportWidth, setViewportWidth] = useState(
       typeof window !== 'undefined' ? window.innerWidth : 375
     )
+    const resizeTimeoutRef = useRef(null)
+
+    // Throttled resize handler to prevent excessive re-renders
+    const handleResize = useCallback(() => {
+      if (resizeTimeoutRef.current) return // Throttle: skip if pending
+      resizeTimeoutRef.current = setTimeout(() => {
+        setViewportWidth(window.innerWidth)
+        resizeTimeoutRef.current = null
+      }, 150) // 150ms throttle
+    }, [])
 
     useEffect(() => {
-      const handleResize = () => setViewportWidth(window.innerWidth)
       window.addEventListener('resize', handleResize)
-      return () => window.removeEventListener('resize', handleResize)
-    }, [])
+      return () => {
+        window.removeEventListener('resize', handleResize)
+        if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current)
+      }
+    }, [handleResize])
 
     // Calculate optimal week size to ALWAYS fit within viewport (no horizontal scroll)
     const getOptimalWeekSize = () => {
@@ -173,6 +188,7 @@ const ClearLifeGrid = memo(
                             isMobile={isMobile}
                             darkMode={darkMode}
                             pastWeekStyle={pastWeekStyle}
+                            setTooltip={setTooltip}
                           />
                         </div>
                       )
