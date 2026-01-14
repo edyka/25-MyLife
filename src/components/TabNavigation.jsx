@@ -395,34 +395,6 @@ const TabNavigation = ({
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around py-1.5">
-          {/* User icon - navigates to Settings */}
-          <button
-            onClick={() => setCurrentTab('settings')}
-            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 ${
-              currentTab === 'settings'
-                ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
-                : darkMode
-                  ? 'text-slate-400 active:text-white'
-                  : 'text-slate-500 active:text-slate-900'
-            }`}
-          >
-            <div
-              className={`w-6 h-6 ${currentTab === 'settings' ? 'bg-white/20' : `bg-gradient-to-br ${theme.iconBg}`} rounded-lg flex items-center justify-center`}
-            >
-              <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
-                {[...Array(9)].map((_, i) => (
-                  <div key={i} className="bg-white/90 rounded-[0.5px]"></div>
-                ))}
-              </div>
-            </div>
-            <span
-              className={`text-[9px] font-semibold mt-0.5 ${currentTab === 'settings' ? 'text-white' : ''}`}
-            >
-              {userName || 'You'}
-              {!subscriptionLoading && tier !== 'free' && (tier === 'life' ? ' 👑' : ' ⚡')}
-            </span>
-          </button>
-
           {/* Navigation tabs */}
           {MOBILE_TABS.map(({ key, label, icon: Icon }) => {
             const isActive = currentTab === key
@@ -445,6 +417,34 @@ const TabNavigation = ({
               </button>
             )
           })}
+
+          {/* User icon - navigates to Settings (at end) */}
+          <button
+            onClick={() => setCurrentTab('settings')}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 ${
+              currentTab === 'settings'
+                ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
+                : darkMode
+                  ? 'text-slate-400 active:text-white'
+                  : 'text-slate-500 active:text-slate-900'
+            }`}
+          >
+            <div
+              className={`w-5 h-5 ${currentTab === 'settings' ? 'bg-white/20' : `bg-gradient-to-br ${theme.iconBg}`} rounded-md flex items-center justify-center`}
+            >
+              <div className="grid grid-cols-3 gap-[0.5px] w-2.5 h-2.5">
+                {[...Array(9)].map((_, i) => (
+                  <div key={i} className="bg-white/90 rounded-[0.5px]"></div>
+                ))}
+              </div>
+            </div>
+            <span
+              className={`text-[9px] font-semibold mt-0.5 ${currentTab === 'settings' ? 'text-white' : ''}`}
+            >
+              {userName || 'You'}
+              {!subscriptionLoading && tier !== 'free' && (tier === 'life' ? ' 👑' : ' ⚡')}
+            </span>
+          </button>
         </div>
       </nav>
     </>
