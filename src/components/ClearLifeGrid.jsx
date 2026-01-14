@@ -52,9 +52,9 @@ const ClearLifeGrid = memo(
       if (!isMobile) return showWeeks ? 12 : 20 // Desktop sizes
 
       const containerPadding = 24
-      const ageLabel = 32
-      const safetyMargin = 8 // Extra margin to ensure no overflow
-      const availableWidth = viewportWidth - containerPadding - ageLabel - safetyMargin
+      const safetyMargin = 4 // Extra margin to ensure no overflow
+      // No ageLabel space needed - labels now overlay on grid
+      const availableWidth = viewportWidth - containerPadding - safetyMargin
       const gapSize = 2 // Reduced gap for mobile
       const gapTotal = (columns - 1) * gapSize
       const boxSize = Math.floor((availableWidth - gapTotal) / columns)
@@ -107,7 +107,7 @@ const ClearLifeGrid = memo(
               return (
                 <div
                   key={yearIndex}
-                  className="flex items-center w-full justify-start sm:justify-center"
+                  className="relative flex items-center w-full justify-center"
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -117,18 +117,23 @@ const ClearLifeGrid = memo(
                     minHeight: `${weekSize + 2}px`,
                   }}
                 >
-                  <div
-                    className="text-xs flex-shrink-0 text-center"
-                    style={{
-                      color: darkMode ? '#94a3b8' : '#475569',
-                      width: isMobile ? '28px' : '32px',
-                      minWidth: isMobile ? '28px' : '32px',
-                      marginRight: isMobile ? '4px' : '8px',
-                      fontSize: isMobile ? '10px' : '12px',
-                    }}
-                  >
-                    {yearIndex % 5 === 0 ? yearIndex : ''}
-                  </div>
+                  {/* Year label - overlays on grid for mobile, separate column for desktop */}
+                  {yearIndex % 5 === 0 && (
+                    <div
+                      className={`absolute left-0 z-10 font-bold ${isMobile ? 'text-[9px]' : 'text-xs'}`}
+                      style={{
+                        color: darkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)',
+                        textShadow: darkMode
+                          ? '0 1px 2px rgba(0,0,0,0.8)'
+                          : '0 1px 2px rgba(255,255,255,0.8)',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        paddingLeft: isMobile ? '2px' : '4px',
+                      }}
+                    >
+                      {yearIndex}
+                    </div>
+                  )}
                   <div
                     className="flex-shrink-0"
                     style={{
