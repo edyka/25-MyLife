@@ -361,7 +361,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
               <div id="life-grid" className={`relative overflow-visible space-y-6`}>
                 {/* Modern Mood Palette - Sticky on mobile only */}
                 <div
-                  className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl interactive-element md:relative sticky top-0 z-40`}
+                  className={`${darkMode ? 'bg-slate-800/95 border-slate-700' : 'bg-white/95 border-slate-200'} border rounded-2xl p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl md:relative sticky top-0 z-40 mb-4 sm:mb-6`}
                 >
                   <ModernMoodPalette
                     selectedColor={selectedColor}
