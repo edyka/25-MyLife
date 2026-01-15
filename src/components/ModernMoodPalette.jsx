@@ -283,6 +283,7 @@ const ActionCircle = ({
   icon: IconComponent,
   label,
   isActive,
+  isLocked,
   darkMode,
   onClick,
   gradientColors,
@@ -322,6 +323,15 @@ const ActionCircle = ({
             {IconComponent}
           </div>
         </div>
+
+        {/* Lock overlay for premium features */}
+        {isLocked && (
+          <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
+            <div className={`p-1.5 rounded-full ${darkMode ? 'bg-slate-800/90' : 'bg-white/90'}`}>
+              <Lock className={`w-3 h-3 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+            </div>
+          </div>
+        )}
       </div>
       <span
         className={`text-[10px] sm:text-xs font-medium ${
@@ -355,7 +365,9 @@ const ModernMoodPalette = ({
 
   // Premium state for mood gating
   const hasUnlimitedMoods = usePremiumStore(state => state.hasFeature('customMoods'))
+  const hasMilestones = usePremiumStore(state => state.hasFeature('milestones'))
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeFeature, setUpgradeFeature] = useState('')
 
   // Get custom moods and categories from store
   const customMoods = useMilestoneStore(state => state.customMoods)
@@ -440,6 +452,7 @@ const ModernMoodPalette = ({
 
   const handleMoodSelect = moodKey => {
     if (isMoodLocked(moodKey)) {
+      setUpgradeFeature('Additional moods')
       setShowUpgradeModal(true)
       return
     }
@@ -612,8 +625,16 @@ const ModernMoodPalette = ({
           icon={<div className={`w-2.5 h-2.5 ${isMilestoneMode ? 'bg-yellow-300' : 'bg-yellow-400'} rotate-45 shadow-sm`} />}
           label="Mark"
           isActive={isMilestoneMode}
+          isLocked={!hasMilestones}
           darkMode={darkMode}
-          onClick={onToggleMilestone}
+          onClick={() => {
+            if (!hasMilestones) {
+              setUpgradeFeature('Milestones')
+              setShowUpgradeModal(true)
+              return
+            }
+            onToggleMilestone()
+          }}
           gradientColors="#fbbf24, #f59e0b, #fbbf24"
         />
 
@@ -672,7 +693,7 @@ const ModernMoodPalette = ({
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        feature="Additional moods"
+        feature={upgradeFeature || 'Premium features'}
       />
 
       {/* Edit Modal */}
