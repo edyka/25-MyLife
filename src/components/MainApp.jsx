@@ -73,6 +73,8 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
   const pinnedWeeksFromStore = useSelectionStore(state => state.pinnedWeeks)
   const setSelectedColor = useSelectionStore(state => state.setSelectedColor)
   const setSelectedWeeks = useSelectionStore(state => state.setSelectedWeeks)
+  const isMilestoneMode = useSelectionStore(state => state.isMilestoneMode)
+  const toggleMilestoneMode = useSelectionStore(state => state.toggleMilestoneMode)
 
   const incrementStreak = useEngagementStore(state => state.incrementStreak)
   const checkBadges = useEngagementStore(state => state.checkBadges)
@@ -192,6 +194,43 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
     clearPinnedWeeks,
   } = weekInteractions
 
+  // Wrapper for week click that handles milestone mode
+  const handleWeekClickWithMilestone = useCallback(
+    (weekNum, event) => {
+      // Check if milestone mode is active
+      const currentMilestoneMode = useSelectionStore.getState().isMilestoneMode
+
+      if (currentMilestoneMode) {
+        // In milestone mode, open the milestone modal for this week
+        if (!hasMilestonesFeature) {
+          setUpgradeFeature('Milestones')
+          setShowUpgradeModal(true)
+          return
+        }
+        setEditingMilestoneWeek(weekNum)
+        setShowMilestoneModal(true)
+        return
+      }
+
+      // Check if clicking on a week that already has a milestone - open editor
+      const currentMilestones = useMilestoneStore.getState().milestones
+      if (currentMilestones[weekNum]?.isMilestone) {
+        if (!hasMilestonesFeature) {
+          setUpgradeFeature('Milestones')
+          setShowUpgradeModal(true)
+          return
+        }
+        setEditingMilestoneWeek(weekNum)
+        setShowMilestoneModal(true)
+        return
+      }
+
+      // Otherwise, use normal week click (painting)
+      handleWeekClick(weekNum, event)
+    },
+    [handleWeekClick, hasMilestonesFeature]
+  )
+
   // currentWeek is now provided by the lifeStore
 
   // Track if we've already set initial mobile view mode
@@ -260,13 +299,13 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
   // Removed unused resetZoom and zoom/pan code
 
-  // Use modern touch gestures hook
+  // Use modern touch gestures hook with milestone-aware click handler
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useModernTouchGestures({
     paintWeeks: weekInteractions?.paintWeeks || (() => {}),
     handleWeekMouseDown: handleWeekMouseDown || (() => {}),
     handleWeekMouseEnter: handleWeekMouseEnter || (() => {}),
     handleMouseUp: handleMouseUp || (() => {}),
-    handleWeekClick: handleWeekClick || (() => {}),
+    handleWeekClick: handleWeekClickWithMilestone || (() => {}),
   })
 
   // Handle custom mood creation - memoized to prevent unnecessary re-renders
@@ -277,22 +316,10 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
     [addCustomCategory]
   )
 
-  // Handle milestone button click - opens modal for selected week or current week
+  // Handle milestone button click - toggles milestone mode
   const handleToggleMilestone = useCallback(() => {
-    let weekToEdit
-
-    if (selectedWeeks && selectedWeeks.size > 0) {
-      // Use first selected week
-      weekToEdit = Array.from(selectedWeeks)[0]
-    } else {
-      // Fall back to current week
-      weekToEdit = currentWeek
-    }
-
-    if (weekToEdit) {
-      handleWeekDoubleClick(weekToEdit)
-    }
-  }, [selectedWeeks, currentWeek, handleWeekDoubleClick])
+    toggleMilestoneMode()
+  }, [toggleMilestoneMode])
 
   // theme toggle handled elsewhere
 
@@ -374,6 +401,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                     clearPinnedWeeks={clearPinnedWeeks}
                     onAddCustomMood={handleAddCustomMood}
                     onToggleMilestone={handleToggleMilestone}
+                    isMilestoneMode={isMilestoneMode}
                   />
                 </div>
                 <div
@@ -420,7 +448,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
                     milestones={milestones}
                     selectedColor={selectedColor}
                     selectedWeeks={selectedWeeks}
-                    handleWeekClick={handleWeekClick}
+                    handleWeekClick={handleWeekClickWithMilestone}
                     handleWeekMouseDown={handleWeekMouseDown}
                     handleWeekMouseEnter={handleWeekMouseEnter}
                     handleMouseUp={handleMouseUp}

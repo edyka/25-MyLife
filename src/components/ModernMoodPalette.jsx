@@ -345,6 +345,7 @@ const ModernMoodPalette = ({
   _clearPinnedWeeks = () => {},
   onAddCustomMood = () => {},
   onToggleMilestone = () => {},
+  isMilestoneMode = false,
 }) => {
   const darkMode = useUIStore(state => state.darkMode)
   const scrollContainerRef = useRef(null)
@@ -540,8 +541,19 @@ const ModernMoodPalette = ({
               <Icons.X className="w-3 h-3" />
             </button>
           )}
+          {/* Milestone mode indicator */}
+          {isMilestoneMode && (
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
+                darkMode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700'
+              }`}
+            >
+              <div className="w-2 h-2 bg-yellow-400 rotate-45 animate-pulse" />
+              <span>Click square to mark</span>
+            </div>
+          )}
           {/* Selected color indicator */}
-          {selectedColor && (
+          {selectedColor && !isMilestoneMode && (
             <div
               className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
                 darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'
@@ -597,9 +609,9 @@ const ModernMoodPalette = ({
 
         {/* Mark Milestone */}
         <ActionCircle
-          icon={<div className="w-2.5 h-2.5 bg-yellow-400 rotate-45 shadow-sm" />}
+          icon={<div className={`w-2.5 h-2.5 ${isMilestoneMode ? 'bg-yellow-300' : 'bg-yellow-400'} rotate-45 shadow-sm`} />}
           label="Mark"
-          isActive={false}
+          isActive={isMilestoneMode}
           darkMode={darkMode}
           onClick={onToggleMilestone}
           gradientColors="#fbbf24, #f59e0b, #fbbf24"

@@ -14,7 +14,10 @@ export const useSelectionStore = create(
   selectedColor: null,
   selectedWeeks: new Set(),
   pinnedWeeks: new Set(),
-  
+
+  // Milestone mode - when active, clicking a week opens milestone modal
+  isMilestoneMode: false,
+
   // Interaction state
   isDragging: false,
   draggedWeeks: new Set(),
@@ -32,6 +35,18 @@ export const useSelectionStore = create(
   setSelectedWeek: (week) => set({ selectedWeek: week }),
   setSelectedColor: (color) => set({ selectedColor: color }),
   setSelectionMode: (mode) => set({ selectionMode: mode }),
+
+  // Milestone mode actions
+  setMilestoneMode: (isActive) => set({ isMilestoneMode: isActive }),
+  toggleMilestoneMode: () => {
+    const { isMilestoneMode, selectedColor } = get();
+    // When entering milestone mode, clear any selected color
+    if (!isMilestoneMode) {
+      set({ isMilestoneMode: true, selectedColor: null });
+    } else {
+      set({ isMilestoneMode: false });
+    }
+  },
   
   // Dragging actions
   setIsDragging: (isDragging) => set({ isDragging }),
