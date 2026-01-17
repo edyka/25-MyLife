@@ -2,22 +2,31 @@ import { useState, useEffect, useRef } from 'react'
 import { auth } from '../lib/supabase'
 import { dataService } from '../services/dataService'
 
+const isDev = process.env.NODE_ENV === 'development'
+
+// Detect mobile at module load time (won't change during session)
+const isMobile =
+  typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+const AUTH_TIMEOUT = isMobile ? 3000 : 5000
+const BACKEND_TIMEOUT = isMobile ? 1500 : 3000
+
 export const useAppAuth = setCurrentPage => {
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false)
   const [isBackendAvailable, setIsBackendAvailable] = useState(true)
-  const userDataLoadRef = useRef({ userId: null, promise: null })
+  const userDataLoadRef = useRef({ userId: null, promise: null, loadId: null })
   const authTimeoutRef = useRef(null)
 
   // Check backend health on mount (non-blocking)
+  // Shorter timeout on mobile (1.5s vs 3s on desktop)
   useEffect(() => {
     const checkBackend = async () => {
       try {
         // Add timeout to prevent long waits
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Backend check timeout')), 3000)
+          setTimeout(() => reject(new Error('Backend check timeout')), BACKEND_TIMEOUT)
         )
 
         const status = await Promise.race([auth.checkConnection(), timeoutPromise])
@@ -27,7 +36,7 @@ export const useAppAuth = setCurrentPage => {
           setIsBackendAvailable(false)
         }
       } catch (error) {
-        console.warn('[Viventiva] Backend check failed or timed out:', error.message)
+        if (isDev) console.warn('[Viventiva] Backend check failed or timed out:', error.message)
         // Don't set backend unavailable on timeout - let auth flow continue
         // Only set unavailable if we got an explicit failure
         if (error.message !== 'Backend check timeout') {
@@ -40,13 +49,14 @@ export const useAppAuth = setCurrentPage => {
   }, [])
 
   // Safety timeout - ensure authLoading doesn't stay true forever
+  // Shorter timeout on mobile for better UX (3s mobile, 5s desktop)
   useEffect(() => {
     authTimeoutRef.current = setTimeout(() => {
       if (authLoading) {
-        console.warn('[Viventiva] Auth timeout - setting authLoading to false')
+        if (isDev) console.warn('[Viventiva] Auth timeout - setting authLoading to false')
         setAuthLoading(false)
       }
-    }, 5000) // 5 second max wait for auth
+    }, AUTH_TIMEOUT)
 
     return () => {
       if (authTimeoutRef.current) {
@@ -62,9 +72,14 @@ export const useAppAuth = setCurrentPage => {
       return await userDataLoadRef.current.promise
     }
 
+    const loadId = Symbol('load')
+    userDataLoadRef.current.loadId = loadId
+
     const loadPromise = (async () => {
       setDataLoading(true)
       try {
+        // Early return if user switched during load
+        if (userDataLoadRef.current.loadId !== loadId) return
         const { useLifeStore } = await import('../stores/useLifeStore')
         const { useMilestoneStore } = await import('../stores/useMilestoneStore')
         const { useSelectionStore } = await import('../stores/useSelectionStore')
@@ -172,8 +187,12 @@ export const useAppAuth = setCurrentPage => {
                   result.error
                 )
               } else {
-                console.log('[Viventiva Auth] Successfully synced local profile to database')
+                if (isDev)
+                  console.log('[Viventiva Auth] Successfully synced local profile to database')
               }
+            })
+            .catch(error => {
+              console.error('[Viventiva Auth] Error syncing profile to database:', error)
             })
 
           // Fetch subscription
@@ -234,7 +253,7 @@ export const useAppAuth = setCurrentPage => {
       const {
         data: { subscription },
       } = auth.onAuthStateChange(async (event, session) => {
-        console.log('[Viventiva Auth] Event:', event, 'User:', session?.user?.id)
+        if (isDev) console.log('[Viventiva Auth] Event:', event, 'User:', session?.user?.id)
 
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           if (session?.user) {

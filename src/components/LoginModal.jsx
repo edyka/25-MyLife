@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { getTheme } from '../utils/themeConfig'
 import { useUIStore } from '../stores/useUIStore'
 import { auth } from '../lib/supabase'
+
+const isDev = process.env.NODE_ENV === 'development'
 
 const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialData = null }) => {
   const themePreset = useUIStore(state => state.themePreset)
@@ -27,6 +29,9 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSent, setResendSent] = useState(false)
 
+  // Track component mounted state for async cleanup
+  const mountedRef = useRef(true)
+
   // Update isSignUp when initialMode changes
   useEffect(() => {
     if (isOpen) {
@@ -46,18 +51,15 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
     }
   }, [isOpen, initialMode, initialData])
 
-  // Track component mounted state for async cleanup
+  // Reset mounted state when component mounts/unmounts
   useEffect(() => {
-    const mountedRef = { current: true }
-
+    mountedRef.current = true
     return () => {
       mountedRef.current = false
     }
   }, [])
 
   const handleSocialLogin = async provider => {
-    const mountedRef = { current: true }
-
     try {
       setLoadingProvider(provider)
       setLoading(true)
@@ -112,7 +114,6 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
 
   const handleEmailLogin = async e => {
     e.preventDefault()
-    const mountedRef = { current: true }
 
     try {
       setLoading(true)
@@ -158,27 +159,29 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       } else {
         // For SIGNUP: user needs to confirm email before session is established
         if (isSignUp) {
-          console.log('[Viventiva LoginModal] Signup successful - user may need to confirm email')
+          if (isDev)
+            console.log('[Viventiva LoginModal] Signup successful - user may need to confirm email')
 
           // Check if email confirmation is required (no session yet)
           const { user } = await auth.getCurrentUser()
 
           if (user) {
             // Session established immediately (email confirmation disabled in Supabase)
-            console.log('[Viventiva LoginModal] Session established, proceeding...')
+            if (isDev) console.log('[Viventiva LoginModal] Session established, proceeding...')
             const { resetRateLimit } = await import('../utils/rateLimiter')
             resetRateLimit(action, identifier)
             onLogin()
           } else {
             // Email confirmation required - show styled success message
-            console.log('[Viventiva LoginModal] Email confirmation required')
+            if (isDev) console.log('[Viventiva LoginModal] Email confirmation required')
             setError('') // Clear any errors
             setSignupSuccess(true)
             setLoading(false)
           }
         } else {
           // For LOGIN: session should be established
-          console.log('[Viventiva LoginModal] Email login successful, waiting for session...')
+          if (isDev)
+            console.log('[Viventiva LoginModal] Email login successful, waiting for session...')
           await new Promise(resolve => setTimeout(resolve, 300))
 
           if (!mountedRef.current) return
@@ -188,7 +191,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
           if (!mountedRef.current) return
 
           if (user && !userError) {
-            console.log('[Viventiva LoginModal] User confirmed, calling onLogin')
+            if (isDev) console.log('[Viventiva LoginModal] User confirmed, calling onLogin')
 
             const { resetRateLimit } = await import('../utils/rateLimiter')
             resetRateLimit(action, identifier)

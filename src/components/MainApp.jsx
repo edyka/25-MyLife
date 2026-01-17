@@ -426,8 +426,11 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
               onClick={() => setShowAchievements(true)}
               className={`p-2 rounded-full hover:bg-black/5 transition-colors ${darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
               title="Achievements"
+              aria-label="View achievements"
             >
-              <span className="text-xl">🏆</span>
+              <span className="text-xl" aria-hidden="true">
+                🏆
+              </span>
             </button>
           </div>
         </TabNavigation>

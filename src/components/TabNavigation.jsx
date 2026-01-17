@@ -43,8 +43,10 @@ const TabNavigation = ({
   const tier = usePremiumStore(state => state.tier)
   const subscriptionLoading = usePremiumStore(state => state.subscriptionLoading)
 
+  const isDev = process.env.NODE_ENV === 'development'
+
   const handleLogout = async () => {
-    console.log('[Viventiva] Logout initiated')
+    if (isDev) console.log('[Viventiva] Logout initiated')
 
     // CRITICAL: Force sync all pending data to Supabase before logout
     // Wait up to 5 seconds to ensure data is saved, but don't block logout forever
@@ -57,7 +59,7 @@ const TabNavigation = ({
           return
         }
 
-        console.log('[Viventiva] Force syncing data to Supabase before logout...')
+        if (isDev) console.log('[Viventiva] Force syncing data to Supabase before logout...')
 
         // Import stores
         const milestoneStoreModule = await import('../stores/useMilestoneStore')
@@ -77,20 +79,27 @@ const TabNavigation = ({
         }
 
         const weekCount = Object.keys(milestoneData.milestones || {}).length
-        console.log('[Viventiva] Force syncing milestones:', weekCount, 'weeks')
-        console.log('[Viventiva] Milestone data structure:', {
-          milestones: weekCount,
-          customMoods: Object.keys(milestoneData.customMoods || {}).length,
-          customCategories: Object.keys(milestoneData.customCategories || {}).length,
-          sampleWeek: weekCount > 0 ? Object.keys(milestoneData.milestones)[0] : null,
-        })
+        if (isDev) {
+          console.log('[Viventiva] Force syncing milestones:', weekCount, 'weeks')
+          console.log('[Viventiva] Milestone data structure:', {
+            milestones: weekCount,
+            customMoods: Object.keys(milestoneData.customMoods || {}).length,
+            customCategories: Object.keys(milestoneData.customCategories || {}).length,
+            sampleWeek: weekCount > 0 ? Object.keys(milestoneData.milestones)[0] : null,
+          })
+        }
 
         const { error: milestonesError } = await database.saveMilestones(user.id, milestoneData)
         if (milestonesError) {
           console.error('[Viventiva] Error force syncing milestones:', milestonesError)
           throw new Error(`Failed to save milestones: ${milestonesError.message}`)
         } else {
-          console.log('[Viventiva] Milestones force synced successfully:', weekCount, 'weeks saved')
+          if (isDev)
+            console.log(
+              '[Viventiva] Milestones force synced successfully:',
+              weekCount,
+              'weeks saved'
+            )
 
           // Verify the save by reading it back
           const { data: verifyData, error: verifyError } = await database.getMilestones(user.id)
@@ -98,7 +107,8 @@ const TabNavigation = ({
             const savedCount = verifyData.milestones_data.milestones
               ? Object.keys(verifyData.milestones_data.milestones || {}).length
               : Object.keys(verifyData.milestones_data || {}).length
-            console.log('[Viventiva] Verified milestones saved:', savedCount, 'weeks in Supabase')
+            if (isDev)
+              console.log('[Viventiva] Verified milestones saved:', savedCount, 'weeks in Supabase')
             if (savedCount !== weekCount) {
               console.warn(
                 '[Viventiva] WARNING: Week count mismatch! Expected:',
@@ -107,7 +117,7 @@ const TabNavigation = ({
                 savedCount
               )
             }
-          } else {
+          } else if (isDev) {
             console.warn('[Viventiva] Could not verify milestones save:', verifyError)
           }
         }
@@ -119,29 +129,30 @@ const TabNavigation = ({
           selectedColor: selectionStore.selectedColor,
         }
 
-        console.log('[Viventiva] Force syncing selections:', {
-          selectedWeeks: selectionsData.selectedWeeks.length,
-          pinnedWeeks: selectionsData.pinnedWeeks.length,
-          selectedColor: selectionsData.selectedColor,
-        })
+        if (isDev)
+          console.log('[Viventiva] Force syncing selections:', {
+            selectedWeeks: selectionsData.selectedWeeks.length,
+            pinnedWeeks: selectionsData.pinnedWeeks.length,
+            selectedColor: selectionsData.selectedColor,
+          })
 
         const { error: selectionsError } = await database.saveSelections(user.id, selectionsData)
         if (selectionsError) {
           console.error('[Viventiva] Error force syncing selections:', selectionsError)
           // Don't throw - selections are less critical than milestones
         } else {
-          console.log('[Viventiva] Selections force synced successfully')
+          if (isDev) console.log('[Viventiva] Selections force synced successfully')
         }
 
         // Force sync goals
         try {
           const goals = milestoneStore.goals || []
-          console.log('[Viventiva] Force syncing goals:', goals.length)
+          if (isDev) console.log('[Viventiva] Force syncing goals:', goals.length)
           const { error: goalsError } = await database.saveGoals(user.id, goals)
           if (goalsError) {
             console.error('[Viventiva] Error force syncing goals:', goalsError)
           } else {
-            console.log('[Viventiva] Goals force synced successfully')
+            if (isDev) console.log('[Viventiva] Goals force synced successfully')
           }
         } catch (goalsError) {
           console.error('[Viventiva] Error in goals sync block:', goalsError)
@@ -151,13 +162,13 @@ const TabNavigation = ({
         try {
           const { useUIStore } = await import('../stores/useUIStore')
           await useUIStore.getState().syncSettingsToSupabase()
-          console.log('[Viventiva] Settings force synced successfully')
+          if (isDev) console.log('[Viventiva] Settings force synced successfully')
         } catch (settingsError) {
           console.error('[Viventiva] Error force syncing settings:', settingsError)
           // Don't throw - settings are less critical
         }
 
-        console.log('[Viventiva] All data synced successfully, proceeding with logout')
+        if (isDev) console.log('[Viventiva] All data synced successfully, proceeding with logout')
       } catch (error) {
         console.error('[Viventiva] Error force syncing before logout:', error)
         // Don't throw - we still want to logout even if sync fails
@@ -231,7 +242,7 @@ const TabNavigation = ({
       }
     }
     keysToRemove.forEach(key => {
-      console.log('[Viventiva] Clearing key:', key)
+      if (isDev) console.log('[Viventiva] Clearing key:', key)
       localStorage.removeItem(key)
     })
 
@@ -239,14 +250,14 @@ const TabNavigation = ({
     auth
       .signOut()
       .then(() => {
-        console.log('[Viventiva] Supabase signOut completed')
+        if (isDev) console.log('[Viventiva] Supabase signOut completed')
       })
       .catch(error => {
         console.error('[Viventiva] Supabase signOut error (ignored):', error)
       })
 
     // Redirect immediately (use setTimeout to ensure it happens even if there are pending promises)
-    console.log('[Viventiva] Redirecting to home...')
+    if (isDev) console.log('[Viventiva] Redirecting to home...')
     setTimeout(() => {
       window.location.href = '/'
     }, 100)

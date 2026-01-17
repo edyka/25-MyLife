@@ -59,9 +59,11 @@ const SettingsPage = () => {
   const [consentDate, setConsentDate] = useState(() => getConsentDate())
   const [loggingOut, setLoggingOut] = useState(false)
 
+  const isDev = process.env.NODE_ENV === 'development'
+
   const handleLogout = async () => {
     setLoggingOut(true)
-    console.log('[Viventiva] Logout initiated from Settings')
+    if (isDev) console.log('[Viventiva] Logout initiated from Settings')
 
     // Force sync all pending data to Supabase before logout
     const syncPromise = (async () => {
@@ -72,7 +74,7 @@ const SettingsPage = () => {
           return
         }
 
-        console.log('[Viventiva] Force syncing data to Supabase before logout...')
+        if (isDev) console.log('[Viventiva] Force syncing data to Supabase before logout...')
 
         // Get current state from stores
         const milestoneStore = useMilestoneStore.getState()
@@ -101,7 +103,7 @@ const SettingsPage = () => {
         // Force sync settings
         await useUIStore.getState().syncSettingsToSupabase()
 
-        console.log('[Viventiva] All data synced successfully')
+        if (isDev) console.log('[Viventiva] All data synced successfully')
       } catch (error) {
         console.error('[Viventiva] Error syncing before logout:', error)
       }
@@ -226,7 +228,8 @@ const SettingsPage = () => {
   }
 
   const handleUpdateProfile = () => {
-    console.log('Update Profile button clicked - saving profile and navigating to setup page')
+    if (isDev)
+      console.log('Update Profile button clicked - saving profile and navigating to setup page')
     saveProfile()
     setCurrentPage('setup')
   }

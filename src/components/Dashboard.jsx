@@ -197,6 +197,7 @@ const Dashboard = ({ stats, darkMode }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label
+                htmlFor="edit-name"
                 className={`block text-sm font-medium mb-2 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}
@@ -204,6 +205,7 @@ const Dashboard = ({ stats, darkMode }) => {
                 Name
               </label>
               <input
+                id="edit-name"
                 type="text"
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
@@ -227,6 +229,7 @@ const Dashboard = ({ stats, darkMode }) => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label
+                    htmlFor="edit-day"
                     className={`block text-xs mb-1 ${
                       darkMode ? 'text-slate-400' : 'text-slate-600'
                     }`}
@@ -234,6 +237,7 @@ const Dashboard = ({ stats, darkMode }) => {
                     Day
                   </label>
                   <input
+                    id="edit-day"
                     type="number"
                     min="1"
                     max="31"
@@ -251,6 +255,7 @@ const Dashboard = ({ stats, darkMode }) => {
                 </div>
                 <div>
                   <label
+                    htmlFor="edit-month"
                     className={`block text-xs mb-1 ${
                       darkMode ? 'text-slate-400' : 'text-slate-600'
                     }`}
@@ -258,6 +263,7 @@ const Dashboard = ({ stats, darkMode }) => {
                     Month
                   </label>
                   <select
+                    id="edit-month"
                     value={editMonth}
                     onChange={e => setEditMonth(parseInt(e.target.value))}
                     className={`w-full px-3 py-2 rounded-lg ${
@@ -275,6 +281,7 @@ const Dashboard = ({ stats, darkMode }) => {
                 </div>
                 <div>
                   <label
+                    htmlFor="edit-year"
                     className={`block text-xs mb-1 ${
                       darkMode ? 'text-slate-400' : 'text-slate-600'
                     }`}
@@ -282,6 +289,7 @@ const Dashboard = ({ stats, darkMode }) => {
                     Year
                   </label>
                   <input
+                    id="edit-year"
                     type="number"
                     min="1900"
                     max={new Date().getFullYear()}
@@ -302,6 +310,7 @@ const Dashboard = ({ stats, darkMode }) => {
 
             <div>
               <label
+                htmlFor="edit-life-expectancy"
                 className={`block text-sm font-medium mb-2 ${
                   darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}
@@ -309,6 +318,7 @@ const Dashboard = ({ stats, darkMode }) => {
                 Life Expectancy (years)
               </label>
               <input
+                id="edit-life-expectancy"
                 type="number"
                 min="1"
                 max="120"

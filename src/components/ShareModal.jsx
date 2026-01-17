@@ -45,18 +45,19 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
   const allMoods = useMemo(() => ({ ...modernMoods, ...customMoods }), [customMoods])
 
   // Find which moods are actually used in the grid
-  const usedMoods = useCallback(() => {
+  const usedMoods = useMemo(() => {
     const used = new Set()
+    const allMoodsLocal = { ...modernMoods, ...customMoods }
     Object.values(milestones || {}).forEach(m => {
-      if (m?.category && allMoods[m.category]) {
+      if (m?.category && allMoodsLocal[m.category]) {
         used.add(m.category)
       }
     })
     return Array.from(used).map(key => ({
       key,
-      ...allMoods[key],
+      ...allMoodsLocal[key],
     }))
-  }, [milestones, allMoods])
+  }, [milestones, customMoods])
 
   // Generate poster image
   const generatePoster = useCallback(async () => {
@@ -183,7 +184,7 @@ const ShareModal = ({ isOpen, onClose, userName = 'My' }) => {
   const currentAge = birthYear ? new Date().getFullYear() - birthYear : 0
   const weeksLived = currentWeek || 0
   const weeksRemaining = lifeExpectancy * 52 - weeksLived
-  const moodsUsed = usedMoods()
+  const moodsUsed = usedMoods
 
   return createPortal(
     <AnimatePresence>
