@@ -74,6 +74,7 @@ const AVAILABLE_COLORS = [
 
 import { useUIStore } from '../stores/useUIStore'
 import { useMilestoneStore } from '../stores/useMilestoneStore'
+import { trapFocus } from '../utils/accessibility'
 
 // Free tier moods (4 basic moods available to all users)
 const FREE_MOODS = ['happy', 'inlove', 'sad', 'focused']
@@ -359,6 +360,7 @@ const ModernMoodPalette = ({
 }) => {
   const darkMode = useUIStore(state => state.darkMode)
   const scrollContainerRef = useRef(null)
+  const editModalRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
@@ -532,6 +534,14 @@ const ModernMoodPalette = ({
     }
   }, [editingMood])
 
+  // Trap focus within edit modal for accessibility
+  useEffect(() => {
+    if (editingMood && editModalRef.current) {
+      const cleanup = trapFocus(editModalRef.current)
+      return cleanup
+    }
+  }, [editingMood])
+
   return (
     <div className="space-y-3">
       {/* Header */}
@@ -622,7 +632,11 @@ const ModernMoodPalette = ({
 
         {/* Mark Milestone */}
         <ActionCircle
-          icon={<div className={`w-2.5 h-2.5 ${isMilestoneMode ? 'bg-yellow-300' : 'bg-yellow-400'} rotate-45 shadow-sm`} />}
+          icon={
+            <div
+              className={`w-2.5 h-2.5 ${isMilestoneMode ? 'bg-yellow-300' : 'bg-yellow-400'} rotate-45 shadow-sm`}
+            />
+          }
           label="Mark"
           isActive={isMilestoneMode}
           isLocked={!hasMilestones}
@@ -707,13 +721,20 @@ const ModernMoodPalette = ({
             }}
           >
             <div
+              ref={editModalRef}
               className={`relative w-full max-w-lg my-8 rounded-xl shadow-2xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}
               style={{ zIndex: 100000 }}
               onClick={e => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-mood-title"
             >
               <div className={`p-4 border-b ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <h3
+                    id="edit-mood-title"
+                    className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}
+                  >
                     Edit Mood
                   </h3>
                   <button
@@ -901,4 +922,4 @@ const ModernMoodPalette = ({
   )
 }
 
-export default ModernMoodPalette
+export default React.memo(ModernMoodPalette)

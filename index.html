@@ -173,14 +173,24 @@
       /* Disable callout on UI elements only */
       button,
       a,
-      [role="button"] {
+      [role='button'] {
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         user-select: none;
       }
 
       /* Allow text selection on content */
-      p, span, h1, h2, h3, h4, h5, h6, li, td, th {
+      p,
+      span,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      li,
+      td,
+      th {
         -webkit-user-select: text;
         user-select: text;
       }
@@ -191,7 +201,7 @@
       input,
       select,
       textarea,
-      [role="button"] {
+      [role='button'] {
         touch-action: manipulation;
       }
 
@@ -209,8 +219,20 @@
         }
 
         /* Re-enable for content areas */
-        p, span, h1, h2, h3, h4, h5, h6, li, td, th,
-        input, textarea, [contenteditable="true"] {
+        p,
+        span,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        li,
+        td,
+        th,
+        input,
+        textarea,
+        [contenteditable='true'] {
           -webkit-user-select: text;
           user-select: text;
         }
@@ -337,35 +359,141 @@
   </head>
 
   <body>
-    <!-- SEO: Initial content for search engines (hidden visually, replaced by React) -->
+    <!-- Initial loading content - visible until React takes over -->
     <div id="root">
-      <!-- This content is for search crawlers - hidden from users, React replaces it -->
-      <div id="seo-content" style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;">
-        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1e293b;">
+      <!-- Loading screen that users see immediately while JS loads -->
+      <div
+        id="initial-loader"
+        style="
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background-color: #f8fafc;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        "
+      >
+        <!-- Logo -->
+        <div
+          style="
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #f97316, #dc2626);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.3);
+          "
+        >
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 3px;
+              width: 28px;
+              height: 28px;
+            "
+          >
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+            <div style="background: rgba(255, 255, 255, 0.9); border-radius: 2px"></div>
+          </div>
+        </div>
+        <!-- Brand name -->
+        <h1
+          style="
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+            letter-spacing: 0.05em;
+          "
+        >
+          VIVENTIVA
+        </h1>
+        <!-- Loading spinner -->
+        <div
+          style="
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #f97316;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 16px;
+          "
+        ></div>
+        <p style="color: #64748b; font-size: 0.875rem; margin-top: 12px">Loading...</p>
+      </div>
+      <style>
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        @media (prefers-color-scheme: dark) {
+          #initial-loader {
+            background-color: #0f172a !important;
+          }
+          #initial-loader h1 {
+            color: #f1f5f9 !important;
+          }
+          #initial-loader p {
+            color: #94a3b8 !important;
+          }
+        }
+      </style>
+      <!-- SEO content - hidden from users, visible to crawlers -->
+      <div
+        id="seo-content"
+        style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none"
+      >
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1e293b">
           Viventiva - Visualize Your Life in Weeks
         </h1>
-        <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
-          See your entire life at a glance. Each square represents one week of your ~4,000 week journey.
-          Track milestones, set meaningful goals, and live with intention.
+        <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem">
+          See your entire life at a glance. Each square represents one week of your ~4,000 week
+          journey. Track milestones, set meaningful goals, and live with intention.
         </p>
 
-        <h2 style="font-size: 1.5rem; color: #334155; margin-bottom: 1rem;">Why Viventiva?</h2>
-        <ul style="text-align: left; max-width: 500px; margin: 0 auto 2rem; color: #475569; line-height: 1.8;">
-          <li><strong>Life Visualization</strong> - See your entire life in a beautiful grid of weeks</li>
+        <h2 style="font-size: 1.5rem; color: #334155; margin-bottom: 1rem">Why Viventiva?</h2>
+        <ul
+          style="
+            text-align: left;
+            max-width: 500px;
+            margin: 0 auto 2rem;
+            color: #475569;
+            line-height: 1.8;
+          "
+        >
+          <li>
+            <strong>Life Visualization</strong> - See your entire life in a beautiful grid of weeks
+          </li>
           <li><strong>Milestone Tracking</strong> - Record and celebrate meaningful moments</li>
           <li><strong>Goal Setting</strong> - Set intentions and track progress over time</li>
           <li><strong>Mood Journaling</strong> - Color your weeks with emotions and reflections</li>
           <li><strong>Privacy First</strong> - Your data stays yours, always</li>
         </ul>
 
-        <h2 style="font-size: 1.5rem; color: #334155; margin-bottom: 1rem;">The Power of Perspective</h2>
-        <p style="color: #64748b; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; color: #334155; margin-bottom: 1rem">
+          The Power of Perspective
+        </h2>
+        <p style="color: #64748b; margin-bottom: 2rem">
           The average human life spans about 4,000 weeks. Viventiva helps you visualize this finite
           time, inspiring you to make every week count. Based on the concept of "memento vivere"
           (remember to live), our tool transforms abstract time into a tangible, actionable format.
         </p>
 
-        <p style="color: #94a3b8; font-style: italic;">
+        <p style="color: #94a3b8; font-style: italic">
           "The trouble is, you think you have time." — Buddha
         </p>
       </div>
@@ -373,13 +501,26 @@
 
     <!-- Noscript fallback for users without JavaScript -->
     <noscript>
-      <div style="font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; text-align: center;">
+      <div
+        style="
+          font-family: system-ui, sans-serif;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem;
+          text-align: center;
+        "
+      >
         <h1>Viventiva - Life Visualization Tool</h1>
-        <p>Viventiva requires JavaScript to run. Please enable JavaScript in your browser to use this application.</p>
-        <p>Viventiva is a powerful life visualization tool that helps you see your entire life in weeks.
-           Track meaningful moments, set intentions, and live with purpose.</p>
+        <p>
+          Viventiva requires JavaScript to run. Please enable JavaScript in your browser to use this
+          application.
+        </p>
+        <p>
+          Viventiva is a powerful life visualization tool that helps you see your entire life in
+          weeks. Track meaningful moments, set intentions, and live with purpose.
+        </p>
         <h2>Features</h2>
-        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+        <ul style="text-align: left; max-width: 400px; margin: 0 auto">
           <li>Visualize your life in weeks (approximately 4,000 weeks)</li>
           <li>Track milestones and meaningful moments</li>
           <li>Set and achieve life goals</li>

@@ -60,36 +60,66 @@ export const getUserFriendlyError = error => {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-// Validate required environment variables
+// Flag to track if Supabase is available
+export let isSupabaseAvailable = true
+
+// Validate required environment variables (warn but don't throw)
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing required Supabase environment variables. ' +
+  console.error(
+    '[Viventiva] Missing required Supabase environment variables. ' +
       'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file.'
   )
+  isSupabaseAvailable = false
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storage: localStorage,
-    storageKey: 'viventiva-auth-token',
-    flowType: 'pkce',
-  },
-  global: {
-    headers: {
-      'x-application-name': 'viventiva',
-    },
-  },
-})
+// Create client with error handling
+let supabaseClient = null
+try {
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storage: localStorage,
+        storageKey: 'viventiva-auth-token',
+        flowType: 'pkce',
+      },
+      global: {
+        headers: {
+          'x-application-name': 'viventiva',
+        },
+      },
+    })
+  }
+} catch (error) {
+  console.error('[Viventiva] Failed to create Supabase client:', error)
+  isSupabaseAvailable = false
+}
+
+export const supabase = supabaseClient
+
+// Helper to check if client is available
+const requireClient = () => {
+  if (!supabaseClient) {
+    return {
+      error: new Error(
+        'Supabase client not available. Privacy protections may be blocking the connection.'
+      ),
+    }
+  }
+  return null
+}
 
 // Helper functions for authentication
 export const auth = {
   // Sign in with Google - Following Supabase best practices
   signInWithGoogle: async () => {
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
@@ -118,7 +148,10 @@ export const auth = {
 
   // Sign in with Facebook
   signInWithFacebook: async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
         redirectTo: `${window.location.origin}/`,
@@ -129,7 +162,10 @@ export const auth = {
 
   // Sign in with Apple (requires Apple Developer account)
   signInWithApple: async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'apple',
       options: {
         redirectTo: `${window.location.origin}/`,
@@ -140,7 +176,10 @@ export const auth = {
 
   // Sign in with Email
   signInWithEmail: async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     })
@@ -151,6 +190,9 @@ export const auth = {
   // NOTE: We don't save the profile here - it will be saved during onboarding
   // when the session is fully established. This avoids RLS timing issues.
   signUpWithEmail: async (email, password, firstName) => {
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
     const options = {
       emailRedirectTo: `${window.location.origin}/`,
     }
@@ -163,7 +205,7 @@ export const auth = {
       }
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
       options,
@@ -177,8 +219,11 @@ export const auth = {
 
   // Resend signup confirmation email (useful when email confirmation is enabled)
   resendSignupEmail: async email => {
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
     try {
-      const { data, error } = await supabase.auth.resend({
+      const { data, error } = await supabaseClient.auth.resend({
         type: 'signup',
         email,
         options: {
@@ -193,8 +238,11 @@ export const auth = {
 
   // Send password reset email
   resetPassword: async email => {
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
     try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/?type=recovery`,
       })
       return { data, error }
@@ -205,8 +253,11 @@ export const auth = {
 
   // Update password (called after user clicks reset link)
   updatePassword: async newPassword => {
+    const clientError = requireClient()
+    if (clientError) return { data: null, ...clientError }
+
     try {
-      const { data, error } = await supabase.auth.updateUser({
+      const { data, error } = await supabaseClient.auth.updateUser({
         password: newPassword,
       })
       return { data, error }
@@ -217,17 +268,20 @@ export const auth = {
 
   // Sign out
   signOut: async () => {
-    const { error } = await supabase.auth.signOut()
+    if (!supabaseClient) return { error: null } // Silent success if no client
+    const { error } = await supabaseClient.auth.signOut()
     return { error }
   },
 
   // Get current user - use getSession for reliable session restoration on refresh
   getCurrentUser: async () => {
+    if (!supabaseClient) return { user: null, error: null } // No client = no user
+
     try {
       const {
         data: { session },
         error,
-      } = await supabase.auth.getSession()
+      } = await supabaseClient.auth.getSession()
 
       // Check for Brave Shields blocking (406 errors)
       if (error && (error.status === 406 || error.message?.includes('406'))) {
@@ -246,7 +300,20 @@ export const auth = {
 
   // Listen to auth changes
   onAuthStateChange: callback => {
-    return supabase.auth.onAuthStateChange(callback)
+    if (!supabaseClient) {
+      // Return a dummy subscription that does nothing
+      console.warn(
+        '[Viventiva] Supabase client not available, auth state changes will not be tracked'
+      )
+      return { data: { subscription: { unsubscribe: () => {} } } }
+    }
+    return supabaseClient.auth.onAuthStateChange(callback)
+  },
+
+  // Get session directly
+  getSession: async () => {
+    if (!supabaseClient) return { data: { session: null }, error: null }
+    return supabaseClient.auth.getSession()
   },
 
   // Check if Supabase is reachable
@@ -278,6 +345,8 @@ export const auth = {
 export const database = {
   // Save user profile data
   saveUserProfile: async (userId, profileData) => {
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
     try {
       const updates = {
         user_id: userId,
@@ -296,7 +365,7 @@ export const database = {
 
       console.log('[Viventiva] Saving user profile:', { userId, profileData: updates })
 
-      const { data, error } = await supabase.from('user_profiles').upsert(updates, {
+      const { data, error } = await supabaseClient.from('user_profiles').upsert(updates, {
         onConflict: 'user_id',
       })
 
@@ -315,7 +384,9 @@ export const database = {
 
   // Save engagement stats independently
   saveEngagementStats: async (userId, stats) => {
-    const { data, error } = await supabase
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
+    const { data, error } = await supabaseClient
       .from('user_profiles')
       .update({
         engagement_stats: stats,
@@ -327,8 +398,10 @@ export const database = {
 
   // Get user profile
   getUserProfile: async userId => {
+    if (!supabaseClient) return { data: null, error: null }
+
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
@@ -350,11 +423,13 @@ export const database = {
 
   // Save mood/milestone data with retry logic
   saveMilestones: async (userId, milestones) => {
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
     const { retryWithBackoff } = await import('../utils/retry')
 
     try {
       const result = await retryWithBackoff(async () => {
-        const { data, error } = await supabase.from('user_milestones').upsert(
+        const { data, error } = await supabaseClient.from('user_milestones').upsert(
           {
             user_id: userId,
             milestones_data: milestones,
@@ -399,7 +474,7 @@ export const database = {
 
     try {
       const result = await retryWithBackoff(async () => {
-        const { data, error } = await supabase.from('user_goals').upsert(
+        const { data, error } = await supabaseClient.from('user_goals').upsert(
           {
             user_id: userId,
             goals_data: goals,
@@ -443,7 +518,7 @@ export const database = {
 
     try {
       const result = await retryWithBackoff(async () => {
-        const { data, error } = await supabase.from('user_selections').upsert(
+        const { data, error } = await supabaseClient.from('user_selections').upsert(
           {
             user_id: userId,
             selections_data: selections,
@@ -485,11 +560,11 @@ export const database = {
   deleteAllUserData: async userId => {
     // Execute all deletions in parallel using Promise.allSettled to ensure all are attempted
     const deletions = await Promise.allSettled([
-      supabase.from('user_profiles').delete().eq('user_id', userId),
-      supabase.from('user_milestones').delete().eq('user_id', userId),
-      supabase.from('user_goals').delete().eq('user_id', userId),
-      supabase.from('user_selections').delete().eq('user_id', userId),
-      supabase.from('user_settings').delete().eq('user_id', userId),
+      supabaseClient.from('user_profiles').delete().eq('user_id', userId),
+      supabaseClient.from('user_milestones').delete().eq('user_id', userId),
+      supabaseClient.from('user_goals').delete().eq('user_id', userId),
+      supabaseClient.from('user_selections').delete().eq('user_id', userId),
+      supabaseClient.from('user_settings').delete().eq('user_id', userId),
     ])
 
     const errors = deletions
@@ -515,11 +590,11 @@ export const database = {
   exportAllUserData: async userId => {
     // Execute all queries in parallel for better performance
     const [profile, milestones, goals, selections, settings] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
-      supabase.from('user_milestones').select('*').eq('user_id', userId).single(),
-      supabase.from('user_goals').select('*').eq('user_id', userId).single(),
-      supabase.from('user_selections').select('*').eq('user_id', userId).single(),
-      supabase.from('user_settings').select('*').eq('user_id', userId).single(),
+      supabaseClient.from('user_profiles').select('*').eq('user_id', userId).single(),
+      supabaseClient.from('user_milestones').select('*').eq('user_id', userId).single(),
+      supabaseClient.from('user_goals').select('*').eq('user_id', userId).single(),
+      supabaseClient.from('user_selections').select('*').eq('user_id', userId).single(),
+      supabaseClient.from('user_settings').select('*').eq('user_id', userId).single(),
     ])
 
     return {
@@ -538,7 +613,7 @@ export const database = {
 
     try {
       const result = await retryWithBackoff(async () => {
-        const { data, error } = await supabase.from('user_settings').upsert(
+        const { data, error } = await supabaseClient.from('user_settings').upsert(
           {
             user_id: userId,
             settings_data: settings,

@@ -1,10 +1,11 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Flag, Save, Trash2, Calendar } from 'lucide-react'
 import { useUIStore } from '../stores/useUIStore'
 import { usePremiumStore } from '../stores/usePremiumStore'
 import { getTheme } from '../utils/themeConfig'
+import { trapFocus } from '../utils/accessibility'
 
 const MilestoneModal = memo(
   ({ isOpen, onClose, weekNum, milestone, onSave, onDelete, allCategories = {} }) => {
@@ -17,6 +18,7 @@ const MilestoneModal = memo(
     const [category, setCategory] = useState('personal')
     const [description, setDescription] = useState('')
     const [isMilestoneFlag, setIsMilestoneFlag] = useState(false)
+    const modalRef = useRef(null)
 
     // Reset form when opening with new data
     useEffect(() => {
@@ -32,6 +34,14 @@ const MilestoneModal = memo(
         setIsMilestoneFlag(false)
       }
     }, [isOpen, milestone])
+
+    // Trap focus within modal for accessibility
+    useEffect(() => {
+      if (isOpen && modalRef.current) {
+        const cleanup = trapFocus(modalRef.current)
+        return cleanup
+      }
+    }, [isOpen])
 
     const handleSave = () => {
       if (!title.trim()) return
@@ -81,12 +91,16 @@ const MilestoneModal = memo(
 
           {/* Modal */}
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className={`relative w-full max-w-md rounded-2xl shadow-2xl ${
               darkMode ? 'bg-slate-800' : 'bg-white'
             }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="milestone-modal-title"
           >
             {/* Header */}
             <div
@@ -99,7 +113,10 @@ const MilestoneModal = memo(
                   <Flag className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <h3
+                    id="milestone-modal-title"
+                    className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}
+                  >
                     {milestone ? 'Edit Milestone' : 'Add Milestone'}
                   </h3>
                   <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>

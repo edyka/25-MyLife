@@ -1,14 +1,15 @@
+import { memo, useState, useEffect } from 'react'
 import Footer from './Footer'
 import LifeCalculator from './LifeCalculator'
 import { motion } from 'framer-motion'
 import { Sparkles, LogIn, Calendar, Target, Clock, Sun, Moon } from 'lucide-react'
 import { getTheme } from '../utils/themeConfig'
 import { useUIStore } from '../stores/useUIStore'
-import { useState } from 'react'
 import LoginModal from './LoginModal'
 import WaitlistPage from './WaitlistPage'
 
 import { WAITLIST_MODE } from '../utils/constants'
+import { prefersReducedMotion } from '../utils/accessibility'
 
 const HomePage = ({ darkMode, onLogin }) => {
   const themePreset = useUIStore(state => state.themePreset)
@@ -75,6 +76,18 @@ const HomePage = ({ darkMode, onLogin }) => {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isSignUpMode, setIsSignUpMode] = useState(false)
   const [initialAuthData, setInitialAuthData] = useState(null)
+  const [reducedMotion, setReducedMotion] = useState(false)
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    setReducedMotion(prefersReducedMotion())
+
+    // Listen for changes to the preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handleChange = e => setReducedMotion(e.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   const handleLoginClick = () => {
     setIsSignUpMode(false)
@@ -108,15 +121,15 @@ const HomePage = ({ darkMode, onLogin }) => {
       id="main-content"
       role="main"
       aria-label="Viventiva homepage"
-      className={`min-h-screen flex flex-col relative overflow-hidden ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}
+      className={`min-h-screen flex flex-col relative ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}
     >
       {/* Aurora Background - Global (behind everything) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div
-          className={`absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 animate-pulse-slow ${darkMode ? activeTheme.bgDark : activeTheme.bgLight}`}
+          className={`absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 ${!reducedMotion ? 'animate-pulse-slow' : ''} ${darkMode ? activeTheme.bgDark : activeTheme.bgLight}`}
         />
         <div
-          className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 animate-pulse-slow delay-1000 ${darkMode ? activeTheme.bgDark : activeTheme.bgLight}`}
+          className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-30 ${!reducedMotion ? 'animate-pulse-slow delay-1000' : ''} ${darkMode ? activeTheme.bgDark : activeTheme.bgLight}`}
         />
       </div>
 
@@ -134,7 +147,9 @@ const HomePage = ({ darkMode, onLogin }) => {
         <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 bg-gradient-to-br ${theme.iconBg} rounded-xl shadow-lg flex items-center justify-center`}>
+            <div
+              className={`w-8 h-8 bg-gradient-to-br ${theme.iconBg} rounded-xl shadow-lg flex items-center justify-center`}
+            >
               <div className="grid grid-cols-3 gap-0.5 w-4 h-4">
                 {[...Array(9)].map((_, i) => (
                   <div key={i} className="bg-white/90 rounded-[1px]"></div>
@@ -181,41 +196,43 @@ const HomePage = ({ darkMode, onLogin }) => {
 
       {/* SECTION 1: HERO */}
       <section className="relative z-10 w-full min-h-[calc(100vh-60px)] flex items-center justify-center py-12 px-4 sm:px-6 overflow-hidden">
-        {/* Floating Week Squares Background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={`float-${i}`}
-              className={`absolute w-3 h-3 rounded-sm opacity-30 ${
-                [
-                  'bg-amber-400',
-                  'bg-emerald-400',
-                  'bg-rose-400',
-                  'bg-sky-400',
-                  'bg-violet-400',
-                  'bg-orange-400',
-                  'bg-teal-400',
-                ][i % 7]
-              }`}
-              style={{ left: `${(i * 7) % 100}%` }}
-              initial={{
-                y: -20,
-                opacity: 0,
-              }}
-              animate={{
-                y: '120vh',
-                opacity: [0, 0.4, 0],
-                rotate: 180,
-              }}
-              transition={{
-                duration: 12 + Math.random() * 8,
-                repeat: Infinity,
-                delay: i * 0.4,
-                ease: 'linear',
-              }}
-            />
-          ))}
-        </div>
+        {/* Floating Week Squares Background - Hidden when reduced motion is preferred */}
+        {!reducedMotion && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(15)].map((_, i) => (
+              <motion.div
+                key={`float-${i}`}
+                className={`absolute w-3 h-3 rounded-sm opacity-30 ${
+                  [
+                    'bg-amber-400',
+                    'bg-emerald-400',
+                    'bg-rose-400',
+                    'bg-sky-400',
+                    'bg-violet-400',
+                    'bg-orange-400',
+                    'bg-teal-400',
+                  ][i % 7]
+                }`}
+                style={{ left: `${(i * 7) % 100}%` }}
+                initial={{
+                  y: -20,
+                  opacity: 0,
+                }}
+                animate={{
+                  y: '120vh',
+                  opacity: [0, 0.4, 0],
+                  rotate: 180,
+                }}
+                transition={{
+                  duration: 12 + Math.random() * 8,
+                  repeat: Infinity,
+                  delay: i * 0.4,
+                  ease: 'linear',
+                }}
+              />
+            ))}
+          </div>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -243,7 +260,7 @@ const HomePage = ({ darkMode, onLogin }) => {
                 </div>
               </div>
               <div
-                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-lg animate-pulse`}
+                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-gradient-to-br ${theme.iconBg} rounded-full border-2 border-white shadow-lg ${!reducedMotion ? 'animate-pulse' : ''}`}
               ></div>
             </div>
             <span
@@ -307,8 +324,10 @@ const HomePage = ({ darkMode, onLogin }) => {
               {/* Current week - pulsing */}
               <motion.div
                 className={`w-5 h-5 md:w-6 md:h-6 rounded-sm ${darkMode ? 'bg-white' : 'bg-slate-900'}`}
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                animate={reducedMotion ? {} : { scale: [1, 1.15, 1] }}
+                transition={
+                  reducedMotion ? {} : { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+                }
               />
 
               {/* Future weeks - empty */}
@@ -394,16 +413,22 @@ const HomePage = ({ darkMode, onLogin }) => {
           {/* Scroll Indicator */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, y: [0, 8, 0] }}
-            transition={{ delay: 1.2, y: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: [0, 8, 0] }}
+            transition={
+              reducedMotion
+                ? { delay: 1.2 }
+                : { delay: 1.2, y: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } }
+            }
             className="mt-12"
           >
             <div
               className={`w-6 h-10 mx-auto rounded-full border-2 ${darkMode ? 'border-slate-600' : 'border-slate-300'} flex justify-center pt-2`}
             >
               <motion.div
-                animate={{ y: [0, 12, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                animate={reducedMotion ? {} : { y: [0, 12, 0] }}
+                transition={
+                  reducedMotion ? {} : { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
+                }
                 className={`w-1.5 h-1.5 rounded-full ${darkMode ? 'bg-slate-500' : 'bg-slate-400'}`}
               />
             </div>
@@ -691,4 +716,4 @@ const HomePage = ({ darkMode, onLogin }) => {
   )
 }
 
-export default HomePage
+export default memo(HomePage)

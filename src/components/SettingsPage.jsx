@@ -1,14 +1,23 @@
-import { ArrowLeft, Cookie, Download, Lock, Image } from 'lucide-react';
-import { toPng } from 'html-to-image';
-import { usePremiumStore } from '../stores/usePremiumStore';
-import UpgradeModal from './UpgradeModal';
-import { exportData } from '../utils/storageUtils';
-import { useUIStore } from '../stores/useUIStore';
-import { useMilestoneStore } from '../stores/useMilestoneStore';
-import { useProfileEditor } from '../hooks/useProfileEditor';
-import { getTheme } from '../utils/themeConfig';
-import { getCookieConsent, hasAnalyticsConsent, setCookieConsent, getConsentDate, clearCookieConsent } from '../utils/consentManager';
-import { useState, useEffect } from 'react';
+import { ArrowLeft, Cookie, Download, Lock, Image, LogOut } from 'lucide-react'
+import { auth, database } from '../lib/supabase'
+import { useLifeStore } from '../stores/useLifeStore'
+import { useSelectionStore } from '../stores/useSelectionStore'
+import { toPng } from 'html-to-image'
+import { usePremiumStore } from '../stores/usePremiumStore'
+import UpgradeModal from './UpgradeModal'
+import { exportData } from '../utils/storageUtils'
+import { useUIStore } from '../stores/useUIStore'
+import { useMilestoneStore } from '../stores/useMilestoneStore'
+import { useProfileEditor } from '../hooks/useProfileEditor'
+import { getTheme } from '../utils/themeConfig'
+import {
+  getCookieConsent,
+  hasAnalyticsConsent,
+  setCookieConsent,
+  getConsentDate,
+  clearCookieConsent,
+} from '../utils/consentManager'
+import { useState, useEffect } from 'react'
 
 const SettingsPage = () => {
   const {
@@ -26,412 +35,602 @@ const SettingsPage = () => {
     birthDay,
     birthMonth,
     birthYear,
-    lifeExpectancy
-  } = useProfileEditor();
+    lifeExpectancy,
+  } = useProfileEditor()
 
-  const setCurrentPage = useUIStore(state => state.setCurrentPage);
-  
+  const setCurrentPage = useUIStore(state => state.setCurrentPage)
+
   // Premium state for PNG export gating
-  const hasExportPng = usePremiumStore((state) => state.hasFeature('pngExport'));
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [exportingPng, setExportingPng] = useState(false);
-  const darkMode = useUIStore(state => state.darkMode);
-  const themePreset = useUIStore(state => state.themePreset);
+  const hasExportPng = usePremiumStore(state => state.hasFeature('pngExport'))
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [exportingPng, setExportingPng] = useState(false)
+  const darkMode = useUIStore(state => state.darkMode)
+  const themePreset = useUIStore(state => state.themePreset)
 
-  const milestones = useMilestoneStore(state => state.milestones);
-  const setMilestones = useMilestoneStore(state => state.setMilestones);
+  const milestones = useMilestoneStore(state => state.milestones)
+  const setMilestones = useMilestoneStore(state => state.setMilestones)
 
   // Get current theme
-  const theme = getTheme(themePreset);
+  const theme = getTheme(themePreset)
 
   // Cookie consent state
-  const [, setCookieConsentState] = useState(() => getCookieConsent());
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(() => hasAnalyticsConsent());
-  const [consentDate, setConsentDate] = useState(() => getConsentDate());
+  const [, setCookieConsentState] = useState(() => getCookieConsent())
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(() => hasAnalyticsConsent())
+  const [consentDate, setConsentDate] = useState(() => getConsentDate())
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    console.log('[Viventiva] Logout initiated from Settings')
+
+    // Force sync all pending data to Supabase before logout
+    const syncPromise = (async () => {
+      try {
+        const { user } = await auth.getCurrentUser()
+        if (!user) {
+          console.warn('[Viventiva] No user found, skipping sync')
+          return
+        }
+
+        console.log('[Viventiva] Force syncing data to Supabase before logout...')
+
+        // Get current state from stores
+        const milestoneStore = useMilestoneStore.getState()
+        const selectionStore = useSelectionStore.getState()
+
+        // Force sync milestones
+        const milestoneData = {
+          milestones: milestoneStore.milestones || {},
+          customMoods: milestoneStore.customMoods || {},
+          customCategories: milestoneStore.customCategories || {},
+        }
+        await database.saveMilestones(user.id, milestoneData)
+
+        // Force sync selections
+        const selectionsData = {
+          selectedWeeks: Array.from(selectionStore.selectedWeeks || new Set()),
+          pinnedWeeks: Array.from(selectionStore.pinnedWeeks || new Set()),
+          selectedColor: selectionStore.selectedColor,
+        }
+        await database.saveSelections(user.id, selectionsData)
+
+        // Force sync goals
+        const goals = milestoneStore.goals || []
+        await database.saveGoals(user.id, goals)
+
+        // Force sync settings
+        await useUIStore.getState().syncSettingsToSupabase()
+
+        console.log('[Viventiva] All data synced successfully')
+      } catch (error) {
+        console.error('[Viventiva] Error syncing before logout:', error)
+      }
+    })()
+
+    // Wait up to 5 seconds for sync
+    await Promise.race([syncPromise, new Promise(resolve => setTimeout(resolve, 5000))])
+
+    // Set logout flag
+    sessionStorage.setItem('viventiva_logging_out', 'true')
+
+    // Clear authentication flags
+    localStorage.removeItem('viventiva_authenticated')
+    localStorage.removeItem('viventiva_profile_complete')
+    localStorage.removeItem('viventiva_just_logged_in')
+
+    // Clear all user-specific data
+    localStorage.removeItem('memento-vivere-life')
+    localStorage.removeItem('memento-vivere-milestones')
+    localStorage.removeItem('memento-vivere-selections')
+    localStorage.removeItem('viventiva-premium')
+
+    // Clear Zustand stores
+    try {
+      useMilestoneStore.getState().clearMilestones()
+      useMilestoneStore.getState().setCustomMoods({})
+      useMilestoneStore.getState().setCustomCategories({})
+      useSelectionStore.getState().clearAllSelections()
+      useLifeStore.getState().setUserName?.('')
+    } catch (e) {
+      console.warn('[Viventiva] Could not clear stores:', e)
+    }
+
+    // Clear all Supabase auth keys
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (
+        key &&
+        (key.includes('sb-') || key.includes('supabase.auth') || key.includes('viventiva-auth'))
+      ) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key))
+
+    // Sign out and redirect
+    auth.signOut().catch(console.error)
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 100)
+  }
 
   // Update state when consent changes
   useEffect(() => {
     const handleConsentChange = () => {
-      setCookieConsentState(getCookieConsent());
-      setAnalyticsEnabled(hasAnalyticsConsent());
-      setConsentDate(getConsentDate());
-    };
+      setCookieConsentState(getCookieConsent())
+      setAnalyticsEnabled(hasAnalyticsConsent())
+      setConsentDate(getConsentDate())
+    }
 
     // Scroll to privacy settings when requested
     const handleScrollToPrivacySettings = () => {
       setTimeout(() => {
-        const privacySection = document.getElementById('privacy-preferences-section');
+        const privacySection = document.getElementById('privacy-preferences-section')
         if (privacySection) {
-          privacySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          privacySection.scrollIntoView({ behavior: 'smooth', block: 'start' })
           // Highlight the section briefly
-          privacySection.style.transition = 'box-shadow 0.3s ease';
+          privacySection.style.transition = 'box-shadow 0.3s ease'
           privacySection.style.boxShadow = darkMode
             ? '0 0 20px rgba(16, 185, 129, 0.3)'
-            : '0 0 20px rgba(16, 185, 129, 0.2)';
+            : '0 0 20px rgba(16, 185, 129, 0.2)'
           setTimeout(() => {
-            privacySection.style.boxShadow = '';
-          }, 2000);
+            privacySection.style.boxShadow = ''
+          }, 2000)
         }
-      }, 300);
-    };
+      }, 300)
+    }
 
-    window.addEventListener('privacyConsentChanged', handleConsentChange);
-    window.addEventListener('scrollToPrivacySettings', handleScrollToPrivacySettings);
+    window.addEventListener('privacyConsentChanged', handleConsentChange)
+    window.addEventListener('scrollToPrivacySettings', handleScrollToPrivacySettings)
 
     return () => {
-      window.removeEventListener('privacyConsentChanged', handleConsentChange);
-      window.removeEventListener('scrollToPrivacySettings', handleScrollToPrivacySettings);
-    };
-  }, [darkMode]);
+      window.removeEventListener('privacyConsentChanged', handleConsentChange)
+      window.removeEventListener('scrollToPrivacySettings', handleScrollToPrivacySettings)
+    }
+  }, [darkMode])
 
   // PNG Export function
   const handleExportPng = async () => {
     if (!hasExportPng) {
-      setShowUpgradeModal(true);
-      return;
+      setShowUpgradeModal(true)
+      return
     }
-    
-    setExportingPng(true);
+
+    setExportingPng(true)
     try {
       // Find the life grid element
-      const gridElement = document.querySelector('[data-life-grid]');
+      const gridElement = document.querySelector('[data-life-grid]')
       if (!gridElement) {
-        alert('Could not find life grid to export. Please go to the main page first.');
-        return;
+        alert('Could not find life grid to export. Please go to the main page first.')
+        return
       }
-      
+
       const dataUrl = await toPng(gridElement, {
         quality: 1,
         pixelRatio: 2,
-        backgroundColor: darkMode ? '#0f172a' : '#ffffff'
-      });
-      
+        backgroundColor: darkMode ? '#0f172a' : '#ffffff',
+      })
+
       // Create download link
-      const link = document.createElement('a');
-      link.download = `viventiva-life-grid-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = dataUrl;
-      link.click();
+      const link = document.createElement('a')
+      link.download = `viventiva-life-grid-${new Date().toISOString().split('T')[0]}.png`
+      link.href = dataUrl
+      link.click()
     } catch (error) {
-      console.error('Error exporting PNG:', error);
-      alert('Failed to export PNG. Please try again.');
+      console.error('Error exporting PNG:', error)
+      alert('Failed to export PNG. Please try again.')
     } finally {
-      setExportingPng(false);
+      setExportingPng(false)
     }
-  };
+  }
 
   const handleUpdateProfile = () => {
-    console.log('Update Profile button clicked - saving profile and navigating to setup page');
-    saveProfile();
-    setCurrentPage('setup');
-  };
+    console.log('Update Profile button clicked - saving profile and navigating to setup page')
+    saveProfile()
+    setCurrentPage('setup')
+  }
 
   return (
     <>
-    <div className={`min-h-screen ${darkMode ? 'modern-bg-dark' : 'modern-bg'} transition-all duration-500 p-4`}>
-      <div className="max-w-4xl mx-auto">
-        <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-2xl p-4 md:p-6`}>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setCurrentPage('main')}
-                className={`p-2 rounded-lg transition-colors ${darkMode
-                  ? `hover:bg-white/10 text-slate-300 hover:text-white`
-                  : `hover:bg-slate-100 text-slate-600 hover:${theme.accent.replace('text-', 'text-')}`
+      <div
+        className={`min-h-screen ${darkMode ? 'modern-bg-dark' : 'modern-bg'} transition-all duration-500 p-4`}
+      >
+        <div className="max-w-4xl mx-auto">
+          <div
+            className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-2xl p-4 md:p-6`}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setCurrentPage('main')}
+                  className={`p-2 rounded-lg transition-colors ${
+                    darkMode
+                      ? `hover:bg-white/10 text-slate-300 hover:text-white`
+                      : `hover:bg-slate-100 text-slate-600 hover:${theme.accent.replace('text-', 'text-')}`
                   }`}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h1 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                Settings & Preferences
-              </h1>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
-              <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>Personal Information</h3>
-
-              {/* Name field */}
-              <div className="mb-4">
-                <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Enter your name"
-                  className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
-                    ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                    : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                    }`}
-                  style={{ outline: 'none' }}
-                />
-              </div>
-
-              {/* Birth date fields */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Day</label>
-                  <input
-                    type="number"
-                    value={editDay}
-                    onChange={(e) => setEditDay(e.target.value)}
-                    min="1"
-                    max="31"
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
-                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                      }`}
-                    style={{ outline: 'none' }}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Month</label>
-                  <select
-                    value={editMonth}
-                    onChange={(e) => setEditMonth(e.target.value)}
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
-                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                      }`}
-                    style={{ outline: 'none' }}
-                  >
-                    <option value="1">Jan</option>
-                    <option value="2">Feb</option>
-                    <option value="3">Mar</option>
-                    <option value="4">Apr</option>
-                    <option value="5">May</option>
-                    <option value="6">Jun</option>
-                    <option value="7">Jul</option>
-                    <option value="8">Aug</option>
-                    <option value="9">Sep</option>
-                    <option value="10">Oct</option>
-                    <option value="11">Nov</option>
-                    <option value="12">Dec</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Year</label>
-                  <input
-                    type="number"
-                    value={editYear}
-                    onChange={(e) => setEditYear(e.target.value)}
-                    min="1920"
-                    max={new Date().getFullYear()}
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
-                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                      }`}
-                    style={{ outline: 'none' }}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Life Expectancy</label>
-                  <input
-                    type="number"
-                    value={editExpectancy}
-                    onChange={(e) => setEditExpectancy(e.target.value)}
-                    min="50"
-                    max="110"
-                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${darkMode
-                      ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
-                      : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
-                      }`}
-                    style={{ outline: 'none' }}
-                  />
-                </div>
-              </div>
-
-              {/* Update Profile Button */}
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={handleUpdateProfile}
-                  className={`${theme.buttonPrimary} px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow}`}
                 >
-                  Update Profile
+                  <ArrowLeft className="w-5 h-5" />
                 </button>
+                <h1
+                  className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}
+                >
+                  Settings & Preferences
+                </h1>
               </div>
             </div>
 
-            <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
-              <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>Data Management</h3>
-              <div className="flex flex-col md:flex-row gap-4">
-                <button
-                  onClick={() => exportData(birthDay, birthMonth, birthYear, lifeExpectancy, milestones)}
-                  className={`${theme.buttonPrimary} px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow}`}
+            <div className="space-y-6">
+              <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
+                <h3
+                  className={`text-lg font-semibold mb-4 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}
                 >
-                  <Download className="w-4 h-4 inline mr-2" />
-                  Export Data (JSON)
-                </button>
-                <button
-                  onClick={handleExportPng}
-                  disabled={exportingPng}
-                  className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow} ${
-                    hasExportPng 
-                      ? theme.buttonPrimary 
-                      : 'bg-gradient-to-r from-slate-500 to-slate-600'
-                  } ${exportingPng ? 'opacity-70 cursor-wait' : ''}`}
-                >
-                  <Image className="w-4 h-4 inline mr-2" />
-                  {exportingPng ? 'Exporting...' : 'Export Grid as PNG'}
-                  {!hasExportPng && (
-                    <Lock className="w-3 h-3 inline ml-2 opacity-70" />
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm('Are you sure you want to clear all milestones?')) {
-                      setMilestones({});
-                    }
-                  }}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-gradient-to-r ${theme.error} hover:opacity-90 text-white shadow-lg hover:shadow-xl`}
-                >
-                  Clear All Milestones
-                </button>
-              </div>
-            </div>
-
-            {/* Cookie Preferences */}
-            <div id="privacy-preferences-section" className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
-              <div className="flex items-center gap-3 mb-4">
-                <Cookie className={`w-5 h-5 ${theme.accent}`} />
-                <h3 className={`text-lg font-semibold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                  Cookie Preferences
+                  Personal Information
                 </h3>
-              </div>
 
-              <div className="space-y-4">
-                <div className={`p-4 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h4 className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                        Essential Cookies
-                      </h4>
-                      <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                        Required for the app to function properly
-                      </p>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
-                      }`}>
-                      Always Active
-                    </div>
+                {/* Name field */}
+                <div className="mb-4">
+                  <label
+                    className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
+                  >
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="Enter your name"
+                    className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
+                      darkMode
+                        ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                        : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                    }`}
+                    style={{ outline: 'none' }}
+                  />
+                </div>
+
+                {/* Birth date fields */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
+                    >
+                      Day
+                    </label>
+                    <input
+                      type="number"
+                      value={editDay}
+                      onChange={e => setEditDay(e.target.value)}
+                      min="1"
+                      max="31"
+                      className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
+                        darkMode
+                          ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                          : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
+                      style={{ outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
+                    >
+                      Month
+                    </label>
+                    <select
+                      value={editMonth}
+                      onChange={e => setEditMonth(e.target.value)}
+                      className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
+                        darkMode
+                          ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                          : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
+                      style={{ outline: 'none' }}
+                    >
+                      <option value="1">Jan</option>
+                      <option value="2">Feb</option>
+                      <option value="3">Mar</option>
+                      <option value="4">Apr</option>
+                      <option value="5">May</option>
+                      <option value="6">Jun</option>
+                      <option value="7">Jul</option>
+                      <option value="8">Aug</option>
+                      <option value="9">Sep</option>
+                      <option value="10">Oct</option>
+                      <option value="11">Nov</option>
+                      <option value="12">Dec</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
+                    >
+                      Year
+                    </label>
+                    <input
+                      type="number"
+                      value={editYear}
+                      onChange={e => setEditYear(e.target.value)}
+                      min="1920"
+                      max={new Date().getFullYear()}
+                      className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
+                        darkMode
+                          ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                          : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
+                      style={{ outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
+                    >
+                      Life Expectancy
+                    </label>
+                    <input
+                      type="number"
+                      value={editExpectancy}
+                      onChange={e => setEditExpectancy(e.target.value)}
+                      min="50"
+                      max="110"
+                      className={`w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 ${
+                        darkMode
+                          ? `bg-white/5 border-white/10 text-slate-200 ${theme.formFocus.replace('border-', 'focus:border-').replace('focus:ring-', 'focus:ring-')} focus:bg-white/10`
+                          : `${theme.inputBg} border-slate-200 text-slate-800 ${theme.formFocus}`
+                      }`}
+                      style={{ outline: 'none' }}
+                    />
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-lg border-2 ${darkMode
-                  ? analyticsEnabled ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-white/10'
-                  : analyticsEnabled ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'
-                  }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h4 className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                        Analytics Cookies
-                      </h4>
-                      <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                        Help us understand how you use the app (Plausible/Google Analytics)
-                      </p>
+                {/* Update Profile Button */}
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={handleUpdateProfile}
+                    className={`${theme.buttonPrimary} px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow}`}
+                  >
+                    Update Profile
+                  </button>
+                </div>
+              </div>
+
+              <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
+                <h3
+                  className={`text-lg font-semibold mb-4 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}
+                >
+                  Data Management
+                </h3>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <button
+                    onClick={() =>
+                      exportData(birthDay, birthMonth, birthYear, lifeExpectancy, milestones)
+                    }
+                    className={`${theme.buttonPrimary} px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow}`}
+                  >
+                    <Download className="w-4 h-4 inline mr-2" />
+                    Export Data (JSON)
+                  </button>
+                  <button
+                    onClick={handleExportPng}
+                    disabled={exportingPng}
+                    className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 text-white shadow-lg hover:shadow-xl ${theme.shadow} ${
+                      hasExportPng
+                        ? theme.buttonPrimary
+                        : 'bg-gradient-to-r from-slate-500 to-slate-600'
+                    } ${exportingPng ? 'opacity-70 cursor-wait' : ''}`}
+                  >
+                    <Image className="w-4 h-4 inline mr-2" />
+                    {exportingPng ? 'Exporting...' : 'Export Grid as PNG'}
+                    {!hasExportPng && <Lock className="w-3 h-3 inline ml-2 opacity-70" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure you want to clear all milestones?')) {
+                        setMilestones({})
+                      }
+                    }}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-gradient-to-r ${theme.error} hover:opacity-90 text-white shadow-lg hover:shadow-xl`}
+                  >
+                    Clear All Milestones
+                  </button>
+                </div>
+              </div>
+
+              {/* Cookie Preferences */}
+              <div
+                id="privacy-preferences-section"
+                className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <Cookie className={`w-5 h-5 ${theme.accent}`} />
+                  <h3
+                    className={`text-lg font-semibold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}
+                  >
+                    Cookie Preferences
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className={`p-4 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4
+                          className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}
+                        >
+                          Essential Cookies
+                        </h4>
+                        <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                          Required for the app to function properly
+                        </p>
+                      </div>
+                      <div
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          darkMode
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        Always Active
+                      </div>
                     </div>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-lg border-2 ${
+                      darkMode
+                        ? analyticsEnabled
+                          ? 'bg-emerald-500/10 border-emerald-500/30'
+                          : 'bg-white/5 border-white/10'
+                        : analyticsEnabled
+                          ? 'bg-emerald-50 border-emerald-200'
+                          : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4
+                          className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}
+                        >
+                          Analytics Cookies
+                        </h4>
+                        <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                          Help us understand how you use the app (Plausible/Google Analytics)
+                        </p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const newValue = !analyticsEnabled
+                          setCookieConsent('accepted', newValue)
+                          setAnalyticsEnabled(newValue)
+
+                          if (newValue) {
+                            // Initialize analytics if enabled
+                            try {
+                              const { initAnalytics } = await import('../utils/analytics')
+                              initAnalytics()
+                            } catch (error) {
+                              console.error('[Settings] Error initializing analytics:', error)
+                            }
+                          }
+                        }}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                          analyticsEnabled
+                            ? `bg-gradient-to-r ${theme.primary}`
+                            : darkMode
+                              ? 'bg-slate-700'
+                              : 'bg-slate-300'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${
+                            analyticsEnabled ? 'translate-x-6' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {consentDate && (
+                    <div className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Last updated: {new Date(consentDate).toLocaleDateString()}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     <button
                       onClick={async () => {
-                        const newValue = !analyticsEnabled;
-                        setCookieConsent('accepted', newValue);
-                        setAnalyticsEnabled(newValue);
-
-                        if (newValue) {
-                          // Initialize analytics if enabled
-                          try {
-                            const { initAnalytics } = await import('../utils/analytics');
-                            initAnalytics();
-                          } catch (error) {
-                            console.error('[Settings] Error initializing analytics:', error);
-                          }
+                        setCookieConsent('accepted', true)
+                        setAnalyticsEnabled(true)
+                        try {
+                          const { initAnalytics } = await import('../utils/analytics')
+                          initAnalytics()
+                        } catch (error) {
+                          console.error('[Settings] Error initializing analytics:', error)
                         }
                       }}
-                      className={`relative w-12 h-6 rounded-full transition-all duration-300 ${analyticsEnabled
-                        ? `bg-gradient-to-r ${theme.primary}`
-                        : darkMode
-                          ? 'bg-slate-700'
-                          : 'bg-slate-300'
-                        }`}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                        darkMode
+                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
                     >
-                      <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${analyticsEnabled ? 'translate-x-6' : 'translate-x-0'
-                          }`}
-                      />
+                      Accept All
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCookieConsent('declined', false)
+                        setAnalyticsEnabled(false)
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                        darkMode
+                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      Decline All
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This will reset your cookie preferences and show the consent banner again. Continue?'
+                          )
+                        ) {
+                          clearCookieConsent()
+                          setCookieConsentState(null)
+                          setAnalyticsEnabled(false)
+                          setConsentDate(null)
+                          // Trigger banner to show again
+                          window.dispatchEvent(new CustomEvent('showConsentBanner'))
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                        darkMode
+                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      Reset Preferences
                     </button>
                   </div>
                 </div>
+              </div>
 
-                {consentDate && (
-                  <div className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                    Last updated: {new Date(consentDate).toLocaleDateString()}
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button
-                    onClick={async () => {
-                      setCookieConsent('accepted', true);
-                      setAnalyticsEnabled(true);
-                      try {
-                        const { initAnalytics } = await import('../utils/analytics');
-                        initAnalytics();
-                      } catch (error) {
-                        console.error('[Settings] Error initializing analytics:', error);
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
-                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                      }`}
+              {/* Account Section */}
+              <div className={`${darkMode ? 'premium-card-dark' : 'premium-card'} rounded-xl p-6`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <LogOut className={`w-5 h-5 ${theme.accent}`} />
+                  <h3
+                    className={`text-lg font-semibold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}
                   >
-                    Accept All
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCookieConsent('declined', false);
-                      setAnalyticsEnabled(false);
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
-                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                      }`}
-                  >
-                    Decline All
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('This will reset your cookie preferences and show the consent banner again. Continue?')) {
-                        clearCookieConsent();
-                        setCookieConsentState(null);
-                        setAnalyticsEnabled(false);
-                        setConsentDate(null);
-                        // Trigger banner to show again
-                        window.dispatchEvent(new CustomEvent('showConsentBanner'));
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
-                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                      }`}
-                  >
-                    Reset Preferences
-                  </button>
+                    Account
+                  </h3>
                 </div>
+                <p className={`text-sm mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Sign out of your account. Your data will be synced before logging out.
+                </p>
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl ${theme.shadow} ${loggingOut ? 'opacity-70 cursor-wait' : ''}`}
+                >
+                  <LogOut className="w-4 h-4 inline mr-2" />
+                  {loggingOut ? 'Logging out...' : 'Log Out'}
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    {/* Upgrade Modal */}
-    <UpgradeModal
-      isOpen={showUpgradeModal}
-      onClose={() => setShowUpgradeModal(false)}
-      feature="PNG Export"
-    />
-    </>
-  );
-};
 
-export default SettingsPage;
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature="PNG Export"
+      />
+    </>
+  )
+}
+
+export default SettingsPage

@@ -1,4 +1,5 @@
-import { useEffect, useCallback, memo, useMemo, useRef, useState } from 'react'
+import { useEffect, useCallback, memo, useMemo, useRef, useState, lazy, Suspense } from 'react'
+import { useShallow } from 'zustand/shallow'
 import { getStats } from '../utils/dateUtils'
 import TabNavigation from './TabNavigation'
 import Footer from './Footer'
@@ -27,58 +28,113 @@ import { useEngagementStore } from '../stores/useEngagementStore'
 import StreakDisplay from './StreakDisplay'
 import AchievementPopup from './AchievementPopup'
 import AchievementsPanel from './AchievementsPanel'
-import UpgradeModal from './UpgradeModal'
-import ShareModal from './ShareModal'
-import MilestoneModal from './MilestoneModal'
 import { usePremiumStore } from '../stores/usePremiumStore'
+
+// Lazy load modals for better performance
+const UpgradeModal = lazy(() => import('./UpgradeModal'))
+const ShareModal = lazy(() => import('./ShareModal'))
+const MilestoneModal = lazy(() => import('./MilestoneModal'))
 
 // Import theme utilities
 import { getTheme } from '../utils/themeConfig'
 
 const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
-  // Optimized Zustand selectors
-  const birthDay = useLifeStore(state => state.birthDay)
-  const birthMonth = useLifeStore(state => state.birthMonth)
-  const birthYear = useLifeStore(state => state.birthYear)
-  const lifeExpectancy = useLifeStore(state => state.lifeExpectancy)
-  const currentWeek = useLifeStore(state => state.currentWeek)
+  // Optimized Zustand selectors - grouped with useShallow for reduced subscriptions
+  const { birthDay, birthMonth, birthYear, lifeExpectancy, currentWeek } = useLifeStore(
+    useShallow(state => ({
+      birthDay: state.birthDay,
+      birthMonth: state.birthMonth,
+      birthYear: state.birthYear,
+      lifeExpectancy: state.lifeExpectancy,
+      currentWeek: state.currentWeek,
+    }))
+  )
 
-  const darkMode = useUIStore(state => state.darkMode)
-  const currentTab = useUIStore(state => state.currentTab)
-  const showWeeks = useUIStore(state => state.showWeeks)
-  const isMobile = useUIStore(state => state.isMobile)
-  const gridLayout = useUIStore(state => state.gridLayout)
-  const pastWeekStyle = useUIStore(state => state.pastWeekStyle)
-  const themePreset = useUIStore(state => state.themePreset)
-  const setCurrentTab = useUIStore(state => state.setCurrentTab)
-  const setShowWeeks = useUIStore(state => state.setShowWeeks)
-  const setCurrentPage = useUIStore(state => state.setCurrentPage)
-  const setIsMobile = useUIStore(state => state.setIsMobile)
-  const setDarkMode = useUIStore(state => state.setDarkMode)
-  const setGridLayout = useUIStore(state => state.setGridLayout)
-  const setPastWeekStyle = useUIStore(state => state.setPastWeekStyle)
-  const setThemePreset = useUIStore(state => state.setThemePreset)
+  const {
+    darkMode,
+    currentTab,
+    showWeeks,
+    isMobile,
+    gridLayout,
+    pastWeekStyle,
+    themePreset,
+    setCurrentTab,
+    setShowWeeks,
+    setCurrentPage,
+    setIsMobile,
+    setDarkMode,
+    setGridLayout,
+    setPastWeekStyle,
+    setThemePreset,
+  } = useUIStore(
+    useShallow(state => ({
+      darkMode: state.darkMode,
+      currentTab: state.currentTab,
+      showWeeks: state.showWeeks,
+      isMobile: state.isMobile,
+      gridLayout: state.gridLayout,
+      pastWeekStyle: state.pastWeekStyle,
+      themePreset: state.themePreset,
+      setCurrentTab: state.setCurrentTab,
+      setShowWeeks: state.setShowWeeks,
+      setCurrentPage: state.setCurrentPage,
+      setIsMobile: state.setIsMobile,
+      setDarkMode: state.setDarkMode,
+      setGridLayout: state.setGridLayout,
+      setPastWeekStyle: state.setPastWeekStyle,
+      setThemePreset: state.setThemePreset,
+    }))
+  )
 
-  const milestones = useMilestoneStore(state => state.milestones)
-  const customCategories = useMilestoneStore(state => state.customCategories)
-  const customMoods = useMilestoneStore(state => state.customMoods)
-  const goals = useMilestoneStore(state => state.goals)
-  const setMilestones = useMilestoneStore(state => state.setMilestones)
-  const addCustomCategory = useMilestoneStore(state => state.addCustomCategory)
-  const setGoals = useMilestoneStore(state => state.setGoals)
-  const getAllCategories = useMilestoneStore(state => state.getAllCategories)
+  const {
+    milestones,
+    customCategories,
+    customMoods,
+    goals,
+    setMilestones,
+    addCustomCategory,
+    setGoals,
+    getAllCategories,
+  } = useMilestoneStore(
+    useShallow(state => ({
+      milestones: state.milestones,
+      customCategories: state.customCategories,
+      customMoods: state.customMoods,
+      goals: state.goals,
+      setMilestones: state.setMilestones,
+      addCustomCategory: state.addCustomCategory,
+      setGoals: state.setGoals,
+      getAllCategories: state.getAllCategories,
+    }))
+  )
 
-  const selectedColor = useSelectionStore(state => state.selectedColor)
-  const selectedWeeks = useSelectionStore(state => state.selectedWeeks)
-  const pinnedWeeksFromStore = useSelectionStore(state => state.pinnedWeeks)
-  const setSelectedColor = useSelectionStore(state => state.setSelectedColor)
-  const setSelectedWeeks = useSelectionStore(state => state.setSelectedWeeks)
-  const isMilestoneMode = useSelectionStore(state => state.isMilestoneMode)
-  const toggleMilestoneMode = useSelectionStore(state => state.toggleMilestoneMode)
+  const {
+    selectedColor,
+    selectedWeeks,
+    pinnedWeeksFromStore,
+    setSelectedColor,
+    setSelectedWeeks,
+    isMilestoneMode,
+    toggleMilestoneMode,
+  } = useSelectionStore(
+    useShallow(state => ({
+      selectedColor: state.selectedColor,
+      selectedWeeks: state.selectedWeeks,
+      pinnedWeeksFromStore: state.pinnedWeeks,
+      setSelectedColor: state.setSelectedColor,
+      setSelectedWeeks: state.setSelectedWeeks,
+      isMilestoneMode: state.isMilestoneMode,
+      toggleMilestoneMode: state.toggleMilestoneMode,
+    }))
+  )
 
-  const incrementStreak = useEngagementStore(state => state.incrementStreak)
-  const checkBadges = useEngagementStore(state => state.checkBadges)
-  const loadEngagementFromSupabase = useEngagementStore(state => state.loadFromSupabase)
+  const { incrementStreak, checkBadges, loadEngagementFromSupabase } = useEngagementStore(
+    useShallow(state => ({
+      incrementStreak: state.incrementStreak,
+      checkBadges: state.checkBadges,
+      loadEngagementFromSupabase: state.loadFromSupabase,
+    }))
+  )
 
   const allCategories = useMemo(() => getAllCategories(), [getAllCategories])
   const theme = useMemo(() => getTheme(themePreset), [themePreset])
@@ -614,33 +670,39 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
         <Footer darkMode={darkMode} isAuthenticated={true} onNavigate={setCurrentPage} />
         <OnboardingTour />
 
-        {/* Upgrade Modal for Premium Features */}
-        <UpgradeModal
-          isOpen={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-          feature={upgradeFeature}
-        />
+        {/* Lazy loaded modals with Suspense */}
+        <Suspense fallback={null}>
+          {showUpgradeModal && (
+            <UpgradeModal
+              isOpen={showUpgradeModal}
+              onClose={() => setShowUpgradeModal(false)}
+              feature={upgradeFeature}
+            />
+          )}
 
-        {/* Share Modal */}
-        <ShareModal
-          isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
-          userName="My"
-        />
+          {showShareModal && (
+            <ShareModal
+              isOpen={showShareModal}
+              onClose={() => setShowShareModal(false)}
+              userName="My"
+            />
+          )}
 
-        {/* Milestone Modal */}
-        <MilestoneModal
-          isOpen={showMilestoneModal}
-          onClose={() => {
-            setShowMilestoneModal(false)
-            setEditingMilestoneWeek(null)
-          }}
-          weekNum={editingMilestoneWeek}
-          milestone={editingMilestoneWeek ? milestones[editingMilestoneWeek] : null}
-          onSave={handleSaveMilestone}
-          onDelete={handleDeleteMilestone}
-          allCategories={allCategories}
-        />
+          {showMilestoneModal && (
+            <MilestoneModal
+              isOpen={showMilestoneModal}
+              onClose={() => {
+                setShowMilestoneModal(false)
+                setEditingMilestoneWeek(null)
+              }}
+              weekNum={editingMilestoneWeek}
+              milestone={editingMilestoneWeek ? milestones[editingMilestoneWeek] : null}
+              onSave={handleSaveMilestone}
+              onDelete={handleDeleteMilestone}
+              allCategories={allCategories}
+            />
+          )}
+        </Suspense>
       </main>
     </>
   )

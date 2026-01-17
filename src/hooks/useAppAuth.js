@@ -9,25 +9,51 @@ export const useAppAuth = setCurrentPage => {
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false)
   const [isBackendAvailable, setIsBackendAvailable] = useState(true)
   const userDataLoadRef = useRef({ userId: null, promise: null })
+  const authTimeoutRef = useRef(null)
 
-  // Check backend health on mount
+  // Check backend health on mount (non-blocking)
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const status = await auth.checkConnection()
+        // Add timeout to prevent long waits
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Backend check timeout')), 3000)
+        )
+
+        const status = await Promise.race([auth.checkConnection(), timeoutPromise])
+
         if (!status.online) {
           console.error('[Viventiva] Backend connection failed:', status)
           setIsBackendAvailable(false)
-          setAuthLoading(false)
         }
       } catch (error) {
-        console.error('[Viventiva] Error checking backend:', error)
-        setIsBackendAvailable(false)
-        setAuthLoading(false)
+        console.warn('[Viventiva] Backend check failed or timed out:', error.message)
+        // Don't set backend unavailable on timeout - let auth flow continue
+        // Only set unavailable if we got an explicit failure
+        if (error.message !== 'Backend check timeout') {
+          setIsBackendAvailable(false)
+        }
       }
     }
+    // Run backend check in background, don't block auth
     checkBackend()
   }, [])
+
+  // Safety timeout - ensure authLoading doesn't stay true forever
+  useEffect(() => {
+    authTimeoutRef.current = setTimeout(() => {
+      if (authLoading) {
+        console.warn('[Viventiva] Auth timeout - setting authLoading to false')
+        setAuthLoading(false)
+      }
+    }, 5000) // 5 second max wait for auth
+
+    return () => {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current)
+      }
+    }
+  }, [authLoading])
 
   const loadUserData = async currentUser => {
     if (!currentUser) return

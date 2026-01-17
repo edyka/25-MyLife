@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 /**
  * Selection Store - Manages week selection and painting interactions
@@ -9,206 +9,206 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export const useSelectionStore = create(
   persist(
     (set, get) => ({
-  // Selection state
-  selectedWeek: null,
-  selectedColor: null,
-  selectedWeeks: new Set(),
-  pinnedWeeks: new Set(),
-
-  // Milestone mode - when active, clicking a week opens milestone modal
-  isMilestoneMode: false,
-
-  // Interaction state
-  isDragging: false,
-  draggedWeeks: new Set(),
-  dragStartWeek: null,
-  selectionMode: 'single', // 'single', 'range', 'rectangular'
-  
-  // Range selection state
-  rangeStart: null,
-  isInRangeMode: false,
-  
-  // Selection preview (for showing potential selections)
-  selectionPreview: new Set(),
-  
-  // Basic selection actions
-  setSelectedWeek: (week) => set({ selectedWeek: week }),
-  setSelectedColor: (color) => set({ selectedColor: color }),
-  setSelectionMode: (mode) => set({ selectionMode: mode }),
-
-  // Milestone mode actions
-  setMilestoneMode: (isActive) => set({ isMilestoneMode: isActive }),
-  toggleMilestoneMode: () => {
-    const { isMilestoneMode, selectedColor } = get();
-    // When entering milestone mode, clear any selected color
-    if (!isMilestoneMode) {
-      set({ isMilestoneMode: true, selectedColor: null });
-    } else {
-      set({ isMilestoneMode: false });
-    }
-  },
-  
-  // Dragging actions
-  setIsDragging: (isDragging) => set({ isDragging }),
-  setDraggedWeeks: (weeks) => set({ draggedWeeks: weeks }),
-  setDragStartWeek: (week) => set({ dragStartWeek: week }),
-  
-  // Week selection management
-  setSelectedWeeks: (weeks) => {
-    const weekSet = weeks instanceof Set ? weeks : new Set(weeks);
-    set({ selectedWeeks: weekSet });
-  },
-  
-  addToSelectedWeeks: (week) => {
-    const { selectedWeeks } = get();
-    const newSelected = new Set(selectedWeeks);
-    newSelected.add(week);
-    set({ selectedWeeks: newSelected });
-  },
-  
-  removeFromSelectedWeeks: (week) => {
-    const { selectedWeeks } = get();
-    const newSelected = new Set(selectedWeeks);
-    newSelected.delete(week);
-    set({ selectedWeeks: newSelected });
-  },
-  
-  toggleWeekSelection: (week) => {
-    const { selectedWeeks } = get();
-    const newSelected = new Set(selectedWeeks);
-    if (newSelected.has(week)) {
-      newSelected.delete(week);
-    } else {
-      newSelected.add(week);
-    }
-    set({ selectedWeeks: newSelected });
-  },
-  
-  clearSelectedWeeks: () => set({ selectedWeeks: new Set() }),
-  
-  // Pinned weeks management
-  setPinnedWeeks: (weeks) => {
-    const weekSet = weeks instanceof Set ? weeks : new Set(weeks);
-    set({ pinnedWeeks: weekSet });
-  },
-  
-  addToPinnedWeeks: (week) => {
-    const { pinnedWeeks } = get();
-    const newPinned = new Set(pinnedWeeks);
-    newPinned.add(week);
-    set({ pinnedWeeks: newPinned });
-  },
-  
-  removeFromPinnedWeeks: (week) => {
-    const { pinnedWeeks } = get();
-    const newPinned = new Set(pinnedWeeks);
-    newPinned.delete(week);
-    set({ pinnedWeeks: newPinned });
-  },
-  
-  clearPinnedWeeks: () => set({ pinnedWeeks: new Set() }),
-  
-  // Range selection management
-  startRangeSelection: (week) => {
-    set({
-      rangeStart: week,
-      isInRangeMode: true,
-      selectedWeeks: new Set([week])
-    });
-  },
-  
-  completeRangeSelection: (endWeek) => {
-    const { rangeStart } = get();
-    if (!rangeStart) return;
-    
-    const start = Math.min(rangeStart, endWeek);
-    const end = Math.max(rangeStart, endWeek);
-    const rangeWeeks = new Set();
-    
-    for (let week = start; week <= end; week++) {
-      rangeWeeks.add(week);
-    }
-    
-    set({
-      selectedWeeks: rangeWeeks,
-      pinnedWeeks: rangeWeeks,
-      rangeStart: null,
-      isInRangeMode: false
-    });
-  },
-  
-  resetRangeSelection: () => {
-    set({
-      rangeStart: null,
-      isInRangeMode: false,
-      selectedWeeks: new Set()
-    });
-  },
-  
-  // Selection preview for UI feedback
-  setSelectionPreview: (weeks) => {
-    const weekSet = weeks instanceof Set ? weeks : new Set(weeks);
-    set({ selectionPreview: weekSet });
-  },
-  
-  clearSelectionPreview: () => set({ selectionPreview: new Set() }),
-  
-  // Rectangular selection
-  selectRectangularArea: (startWeek, endWeek, weeksPerRow = 52) => {
-    const startRow = Math.floor((startWeek - 1) / weeksPerRow);
-    const endRow = Math.floor((endWeek - 1) / weeksPerRow);
-    const startCol = (startWeek - 1) % weeksPerRow;
-    const endCol = (endWeek - 1) % weeksPerRow;
-    
-    const minRow = Math.min(startRow, endRow);
-    const maxRow = Math.max(startRow, endRow);
-    const minCol = Math.min(startCol, endCol);
-    const maxCol = Math.max(startCol, endCol);
-    
-    const selectedWeeks = new Set();
-    
-    for (let row = minRow; row <= maxRow; row++) {
-      for (let col = minCol; col <= maxCol; col++) {
-        const week = row * weeksPerRow + col + 1;
-        selectedWeeks.add(week);
-      }
-    }
-    
-    set({ selectedWeeks });
-    return selectedWeeks;
-  },
-  
-  // Utility functions
-  getWeeksInSelection: () => {
-    const { selectedWeeks, pinnedWeeks } = get();
-    return new Set([...selectedWeeks, ...pinnedWeeks]);
-  },
-  
-  isWeekSelected: (week) => {
-    const { selectedWeeks, pinnedWeeks } = get();
-    return selectedWeeks.has(week) || pinnedWeeks.has(week);
-  },
-  
-  getSelectionCount: () => {
-    const { selectedWeeks, pinnedWeeks } = get();
-    return new Set([...selectedWeeks, ...pinnedWeeks]).size;
-  },
-  
-  // Clear all selections
-  clearAllSelections: () => {
-    set({
+      // Selection state
       selectedWeek: null,
       selectedColor: null,
       selectedWeeks: new Set(),
       pinnedWeeks: new Set(),
-      rangeStart: null,
-      isInRangeMode: false,
-      selectionPreview: new Set(),
+
+      // Milestone mode - when active, clicking a week opens milestone modal
+      isMilestoneMode: false,
+
+      // Interaction state
       isDragging: false,
       draggedWeeks: new Set(),
-      dragStartWeek: null
-    });
-  }
+      dragStartWeek: null,
+      selectionMode: 'single', // 'single', 'range', 'rectangular'
+
+      // Range selection state
+      rangeStart: null,
+      isInRangeMode: false,
+
+      // Selection preview (for showing potential selections)
+      selectionPreview: new Set(),
+
+      // Basic selection actions
+      setSelectedWeek: week => set({ selectedWeek: week }),
+      setSelectedColor: color => set({ selectedColor: color }),
+      setSelectionMode: mode => set({ selectionMode: mode }),
+
+      // Milestone mode actions
+      setMilestoneMode: isActive => set({ isMilestoneMode: isActive }),
+      toggleMilestoneMode: () => {
+        const { isMilestoneMode } = get()
+        // When entering milestone mode, clear any selected color
+        if (!isMilestoneMode) {
+          set({ isMilestoneMode: true, selectedColor: null })
+        } else {
+          set({ isMilestoneMode: false })
+        }
+      },
+
+      // Dragging actions
+      setIsDragging: isDragging => set({ isDragging }),
+      setDraggedWeeks: weeks => set({ draggedWeeks: weeks }),
+      setDragStartWeek: week => set({ dragStartWeek: week }),
+
+      // Week selection management
+      setSelectedWeeks: weeks => {
+        const weekSet = weeks instanceof Set ? weeks : new Set(weeks)
+        set({ selectedWeeks: weekSet })
+      },
+
+      addToSelectedWeeks: week => {
+        const { selectedWeeks } = get()
+        const newSelected = new Set(selectedWeeks)
+        newSelected.add(week)
+        set({ selectedWeeks: newSelected })
+      },
+
+      removeFromSelectedWeeks: week => {
+        const { selectedWeeks } = get()
+        const newSelected = new Set(selectedWeeks)
+        newSelected.delete(week)
+        set({ selectedWeeks: newSelected })
+      },
+
+      toggleWeekSelection: week => {
+        const { selectedWeeks } = get()
+        const newSelected = new Set(selectedWeeks)
+        if (newSelected.has(week)) {
+          newSelected.delete(week)
+        } else {
+          newSelected.add(week)
+        }
+        set({ selectedWeeks: newSelected })
+      },
+
+      clearSelectedWeeks: () => set({ selectedWeeks: new Set() }),
+
+      // Pinned weeks management
+      setPinnedWeeks: weeks => {
+        const weekSet = weeks instanceof Set ? weeks : new Set(weeks)
+        set({ pinnedWeeks: weekSet })
+      },
+
+      addToPinnedWeeks: week => {
+        const { pinnedWeeks } = get()
+        const newPinned = new Set(pinnedWeeks)
+        newPinned.add(week)
+        set({ pinnedWeeks: newPinned })
+      },
+
+      removeFromPinnedWeeks: week => {
+        const { pinnedWeeks } = get()
+        const newPinned = new Set(pinnedWeeks)
+        newPinned.delete(week)
+        set({ pinnedWeeks: newPinned })
+      },
+
+      clearPinnedWeeks: () => set({ pinnedWeeks: new Set() }),
+
+      // Range selection management
+      startRangeSelection: week => {
+        set({
+          rangeStart: week,
+          isInRangeMode: true,
+          selectedWeeks: new Set([week]),
+        })
+      },
+
+      completeRangeSelection: endWeek => {
+        const { rangeStart } = get()
+        if (!rangeStart) return
+
+        const start = Math.min(rangeStart, endWeek)
+        const end = Math.max(rangeStart, endWeek)
+        const rangeWeeks = new Set()
+
+        for (let week = start; week <= end; week++) {
+          rangeWeeks.add(week)
+        }
+
+        set({
+          selectedWeeks: rangeWeeks,
+          pinnedWeeks: rangeWeeks,
+          rangeStart: null,
+          isInRangeMode: false,
+        })
+      },
+
+      resetRangeSelection: () => {
+        set({
+          rangeStart: null,
+          isInRangeMode: false,
+          selectedWeeks: new Set(),
+        })
+      },
+
+      // Selection preview for UI feedback
+      setSelectionPreview: weeks => {
+        const weekSet = weeks instanceof Set ? weeks : new Set(weeks)
+        set({ selectionPreview: weekSet })
+      },
+
+      clearSelectionPreview: () => set({ selectionPreview: new Set() }),
+
+      // Rectangular selection
+      selectRectangularArea: (startWeek, endWeek, weeksPerRow = 52) => {
+        const startRow = Math.floor((startWeek - 1) / weeksPerRow)
+        const endRow = Math.floor((endWeek - 1) / weeksPerRow)
+        const startCol = (startWeek - 1) % weeksPerRow
+        const endCol = (endWeek - 1) % weeksPerRow
+
+        const minRow = Math.min(startRow, endRow)
+        const maxRow = Math.max(startRow, endRow)
+        const minCol = Math.min(startCol, endCol)
+        const maxCol = Math.max(startCol, endCol)
+
+        const selectedWeeks = new Set()
+
+        for (let row = minRow; row <= maxRow; row++) {
+          for (let col = minCol; col <= maxCol; col++) {
+            const week = row * weeksPerRow + col + 1
+            selectedWeeks.add(week)
+          }
+        }
+
+        set({ selectedWeeks })
+        return selectedWeeks
+      },
+
+      // Utility functions
+      getWeeksInSelection: () => {
+        const { selectedWeeks, pinnedWeeks } = get()
+        return new Set([...selectedWeeks, ...pinnedWeeks])
+      },
+
+      isWeekSelected: week => {
+        const { selectedWeeks, pinnedWeeks } = get()
+        return selectedWeeks.has(week) || pinnedWeeks.has(week)
+      },
+
+      getSelectionCount: () => {
+        const { selectedWeeks, pinnedWeeks } = get()
+        return new Set([...selectedWeeks, ...pinnedWeeks]).size
+      },
+
+      // Clear all selections
+      clearAllSelections: () => {
+        set({
+          selectedWeek: null,
+          selectedColor: null,
+          selectedWeeks: new Set(),
+          pinnedWeeks: new Set(),
+          rangeStart: null,
+          isInRangeMode: false,
+          selectionPreview: new Set(),
+          isDragging: false,
+          draggedWeeks: new Set(),
+          dragStartWeek: null,
+        })
+      },
     }),
     {
       name: 'memento-vivere-selections',
@@ -216,27 +216,27 @@ export const useSelectionStore = create(
         // Custom replacer to convert Set to Array when storing
         replacer: (key, value) => {
           if (value instanceof Set) {
-            return Array.from(value);
+            return Array.from(value)
           }
-          return value;
+          return value
         },
         // Custom reviver to convert Array back to Set when loading
         reviver: (key, value) => {
           if (key === 'selectedWeeks' || key === 'pinnedWeeks') {
-            return new Set(value);
+            return new Set(value)
           }
-          return value;
-        }
+          return value
+        },
       }),
       // Only persist the essential selection state
-      partialize: (state) => ({
+      partialize: state => ({
         selectedWeeks: state.selectedWeeks,
         pinnedWeeks: state.pinnedWeeks,
-        selectedColor: state.selectedColor
-      })
+        selectedColor: state.selectedColor,
+      }),
     }
   )
-);
+)
 
 // Optimized individual selectors for fine-grained subscriptions
 // Use direct selectors instead of useSelectionSelectors to prevent unnecessary re-renders
