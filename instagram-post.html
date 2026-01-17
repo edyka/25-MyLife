@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viventiva Instagram Post</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a2e;
+      padding: 20px;
+    }
+
+    .post {
+      width: 1080px;
+      height: 1080px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    /* Decorative gradient orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+    }
+
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      top: -100px;
+      right: -100px;
+    }
+
+    .orb-2 {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      bottom: -50px;
+      left: -50px;
+    }
+
+    .orb-3 {
+      width: 200px;
+      height: 200px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      bottom: 200px;
+      right: 100px;
+    }
+
+    /* Content */
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .logo-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border-radius: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 10px;
+    }
+
+    .logo-dot {
+      background: rgba(255,255,255,0.9);
+      border-radius: 3px;
+    }
+
+    .logo-text {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f97316, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+
+    .headline {
+      font-size: 72px;
+      font-weight: 800;
+      color: white;
+      line-height: 1.1;
+      max-width: 900px;
+      letter-spacing: -2px;
+    }
+
+    .headline span {
+      background: linear-gradient(135deg, #f97316, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subheadline {
+      font-size: 28px;
+      color: rgba(255,255,255,0.7);
+      max-width: 700px;
+      line-height: 1.5;
+    }
+
+    /* Life Grid Preview */
+    .grid-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 30px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .grid-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .grid-cell {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .grid-cell.past {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    .grid-cell.happy {
+      background: #10b981;
+    }
+
+    .grid-cell.love {
+      background: #ec4899;
+    }
+
+    .grid-cell.focused {
+      background: #3b82f6;
+    }
+
+    .grid-cell.sad {
+      background: #6366f1;
+    }
+
+    .grid-cell.current {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+      animation: pulse 2s infinite;
+    }
+
+    .grid-cell.milestone {
+      position: relative;
+    }
+
+    .grid-cell.milestone::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 6px;
+      height: 6px;
+      background: #fbbf24;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Features */
+    .features {
+      display: flex;
+      gap: 40px;
+      margin-top: 20px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255,255,255,0.8);
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .feature-icon.paint {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .feature-icon.milestone {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .feature-icon.track {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+    }
+
+    /* CTA */
+    .cta {
+      margin-top: 30px;
+      padding: 20px 50px;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border-radius: 100px;
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="post">
+    <!-- Decorative orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="content">
+      <!-- Logo -->
+      <div class="logo">
+        <div class="logo-icon">
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+          <div class="logo-dot"></div>
+        </div>
+        <span class="logo-text">Viventiva</span>
+      </div>
+
+      <!-- Headline -->
+      <h1 class="headline">
+        Visualize Your Life<br>in <span>Weeks</span>
+      </h1>
+
+      <p class="subheadline">
+        Paint your memories, mark milestones, and see your entire life at a glance
+      </p>
+
+      <!-- Grid Preview -->
+      <div class="grid-preview">
+        <div class="grid-row">
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell love"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell focused"></div>
+          <div class="grid-cell focused"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell love milestone"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell sad"></div>
+          <div class="grid-cell sad"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell focused"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell love"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell focused"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell love milestone"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell focused"></div>
+          <div class="grid-cell sad"></div>
+          <div class="grid-cell happy"></div>
+          <div class="grid-cell focused"></div>
+          <div class="grid-cell current"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon paint">🎨</div>
+          Paint moods
+        </div>
+        <div class="feature">
+          <div class="feature-icon milestone">💎</div>
+          Mark milestones
+        </div>
+        <div class="feature">
+          <div class="feature-icon track">📊</div>
+          Track progress
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta">Try it free →</div>
+    </div>
+  </div>
+</body>
+</html>

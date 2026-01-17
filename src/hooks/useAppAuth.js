@@ -19,32 +19,29 @@ export const useAppAuth = setCurrentPage => {
   const userDataLoadRef = useRef({ userId: null, promise: null, loadId: null })
   const authTimeoutRef = useRef(null)
 
-  // Check backend health on mount (non-blocking)
-  // Shorter timeout on mobile (1.5s vs 3s on desktop)
+  // Check backend health on mount (non-blocking, silent on mobile)
+  // Skip on mobile Safari to prevent privacy warning
   useEffect(() => {
+    // Skip backend check on mobile - it can trigger Safari's privacy warning
+    if (isMobile) return
+
     const checkBackend = async () => {
       try {
-        // Add timeout to prevent long waits
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Backend check timeout')), BACKEND_TIMEOUT)
-        )
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), BACKEND_TIMEOUT)
 
-        const status = await Promise.race([auth.checkConnection(), timeoutPromise])
+        const status = await auth.checkConnection()
+        clearTimeout(timeoutId)
 
         if (!status.online) {
-          console.error('[Viventiva] Backend connection failed:', status)
+          if (isDev) console.error('[Viventiva] Backend connection failed:', status)
           setIsBackendAvailable(false)
         }
-      } catch (error) {
-        if (isDev) console.warn('[Viventiva] Backend check failed or timed out:', error.message)
-        // Don't set backend unavailable on timeout - let auth flow continue
-        // Only set unavailable if we got an explicit failure
-        if (error.message !== 'Backend check timeout') {
-          setIsBackendAvailable(false)
-        }
+      } catch {
+        // Silently ignore - don't trigger any warnings
+        // Backend availability will be determined by actual auth attempts
       }
     }
-    // Run backend check in background, don't block auth
     checkBackend()
   }, [])
 
