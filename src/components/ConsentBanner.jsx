@@ -1,59 +1,59 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Cookie } from 'lucide-react';
-import { useUIStore } from '../stores/useUIStore';
-import { getTheme } from '../utils/themeConfig';
-import { getCookieConsent, setCookieConsent } from '../utils/consentManager';
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Cookie } from 'lucide-react'
+import { useUIStore } from '../stores/useUIStore'
+import { getTheme } from '../utils/themeConfig'
+import { getCookieConsent, setCookieConsent } from '../utils/consentManager'
 
 const ConsentBanner = () => {
-  const [showBanner, setShowBanner] = useState(false);
-  const darkMode = useUIStore(state => state.darkMode);
-  const themePreset = useUIStore(state => state.themePreset);
-  const theme = getTheme(themePreset);
+  const [showBanner, setShowBanner] = useState(false)
+  const darkMode = useUIStore(state => state.darkMode)
+  const themePreset = useUIStore(state => state.themePreset)
+  const theme = getTheme(themePreset)
 
   useEffect(() => {
     // Check if user has already accepted cookies
-    const cookieConsent = getCookieConsent();
+    const cookieConsent = getCookieConsent()
     if (!cookieConsent) {
       // Show banner after a short delay for better UX
       const timer = setTimeout(() => {
-        setShowBanner(true);
-      }, 1000);
-      return () => clearTimeout(timer);
+        setShowBanner(true)
+      }, 1000)
+      return () => clearTimeout(timer)
     }
 
     // Listen for request to show banner again (from Settings)
     const handleShowBanner = () => {
-      setShowBanner(true);
-    };
+      setShowBanner(true)
+    }
 
-    window.addEventListener('showConsentBanner', handleShowBanner);
+    window.addEventListener('showConsentBanner', handleShowBanner)
     return () => {
-      window.removeEventListener('showConsentBanner', handleShowBanner);
-    };
-  }, []);
+      window.removeEventListener('showConsentBanner', handleShowBanner)
+    }
+  }, [])
 
   const handleAccept = async () => {
     // Set consent with analytics enabled
-    setCookieConsent('accepted', true);
-    setShowBanner(false);
+    setCookieConsent('accepted', true)
+    setShowBanner(false)
 
     // Initialize analytics now that consent is given
     try {
-      const { initAnalytics } = await import('../utils/analytics');
-      initAnalytics();
+      const { initAnalytics } = await import('../utils/analytics')
+      initAnalytics()
     } catch (error) {
-      console.error('[CookieConsent] Error initializing analytics:', error);
+      console.error('[CookieConsent] Error initializing analytics:', error)
     }
-  };
+  }
 
   const handleDecline = () => {
     // Set consent as declined (analytics disabled)
-    setCookieConsent('declined', false);
-    setShowBanner(false);
-  };
+    setCookieConsent('declined', false)
+    setShowBanner(false)
+  }
 
-  if (!showBanner) return null;
+  if (!showBanner) return null
 
   return (
     <AnimatePresence>
@@ -62,10 +62,12 @@ const ConsentBanner = () => {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className={`fixed bottom-0 left-0 right-0 z-50 p-4 ${darkMode
+        className={`fixed left-0 right-0 z-[60] p-4 pb-20 md:pb-4 ${
+          darkMode
             ? 'bg-slate-900/95 backdrop-blur-xl border-t border-slate-700'
             : 'bg-white/95 backdrop-blur-xl border-t border-slate-200'
-          } shadow-2xl`}
+        } shadow-2xl`}
+        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex items-start gap-3 flex-1">
@@ -77,15 +79,15 @@ const ConsentBanner = () => {
                 Cookie Consent
               </h3>
               <p className={`text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                We use cookies to enhance your experience, analyze site usage, and assist in our marketing efforts.
-                By clicking "Accept All", you consent to our use of cookies.{' '}
+                We use cookies to enhance your experience, analyze site usage, and assist in our
+                marketing efforts. By clicking "Accept All", you consent to our use of cookies.{' '}
                 <a
                   href="#/app-policy"
                   className={`underline ${theme.accent} hover:opacity-80`}
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={e => {
+                    e.preventDefault()
                     // Navigate to privacy policy
-                    window.location.hash = '/app-policy';
+                    window.location.hash = '/app-policy'
                   }}
                 >
                   Learn more
@@ -96,28 +98,30 @@ const ConsentBanner = () => {
           <div className="flex gap-2 w-full sm:w-auto flex-wrap">
             <button
               onClick={handleDecline}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                darkMode
                   ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                }`}
+              }`}
             >
               Decline
             </button>
             <button
               onClick={() => {
                 // Navigate to settings for granular control
-                const setCurrentPage = useUIStore.getState().setCurrentPage;
-                setCurrentPage('settings');
-                setShowBanner(false);
+                const setCurrentPage = useUIStore.getState().setCurrentPage
+                setCurrentPage('settings')
+                setShowBanner(false)
                 // Scroll to cookie preferences section
                 setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('scrollToPrivacySettings'));
-                }, 100);
+                  window.dispatchEvent(new CustomEvent('scrollToPrivacySettings'))
+                }, 100)
               }}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${darkMode
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                darkMode
                   ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-                }`}
+              }`}
             >
               Customize
             </button>
@@ -131,8 +135,7 @@ const ConsentBanner = () => {
         </div>
       </motion.div>
     </AnimatePresence>
-  );
-};
+  )
+}
 
-export default ConsentBanner;
-
+export default ConsentBanner
