@@ -276,6 +276,23 @@ export const useAppAuth = setCurrentPage => {
         }
       })
       authListener = subscription
+
+      // Check for existing session (handles OAuth redirect case)
+      // This is needed because the auth state change might have fired before our listener was set up
+      try {
+        const { data: { session } } = await auth.getSession()
+        if (session?.user) {
+          if (isDev) console.log('[Viventiva Auth] Found existing session:', session.user.id)
+          setUser(prev => (prev?.id === session.user.id ? prev : session.user))
+          setAuthLoading(false)
+          loadUserData(session.user)
+        } else {
+          setAuthLoading(false)
+        }
+      } catch (error) {
+        console.error('[Viventiva Auth] Error getting session:', error)
+        setAuthLoading(false)
+      }
     }
     setupAuth()
     return () => {
