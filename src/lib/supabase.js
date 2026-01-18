@@ -83,9 +83,7 @@ try {
         detectSessionInUrl: true,
         storage: localStorage,
         storageKey: 'viventiva-auth-token',
-        // Use implicit flow for better compatibility with Brave and privacy browsers
-        // PKCE requires additional server roundtrips that can be blocked
-        flowType: 'implicit',
+        flowType: 'pkce',
       },
       global: {
         headers: {
