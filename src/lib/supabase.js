@@ -83,7 +83,9 @@ try {
         detectSessionInUrl: true,
         storage: localStorage,
         storageKey: 'viventiva-auth-token',
-        flowType: 'pkce',
+        // Use implicit flow for better compatibility with Brave and privacy browsers
+        // PKCE requires additional server roundtrips that can be blocked
+        flowType: 'implicit',
       },
       global: {
         headers: {
@@ -113,22 +115,21 @@ const requireClient = () => {
 
 // Helper functions for authentication
 export const auth = {
-  // Sign in with Google - Following Supabase best practices
+  // Sign in with Google - Using popup for better privacy browser compatibility
   signInWithGoogle: async () => {
     const clientError = requireClient()
     if (clientError) return { data: null, ...clientError }
 
     try {
+      // Use signInWithOAuth but handle popup manually for Brave/privacy browsers
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'select_account', // Show account selector and ensure refresh token
+            prompt: 'select_account',
           },
-          // Skip browser redirect for better UX (handled by Supabase)
-          skipBrowserRedirect: false,
         },
       })
 
@@ -137,8 +138,6 @@ export const auth = {
         return { data: null, error }
       }
 
-      // If data.url exists, Supabase will handle the redirect automatically
-      // The redirect will go to Google, then back to our callback URL
       return { data, error: null }
     } catch (err) {
       console.error('[Supabase] Google OAuth exception:', err)

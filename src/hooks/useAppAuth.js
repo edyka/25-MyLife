@@ -247,6 +247,15 @@ export const useAppAuth = setCurrentPage => {
   useEffect(() => {
     let authListener = null
     const setupAuth = async () => {
+      // Check for OAuth callback in URL hash (for Brave and privacy browsers)
+      // This handles the case where automatic detection might be blocked
+      const hash = window.location.hash
+      const hasOAuthTokens = hash && (hash.includes('access_token') || hash.includes('error'))
+
+      if (hasOAuthTokens && isDev) {
+        console.log('[Viventiva Auth] OAuth tokens detected in URL hash')
+      }
+
       const {
         data: { subscription },
       } = auth.onAuthStateChange(async (event, session) => {
@@ -257,6 +266,10 @@ export const useAppAuth = setCurrentPage => {
             setUser(prev => (prev?.id === session.user.id ? prev : session.user))
             setAuthLoading(false)
             loadUserData(session.user)
+            // Clean up URL hash after successful auth
+            if (window.location.hash) {
+              window.history.replaceState(null, '', window.location.pathname)
+            }
           } else if (event === 'INITIAL_SESSION') {
             setUser(null)
             setAuthLoading(false)
@@ -278,7 +291,7 @@ export const useAppAuth = setCurrentPage => {
       authListener = subscription
 
       // Check for existing session (handles OAuth redirect case)
-      // This is needed because the auth state change might have fired before our listener was set up
+      // This is critical for Brave/privacy browsers where auto-detection may fail
       try {
         const { data: { session } } = await auth.getSession()
         if (session?.user) {
@@ -286,6 +299,10 @@ export const useAppAuth = setCurrentPage => {
           setUser(prev => (prev?.id === session.user.id ? prev : session.user))
           setAuthLoading(false)
           loadUserData(session.user)
+          // Clean up URL hash
+          if (window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname)
+          }
         } else {
           setAuthLoading(false)
         }
