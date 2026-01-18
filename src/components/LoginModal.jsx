@@ -28,9 +28,25 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
   const [resetEmailSent, setResetEmailSent] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSent, setResendSent] = useState(false)
+  const [isBraveBrowser, setIsBraveBrowser] = useState(false)
 
   // Track component mounted state for async cleanup
   const mountedRef = useRef(true)
+
+  // Detect Brave browser on mount
+  useEffect(() => {
+    const detectBrave = async () => {
+      try {
+        // Brave exposes navigator.brave.isBrave()
+        if (navigator.brave && await navigator.brave.isBrave()) {
+          setIsBraveBrowser(true)
+        }
+      } catch {
+        // Not Brave or detection failed
+      }
+    }
+    detectBrave()
+  }, [])
 
   // Update isSignUp when initialMode changes
   useEffect(() => {
@@ -542,6 +558,17 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
 
             {!signupSuccess && !resetEmailSent && !isForgotPassword && !showEmailForm ? (
               <div className="space-y-3">
+                {/* Brave browser warning */}
+                {isBraveBrowser && (
+                  <div className={`p-3 rounded-xl text-sm ${
+                    darkMode
+                      ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
+                      : 'bg-amber-50 border border-amber-200 text-amber-700'
+                  }`}>
+                    <span className="font-medium">Using Brave?</span> Google login may not work due to privacy shields. Use <button onClick={() => setShowEmailForm(true)} className="underline font-semibold">Email login</button> instead, or disable shields for this site.
+                  </div>
+                )}
+
                 {/* Google */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
