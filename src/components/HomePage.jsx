@@ -11,7 +11,7 @@ import WaitlistPage from './WaitlistPage'
 import { WAITLIST_MODE } from '../utils/constants'
 import { prefersReducedMotion } from '../utils/accessibility'
 
-const HomePage = ({ darkMode, onLogin }) => {
+const HomePage = ({ darkMode, onLogin, isCheckingAuth = false }) => {
   const themePreset = useUIStore(state => state.themePreset)
   const setDarkMode = useUIStore(state => state.setDarkMode)
   const setCurrentPage = useUIStore(state => state.setCurrentPage)

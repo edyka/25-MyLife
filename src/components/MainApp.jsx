@@ -38,7 +38,7 @@ const MilestoneModal = lazy(() => import('./MilestoneModal'))
 // Import theme utilities
 import { getTheme } from '../utils/themeConfig'
 
-const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
+const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = false }) => {
   // Optimized Zustand selectors - grouped with useShallow for reduced subscriptions
   const { birthDay, birthMonth, birthYear, lifeExpectancy, currentWeek } = useLifeStore(
     useShallow(state => ({
@@ -387,6 +387,23 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt }) => {
 
   return (
     <>
+      {/* Subtle loading overlay - shows while data loads in background */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[200] pointer-events-none">
+          <div className={`absolute top-0 left-0 right-0 h-1 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+            <div
+              className={`h-full bg-gradient-to-r ${theme.primary} animate-pulse`}
+              style={{ width: '60%', animation: 'loading-bar 1.5s ease-in-out infinite' }}
+            />
+          </div>
+          <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-medium ${
+            darkMode ? 'bg-slate-800/90 text-slate-300' : 'bg-white/90 text-slate-600'
+          } shadow-lg backdrop-blur-sm`}>
+            Loading your data...
+          </div>
+        </div>
+      )}
+
       {/* Skip link for accessibility - keyboard users can skip navigation */}
       <a
         href="#life-grid"

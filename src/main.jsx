@@ -2,12 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
-import { initSentry } from './utils/sentry';
 import { initAnalytics } from './utils/analytics';
 import { hasAnalyticsConsent } from './utils/consentManager';
 
-// Initialize Sentry error monitoring (essential, no consent needed)
-initSentry();
+// Initialize Sentry error monitoring (async, non-blocking for faster initial render)
+(async () => {
+  try {
+    const { initSentry } = await import('./utils/sentry');
+    initSentry();
+  } catch (error) {
+    console.error('[Viventiva] Error initializing Sentry:', error);
+  }
+})();
 
 // Initialize analytics only if consent is given
 // Will be re-checked when user accepts cookies

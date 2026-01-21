@@ -160,17 +160,12 @@ const App = () => {
       <div
         className={`${darkMode ? 'modern-bg-dark' : 'modern-bg'} min-h-screen transition-all duration-500 ${!isBackendAvailable ? 'pt-20' : ''}`}
       >
-        {authLoading ? (
-          <Suspense fallback={<LoadingSpinner message="Checking session..." />}>
-            <LoadingSpinner message="Checking session..." />
-          </Suspense>
-        ) : !user ? (
+        {/* Show content immediately - no blocking loader */}
+        {/* During auth check: show HomePage (will switch to MainApp if logged in) */}
+        {/* During data load: show MainApp with loading state */}
+        {!user ? (
           <Suspense fallback={<LoadingSpinner message="Loading..." />}>
-            <HomePage darkMode={darkMode} onLogin={handleLogin} />
-          </Suspense>
-        ) : dataLoading ? (
-          <Suspense fallback={<LoadingSpinner message="Loading your journey..." />}>
-            <LoadingSpinner message="Loading your journey..." />
+            <HomePage darkMode={darkMode} onLogin={handleLogin} isCheckingAuth={authLoading} />
           </Suspense>
         ) : needsProfileSetup ? (
           <Suspense fallback={<LoadingSpinner message="Preparing setup..." />}>
@@ -178,7 +173,7 @@ const App = () => {
           </Suspense>
         ) : (
           <Suspense fallback={<LoadingSpinner message="Loading your journey..." />}>
-            <MainApp />
+            <MainApp isLoading={dataLoading} />
           </Suspense>
         )}
       </div>
