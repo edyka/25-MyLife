@@ -432,7 +432,25 @@
             margin-top: 16px;
           "
         ></div>
-        <p style="color: #64748b; font-size: 0.875rem; margin-top: 12px">Loading...</p>
+        <p id="loader-text" style="color: #64748b; font-size: 0.875rem; margin-top: 12px">Loading...</p>
+        <button
+          id="loader-retry"
+          onclick="window.location.reload()"
+          style="
+            display: none;
+            margin-top: 16px;
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #f97316, #dc2626);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+          "
+        >
+          Tap to reload
+        </button>
       </div>
       <style>
         @keyframes spin {
@@ -452,6 +470,18 @@
           }
         }
       </style>
+      <script>
+        // Safety: if React doesn't mount within 8s, show reload button
+        setTimeout(function () {
+          var loader = document.getElementById('initial-loader')
+          if (loader && loader.parentNode === document.getElementById('root')) {
+            var text = document.getElementById('loader-text')
+            var btn = document.getElementById('loader-retry')
+            if (text) text.textContent = 'Taking too long? Try reloading.'
+            if (btn) btn.style.display = 'inline-block'
+          }
+        }, 8000)
+      </script>
       <!-- SEO content - hidden from users, visible to crawlers -->
       <div
         id="seo-content"

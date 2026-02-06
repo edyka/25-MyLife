@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viventiva-cache-v2'
+const CACHE_NAME = 'viventiva-cache-v3'
 const URLS_TO_CACHE = ['/', '/index.html', '/manifest.webmanifest', '/vite.svg']
 
 self.addEventListener('install', event => {
@@ -25,6 +25,8 @@ self.addEventListener('activate', event => {
       .keys()
       .then(keys => Promise.all(keys.map(key => (key !== CACHE_NAME ? caches.delete(key) : null))))
   )
+  // Take control of all open tabs immediately
+  self.clients.claim()
 })
 
 self.addEventListener('fetch', event => {
@@ -66,40 +68,78 @@ self.addEventListener('fetch', event => {
   if (
     request.url.includes('googletagmanager.com') ||
     request.url.includes('google-analytics.com') ||
-    request.url.includes('plausible.io')
+    request.url.includes('plausible.io') ||
+    request.url.includes('stripe.com')
   ) {
     return
   }
 
+  // NAVIGATION REQUESTS (HTML pages): Always network-first
+  // Critical: after deployments, Vite generates new chunk hashes.
+  // Serving stale index.html would reference non-existent JS files.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Cache the fresh navigation response
+          if (response && response.status === 200) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(request, clone).catch(() => {})
+            })
+          }
+          return response
+        })
+        .catch(() => {
+          // Offline: fall back to cached index.html
+          return caches.match('/index.html') || caches.match('/')
+        })
+    )
+    return
+  }
+
+  // STATIC ASSETS with hashes (immutable): Cache-first
+  // Vite hashed assets like /assets/index-D8p7_VLa.js never change
+  if (request.url.includes('/assets/')) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached
+        return fetch(request).then(response => {
+          // Only cache valid JS/CSS responses (not HTML rewrites from SPA fallback)
+          if (
+            response &&
+            response.status === 200 &&
+            response.type === 'basic' &&
+            !response.headers.get('content-type')?.includes('text/html')
+          ) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(request, clone).catch(() => {})
+            })
+          }
+          return response
+        })
+      })
+    )
+    return
+  }
+
+  // ALL OTHER REQUESTS: Stale-while-revalidate
   event.respondWith(
     caches.match(request).then(cached => {
       const fetchPromise = fetch(request)
         .then(response => {
-          // Only cache successful responses
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response
           }
-
-          // Clone response before caching
-          const responseClone = response.clone()
-
-          // Cache with error handling
+          const clone = response.clone()
           caches.open(CACHE_NAME).then(cache => {
-            try {
-              cache.put(request, responseClone).catch(err => {
-                console.warn('[SW] Failed to cache:', request.url, err)
-              })
-            } catch (err) {
-              console.warn('[SW] Cache error:', err)
-            }
+            cache.put(request, clone).catch(() => {})
           })
-
           return response
         })
-        .catch(error => {
-          console.warn('[SW] Fetch failed:', request.url, error)
-          // Return cached version if available, otherwise let browser handle (don't return 408)
-          return cached || fetch(request)
+        .catch(() => {
+          return cached
         })
 
       return cached || fetchPromise
