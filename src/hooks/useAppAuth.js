@@ -329,8 +329,22 @@ export const useAppAuth = setCurrentPage => {
       // If we have an OAuth code in the URL, wait for onAuthStateChange to handle it
       // Then fall back to explicit code exchange for Brave/privacy browsers
       if (oauthCode) {
-        // Give onAuthStateChange up to 1.5s to handle the PKCE exchange automatically
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        // Poll until onAuthStateChange handles the PKCE exchange, or timeout
+        // Mobile Safari handles PKCE fast (~200ms), so short timeout is fine
+        // Brave needs longer since auto-detection often fails
+        const PKCE_WAIT = isMobile ? 600 : 1500
+        await new Promise(resolve => {
+          if (initialSessionHandled) return resolve()
+          const start = Date.now()
+          const check = () => {
+            if (initialSessionHandled || Date.now() - start >= PKCE_WAIT) {
+              resolve()
+              return
+            }
+            setTimeout(check, 50)
+          }
+          setTimeout(check, 50)
+        })
 
         if (!initialSessionHandled) {
           // Auto-detection failed (common in Brave) - try explicit code exchange
