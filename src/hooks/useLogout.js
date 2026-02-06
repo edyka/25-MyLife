@@ -87,7 +87,14 @@ export const useLogout = () => {
       console.warn('[Viventiva] Could not clear stores:', e)
     }
 
-    // Step 5: Clear Supabase auth keys from localStorage
+    // Step 5: Sign out first (await to ensure Supabase cleans up internal state)
+    try {
+      await auth.signOut()
+    } catch (e) {
+      console.warn('[Viventiva] signOut error (continuing logout):', e)
+    }
+
+    // Step 6: Clear ALL Supabase/auth keys from localStorage after signOut
     const keysToRemove = []
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -100,11 +107,11 @@ export const useLogout = () => {
     }
     keysToRemove.forEach(key => localStorage.removeItem(key))
 
-    // Step 6: Sign out and redirect
-    auth.signOut().catch(console.error)
-    setTimeout(() => {
-      window.location.href = '/'
-    }, 100)
+    // Also clear sessionStorage logout flag
+    sessionStorage.removeItem('viventiva_logging_out')
+
+    // Step 7: Redirect
+    window.location.href = '/'
   }, [])
 
   return { handleLogout, loggingOut }
