@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown } from './icons'
 
 // Import optimized life selectors
@@ -43,6 +44,19 @@ const TabNavigation = ({
   const subscriptionLoading = usePremiumStore(state => state.subscriptionLoading)
 
   const { handleLogout } = useLogout()
+
+  // Hide bottom nav when iOS virtual keyboard is open
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const onResize = () => {
+      // Keyboard is open when viewport height is significantly less than window height
+      setKeyboardOpen(window.innerHeight - vv.height > 150)
+    }
+    vv.addEventListener('resize', onResize)
+    return () => vv.removeEventListener('resize', onResize)
+  }, [])
 
   return (
     <>
@@ -178,9 +192,11 @@ const TabNavigation = ({
         </div>
       </nav>
 
-      {/* Mobile Bottom Navigation - Compact with user info */}
+      {/* Mobile Bottom Navigation - Hidden when iOS keyboard is open */}
       <nav
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t ${
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t transition-transform duration-200 ${
+          keyboardOpen ? 'translate-y-full' : 'translate-y-0'
+        } ${
           darkMode
             ? 'bg-slate-900/98 border-slate-700/50 backdrop-blur-xl'
             : 'bg-white/98 border-slate-200 backdrop-blur-xl'
