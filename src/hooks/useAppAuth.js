@@ -329,6 +329,13 @@ export const useAppAuth = setCurrentPage => {
       // Check for existing session (handles OAuth redirect case)
       // This is critical for Brave/privacy browsers where auto-detection may fail
       try {
+        // If URL has OAuth code, wait briefly for onAuthStateChange to handle PKCE exchange
+        // before calling getSession() which could race with the exchange
+        const hasOAuthCode = window.location.search.includes('code=')
+        if (hasOAuthCode && !initialSessionHandled) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+
         const {
           data: { session },
         } = await auth.getSession()
@@ -338,11 +345,13 @@ export const useAppAuth = setCurrentPage => {
           setUser(prev => (prev?.id === session.user.id ? prev : session.user))
           setAuthLoading(false)
           loadUserData(session.user)
-          // Clean up OAuth params from URL
           cleanOAuthUrl()
         } else if (!initialSessionHandled) {
-          // No session - still clean up any OAuth params from URL
-          cleanOAuthUrl()
+          // No session found - only clean URL if no OAuth code is pending
+          // (avoid removing ?code= before Supabase finishes the PKCE exchange)
+          if (!hasOAuthCode) {
+            cleanOAuthUrl()
+          }
           setAuthLoading(false)
         }
       } catch (error) {
