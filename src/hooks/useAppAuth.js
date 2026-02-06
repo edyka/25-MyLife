@@ -286,9 +286,10 @@ export const useAppAuth = setCurrentPage => {
       // Check for OAuth callback in URL (both hash and query string)
       const hash = window.location.hash
       const hasOAuthTokens = hash && (hash.includes('access_token') || hash.includes('error'))
-      const hasOAuthCode = window.location.search.includes('code=')
+      const urlParams = new URLSearchParams(window.location.search)
+      const oauthCode = urlParams.get('code')
 
-      if ((hasOAuthTokens || hasOAuthCode) && isDev) {
+      if ((hasOAuthTokens || oauthCode) && isDev) {
         console.log('[Viventiva Auth] OAuth callback detected in URL')
       }
 
@@ -303,7 +304,6 @@ export const useAppAuth = setCurrentPage => {
             setUser(prev => (prev?.id === session.user.id ? prev : session.user))
             setAuthLoading(false)
             loadUserData(session.user)
-            // Clean up OAuth params from URL after successful auth
             cleanOAuthUrl()
           } else if (event === 'INITIAL_SESSION') {
             initialSessionHandled = true
@@ -326,16 +326,44 @@ export const useAppAuth = setCurrentPage => {
       })
       authListener = subscription
 
-      // Check for existing session (handles OAuth redirect case)
-      // This is critical for Brave/privacy browsers where auto-detection may fail
-      try {
-        // If URL has OAuth code, wait briefly for onAuthStateChange to handle PKCE exchange
-        // before calling getSession() which could race with the exchange
-        const hasOAuthCode = window.location.search.includes('code=')
-        if (hasOAuthCode && !initialSessionHandled) {
-          await new Promise(resolve => setTimeout(resolve, 500))
+      // If we have an OAuth code in the URL, wait for onAuthStateChange to handle it
+      // Then fall back to explicit code exchange for Brave/privacy browsers
+      if (oauthCode) {
+        // Give onAuthStateChange up to 1.5s to handle the PKCE exchange automatically
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        if (!initialSessionHandled) {
+          // Auto-detection failed (common in Brave) - try explicit code exchange
+          if (isDev) console.log('[Viventiva Auth] Auto PKCE failed, trying manual exchange')
+          try {
+            const { data, error } = await auth.exchangeCodeForSession(oauthCode)
+            if (data?.session?.user && !initialSessionHandled) {
+              if (isDev) console.log('[Viventiva Auth] Manual code exchange succeeded')
+              initialSessionHandled = true
+              setUser(data.session.user)
+              setAuthLoading(false)
+              loadUserData(data.session.user)
+              cleanOAuthUrl()
+              return
+            }
+            if (error) {
+              console.error('[Viventiva Auth] Manual code exchange failed:', error.message)
+            }
+          } catch (err) {
+            console.error('[Viventiva Auth] Manual code exchange error:', err)
+          }
         }
 
+        // If still not handled, clean up and show landing page
+        if (!initialSessionHandled) {
+          cleanOAuthUrl()
+          setAuthLoading(false)
+        }
+        return
+      }
+
+      // No OAuth code - check for existing session (normal page load)
+      try {
         const {
           data: { session },
         } = await auth.getSession()
@@ -347,11 +375,7 @@ export const useAppAuth = setCurrentPage => {
           loadUserData(session.user)
           cleanOAuthUrl()
         } else if (!initialSessionHandled) {
-          // No session found - only clean URL if no OAuth code is pending
-          // (avoid removing ?code= before Supabase finishes the PKCE exchange)
-          if (!hasOAuthCode) {
-            cleanOAuthUrl()
-          }
+          cleanOAuthUrl()
           setAuthLoading(false)
         }
       } catch (error) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viventiva-cache-v1'
+const CACHE_NAME = 'viventiva-cache-v2'
 const URLS_TO_CACHE = ['/', '/index.html', '/manifest.webmanifest', '/vite.svg']
 
 self.addEventListener('install', event => {

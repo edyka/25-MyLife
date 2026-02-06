@@ -314,6 +314,18 @@ export const auth = {
     return supabaseClient.auth.getSession()
   },
 
+  // Manually exchange PKCE code for session (fallback for Brave/privacy browsers
+  // where automatic detection in onAuthStateChange may fail)
+  exchangeCodeForSession: async code => {
+    if (!supabaseClient) return { data: { session: null }, error: new Error('No client') }
+    try {
+      return await supabaseClient.auth.exchangeCodeForSession(code)
+    } catch (error) {
+      console.error('[Supabase] Code exchange failed:', error)
+      return { data: { session: null }, error }
+    }
+  },
+
   // Check if Supabase is reachable
   checkConnection: async () => {
     try {
