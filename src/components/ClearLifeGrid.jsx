@@ -39,42 +39,50 @@ const ClearLifeGrid = memo(
     const columns = getColumns()
     const isBiWeekly = isMobile && showWeeks // Whether we're grouping 2 weeks per cell
 
-    // Responsive week size based on viewport width for mobile
-    const [viewportWidth, setViewportWidth] = useState(
-      typeof window !== 'undefined' ? window.innerWidth : 375
+    // Measure actual container width instead of guessing padding values
+    const containerRef = useRef(null)
+    const [containerWidth, setContainerWidth] = useState(
+      typeof window !== 'undefined' ? window.innerWidth - 44 : 330
     )
     const resizeTimeoutRef = useRef(null)
 
-    // Throttled resize handler to prevent excessive re-renders
-    const handleResize = useCallback(() => {
-      if (resizeTimeoutRef.current) return // Throttle: skip if pending
-      resizeTimeoutRef.current = setTimeout(() => {
-        setViewportWidth(window.innerWidth)
-        resizeTimeoutRef.current = null
-      }, 150) // 150ms throttle
+    const measureContainer = useCallback(() => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth)
+      }
     }, [])
 
+    // Throttled resize handler
+    const handleResize = useCallback(() => {
+      if (resizeTimeoutRef.current) return
+      resizeTimeoutRef.current = setTimeout(() => {
+        measureContainer()
+        resizeTimeoutRef.current = null
+      }, 150)
+    }, [measureContainer])
+
     useEffect(() => {
+      // Measure on mount (after layout)
+      measureContainer()
       window.addEventListener('resize', handleResize)
       return () => {
         window.removeEventListener('resize', handleResize)
         if (resizeTimeoutRef.current) clearTimeout(resizeTimeoutRef.current)
       }
-    }, [handleResize])
+    }, [handleResize, measureContainer])
 
-    // Calculate optimal week size to ALWAYS fit within viewport (no horizontal scroll)
+    // Gutter width for year labels (dedicated column, no overlap)
+    const gutterWidth = isMobile ? 24 : 28
+
+    // Calculate optimal week size to ALWAYS fit within container (no overflow)
     const getOptimalWeekSize = () => {
       if (!isMobile) return showWeeks ? 12 : 20 // Desktop sizes
 
-      const containerPadding = 24
-      const safetyMargin = 4 // Extra margin to ensure no overflow
-      // No ageLabel space needed - labels now overlay on grid
-      const availableWidth = viewportWidth - containerPadding - safetyMargin
-      const gapSize = 2 // Reduced gap for mobile
+      const availableWidth = containerWidth - gutterWidth - 2 // 2px safety
+      const gapSize = 2
       const gapTotal = (columns - 1) * gapSize
       const boxSize = Math.floor((availableWidth - gapTotal) / columns)
 
-      // Ensure minimum visible size but NEVER exceed what fits
       return Math.max(6, boxSize)
     }
 
@@ -101,7 +109,7 @@ const ClearLifeGrid = memo(
     }, [totalYears, columns, isBiWeekly, showWeeks])
 
     return (
-      <div className="relative" data-life-grid>
+      <div className="relative" data-life-grid ref={containerRef}>
         <div
           className="w-full overflow-hidden"
           onMouseUp={handleMouseUp}
@@ -114,85 +122,101 @@ const ClearLifeGrid = memo(
             }}
           >
             {rows.map((rowItems, yearIndex) => {
-              // Add extra spacing every 10 years for visual decades
               const isDecadeStart = yearIndex > 0 && yearIndex % 10 === 0
-              const rowGap = isMobile ? 2 : 4 // Consistent row gap
-              const decadeGap = isMobile ? 6 : 10 // Extra gap at decades
+              const showLabel = yearIndex % 5 === 0
+              const rowGap = isMobile ? 2 : 4
+              const decadeGap = isMobile ? 6 : 10
 
               return (
-                <div
-                  key={yearIndex}
-                  className="relative flex items-center w-full justify-center"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flexWrap: 'nowrap',
-                    marginTop: isDecadeStart ? `${decadeGap}px` : '0px',
-                    marginBottom: `${rowGap}px`,
-                    minHeight: `${weekSize + 2}px`,
-                  }}
-                >
-                  {/* Year label - overlays on grid for mobile, separate column for desktop */}
-                  {yearIndex % 5 === 0 && (
+                <div key={yearIndex}>
+                  {/* Decade separator line */}
+                  {isDecadeStart && (
                     <div
-                      className={`absolute left-0 z-10 font-bold ${isMobile ? 'text-[9px]' : 'text-xs'}`}
                       style={{
-                        color: darkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)',
-                        textShadow: darkMode
-                          ? '0 1px 2px rgba(0,0,0,0.8)'
-                          : '0 1px 2px rgba(255,255,255,0.8)',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        paddingLeft: isMobile ? '2px' : '4px',
+                        borderTop: `1px solid ${darkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)'}`,
+                        marginTop: `${decadeGap + 2}px`,
+                        marginBottom: `${Math.floor(decadeGap / 2) + 1}px`,
                       }}
-                    >
-                      {yearIndex}
-                    </div>
+                    />
                   )}
                   <div
-                    className="flex-shrink-0"
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: `repeat(${columns}, ${weekSize}px)`,
-                      gap: `${colGap}px`,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      flexWrap: 'nowrap',
+                      alignItems: 'center',
+                      marginBottom: `${rowGap}px`,
+                      minHeight: `${weekSize + 2}px`,
                     }}
                   >
-                    {rowItems.map((weekData, _idx) => {
-                      // Handle both simple weekNum (number) and biweekly objects
-                      const isBiWeeklyCell = typeof weekData === 'object'
-                      const weekNum = isBiWeeklyCell ? weekData.startWeek : weekData
-                      const weekNum2 = isBiWeeklyCell ? weekData.endWeek : null
-                      const key = isBiWeeklyCell
-                        ? `${weekData.startWeek}-${weekData.endWeek}`
-                        : weekNum
+                    {/* Year label gutter — fixed width, always present for alignment */}
+                    <div
+                      style={{
+                        width: `${gutterWidth}px`,
+                        flexShrink: 0,
+                        textAlign: 'right',
+                        paddingRight: isMobile ? 4 : 6,
+                        fontSize: isMobile ? '11px' : '12px',
+                        fontWeight: 700,
+                        color: showLabel
+                          ? darkMode
+                            ? 'rgba(255,255,255,0.9)'
+                            : 'rgba(0,0,0,0.65)'
+                          : 'transparent',
+                        lineHeight: 1,
+                        letterSpacing: '-0.02em',
+                        userSelect: 'none',
+                      }}
+                    >
+                      {showLabel ? yearIndex : ''}
+                    </div>
+                    <div
+                      className="flex-shrink-0"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${columns}, ${weekSize}px)`,
+                        gap: `${colGap}px`,
+                      }}
+                    >
+                      {rowItems.map((weekData, _idx) => {
+                        const isBiWeeklyCell = typeof weekData === 'object'
+                        const weekNum = isBiWeeklyCell ? weekData.startWeek : weekData
+                        const weekNum2 = isBiWeeklyCell ? weekData.endWeek : null
+                        const key = isBiWeeklyCell
+                          ? `${weekData.startWeek}-${weekData.endWeek}`
+                          : weekNum
 
-                      return (
-                        <div key={key} style={{ width: `${weekSize}px`, height: `${weekSize}px` }}>
-                          <ClearWeekBox
-                            weekNum={weekNum}
-                            weekNum2={weekNum2}
-                            handleWeekClick={handleWeekClick}
-                            handleWeekMouseDown={handleWeekMouseDown}
-                            handleWeekMouseEnter={handleWeekMouseEnter}
-                            handleTouchStart={handleTouchStart}
-                            handleTouchMove={handleTouchMove}
-                            handleTouchEnd={handleTouchEnd}
-                            handleDoubleClick={handleDoubleClick}
-                            isDragging={isDragging}
-                            currentWeek={currentWeek}
-                            milestones={milestones}
-                            allCategories={allCategories}
-                            selectedWeeks={selectedWeeks}
-                            draggedWeeks={draggedWeeks}
-                            selectedColor={selectedColor}
-                            isMobile={isMobile}
-                            darkMode={darkMode}
-                            pastWeekStyle={pastWeekStyle}
-                            setTooltip={setTooltip}
-                          />
-                        </div>
-                      )
-                    })}
+                        return (
+                          <div
+                            key={key}
+                            style={{ width: `${weekSize}px`, height: `${weekSize}px` }}
+                          >
+                            <ClearWeekBox
+                              weekNum={weekNum}
+                              weekNum2={weekNum2}
+                              handleWeekClick={handleWeekClick}
+                              handleWeekMouseDown={handleWeekMouseDown}
+                              handleWeekMouseEnter={handleWeekMouseEnter}
+                              handleTouchStart={handleTouchStart}
+                              handleTouchMove={handleTouchMove}
+                              handleTouchEnd={handleTouchEnd}
+                              handleDoubleClick={handleDoubleClick}
+                              isDragging={isDragging}
+                              currentWeek={currentWeek}
+                              milestones={milestones}
+                              allCategories={allCategories}
+                              selectedWeeks={selectedWeeks}
+                              draggedWeeks={draggedWeeks}
+                              selectedColor={selectedColor}
+                              isMobile={isMobile}
+                              darkMode={darkMode}
+                              pastWeekStyle={pastWeekStyle}
+                              setTooltip={setTooltip}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               )
