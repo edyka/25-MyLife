@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Plus,
@@ -20,7 +20,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { usePremiumStore } from '../stores/usePremiumStore'
-import UpgradeModal from './UpgradeModal'
+const UpgradeModal = React.lazy(() => import('./UpgradeModal'))
 
 const CustomMoodCreator = ({
   darkMode,

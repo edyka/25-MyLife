@@ -1,14 +1,12 @@
+import React from 'react'
 import { ArrowLeft, Cookie, Download, Lock, Image, LogOut } from 'lucide-react'
-import { auth, database } from '../lib/supabase'
-import { useLifeStore } from '../stores/useLifeStore'
-import { useSelectionStore } from '../stores/useSelectionStore'
-import { toPng } from 'html-to-image'
 import { usePremiumStore } from '../stores/usePremiumStore'
-import UpgradeModal from './UpgradeModal'
+const UpgradeModal = React.lazy(() => import('./UpgradeModal'))
 import { exportData } from '../utils/storageUtils'
 import { useUIStore } from '../stores/useUIStore'
 import { useMilestoneStore } from '../stores/useMilestoneStore'
 import { useProfileEditor } from '../hooks/useProfileEditor'
+import { useLogout } from '../hooks/useLogout'
 import { getTheme } from '../utils/themeConfig'
 import {
   getCookieConsent,
@@ -57,105 +55,7 @@ const SettingsPage = () => {
   const [, setCookieConsentState] = useState(() => getCookieConsent())
   const [analyticsEnabled, setAnalyticsEnabled] = useState(() => hasAnalyticsConsent())
   const [consentDate, setConsentDate] = useState(() => getConsentDate())
-  const [loggingOut, setLoggingOut] = useState(false)
-
-  const isDev = process.env.NODE_ENV === 'development'
-
-  const handleLogout = async () => {
-    setLoggingOut(true)
-    if (isDev) console.log('[Viventiva] Logout initiated from Settings')
-
-    // Force sync all pending data to Supabase before logout
-    const syncPromise = (async () => {
-      try {
-        const { user } = await auth.getCurrentUser()
-        if (!user) {
-          console.warn('[Viventiva] No user found, skipping sync')
-          return
-        }
-
-        if (isDev) console.log('[Viventiva] Force syncing data to Supabase before logout...')
-
-        // Get current state from stores
-        const milestoneStore = useMilestoneStore.getState()
-        const selectionStore = useSelectionStore.getState()
-
-        // Force sync milestones
-        const milestoneData = {
-          milestones: milestoneStore.milestones || {},
-          customMoods: milestoneStore.customMoods || {},
-          customCategories: milestoneStore.customCategories || {},
-        }
-        await database.saveMilestones(user.id, milestoneData)
-
-        // Force sync selections
-        const selectionsData = {
-          selectedWeeks: Array.from(selectionStore.selectedWeeks || new Set()),
-          pinnedWeeks: Array.from(selectionStore.pinnedWeeks || new Set()),
-          selectedColor: selectionStore.selectedColor,
-        }
-        await database.saveSelections(user.id, selectionsData)
-
-        // Force sync goals
-        const goals = milestoneStore.goals || []
-        await database.saveGoals(user.id, goals)
-
-        // Force sync settings
-        await useUIStore.getState().syncSettingsToSupabase()
-
-        if (isDev) console.log('[Viventiva] All data synced successfully')
-      } catch (error) {
-        console.error('[Viventiva] Error syncing before logout:', error)
-      }
-    })()
-
-    // Wait up to 5 seconds for sync
-    await Promise.race([syncPromise, new Promise(resolve => setTimeout(resolve, 5000))])
-
-    // Set logout flag
-    sessionStorage.setItem('viventiva_logging_out', 'true')
-
-    // Clear authentication flags
-    localStorage.removeItem('viventiva_authenticated')
-    localStorage.removeItem('viventiva_profile_complete')
-    localStorage.removeItem('viventiva_just_logged_in')
-
-    // Clear all user-specific data
-    localStorage.removeItem('memento-vivere-life')
-    localStorage.removeItem('memento-vivere-milestones')
-    localStorage.removeItem('memento-vivere-selections')
-    localStorage.removeItem('viventiva-premium')
-
-    // Clear Zustand stores
-    try {
-      useMilestoneStore.getState().clearMilestones()
-      useMilestoneStore.getState().setCustomMoods({})
-      useMilestoneStore.getState().setCustomCategories({})
-      useSelectionStore.getState().clearAllSelections()
-      useLifeStore.getState().setUserName?.('')
-    } catch (e) {
-      console.warn('[Viventiva] Could not clear stores:', e)
-    }
-
-    // Clear all Supabase auth keys
-    const keysToRemove = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (
-        key &&
-        (key.includes('sb-') || key.includes('supabase.auth') || key.includes('viventiva-auth'))
-      ) {
-        keysToRemove.push(key)
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key))
-
-    // Sign out and redirect
-    auth.signOut().catch(console.error)
-    setTimeout(() => {
-      window.location.href = '/'
-    }, 100)
-  }
+  const { handleLogout, loggingOut } = useLogout()
 
   // Update state when consent changes
   useEffect(() => {
@@ -208,6 +108,7 @@ const SettingsPage = () => {
         return
       }
 
+      const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(gridElement, {
         quality: 1,
         pixelRatio: 2,
@@ -228,8 +129,6 @@ const SettingsPage = () => {
   }
 
   const handleUpdateProfile = () => {
-    if (isDev)
-      console.log('Update Profile button clicked - saving profile and navigating to setup page')
     saveProfile()
     setCurrentPage('setup')
   }

@@ -2,7 +2,14 @@ import React from 'react'
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react'
 import { getTheme } from '../utils/themeConfig'
 import { getUserFriendlyError } from '../utils/errorMessages'
-import * as Sentry from '@sentry/react'
+// Lazy-load Sentry to avoid ~50-80KB in initial bundle
+let _Sentry = null
+const getSentry = () => {
+  if (!_Sentry) {
+    _Sentry = import('@sentry/react')
+  }
+  return _Sentry
+}
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -27,17 +34,23 @@ class ErrorBoundary extends React.Component {
 
     console.error('Error caught by boundary:', error, errorInfo)
 
-    // Report to Sentry
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-      tags: {
-        errorBoundary: true,
-      },
-    })
+    // Report to Sentry (lazy-loaded)
+    getSentry()
+      .then(Sentry => {
+        Sentry.captureException(error, {
+          contexts: {
+            react: {
+              componentStack: errorInfo.componentStack,
+            },
+          },
+          tags: {
+            errorBoundary: true,
+          },
+        })
+      })
+      .catch(() => {
+        // Sentry failed to load - error already logged to console above
+      })
 
     if (this.props.onError) {
       this.props.onError(error, errorInfo)

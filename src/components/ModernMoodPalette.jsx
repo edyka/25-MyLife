@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import * as Icons from './icons'
 import { Lock } from 'lucide-react'
 import CustomMoodCreator from './CustomMoodCreator'
-import UpgradeModal from './UpgradeModal'
+const UpgradeModal = React.lazy(() => import('./UpgradeModal'))
 import { usePremiumStore } from '../stores/usePremiumStore'
 
 // Available icons for mood selection

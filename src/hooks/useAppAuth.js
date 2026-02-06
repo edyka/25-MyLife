@@ -27,11 +27,12 @@ export const useAppAuth = setCurrentPage => {
 
     const checkBackend = async () => {
       try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), BACKEND_TIMEOUT)
-
-        const status = await auth.checkConnection()
-        clearTimeout(timeoutId)
+        const status = await Promise.race([
+          auth.checkConnection(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), BACKEND_TIMEOUT)
+          ),
+        ])
 
         if (!status.online) {
           if (isDev) console.error('[Viventiva] Backend connection failed:', status)
@@ -84,13 +85,13 @@ export const useAppAuth = setCurrentPage => {
           { useMilestoneStore },
           { useSelectionStore },
           { useUIStore },
-          { usePremiumStore }
+          { usePremiumStore },
         ] = await Promise.all([
           import('../stores/useLifeStore'),
           import('../stores/useMilestoneStore'),
           import('../stores/useSelectionStore'),
           import('../stores/useUIStore'),
-          import('../stores/usePremiumStore')
+          import('../stores/usePremiumStore'),
         ])
 
         // Use DataService for optimized parallel loading and caching
@@ -258,7 +259,8 @@ export const useAppAuth = setCurrentPage => {
   const cleanOAuthUrl = () => {
     const url = new URL(window.location.href)
     const hasOAuthQuery = url.searchParams.has('code') || url.searchParams.has('error')
-    const hasOAuthHash = window.location.hash &&
+    const hasOAuthHash =
+      window.location.hash &&
       (window.location.hash.includes('access_token') || window.location.hash.includes('error'))
 
     if (hasOAuthQuery || hasOAuthHash) {
@@ -267,7 +269,8 @@ export const useAppAuth = setCurrentPage => {
       url.searchParams.delete('error')
       url.searchParams.delete('error_description')
       // Build clean URL
-      const cleanUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '')
+      const cleanUrl =
+        url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '')
       window.history.replaceState(null, '', cleanUrl)
       if (isDev) console.log('[Viventiva Auth] Cleaned OAuth params from URL')
     }
@@ -275,6 +278,10 @@ export const useAppAuth = setCurrentPage => {
 
   useEffect(() => {
     let authListener = null
+    // Track whether onAuthStateChange already handled the initial session
+    // to prevent the manual getSession() call from triggering a duplicate loadUserData
+    let initialSessionHandled = false
+
     const setupAuth = async () => {
       // Check for OAuth callback in URL (both hash and query string)
       const hash = window.location.hash
@@ -292,12 +299,14 @@ export const useAppAuth = setCurrentPage => {
 
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           if (session?.user) {
+            initialSessionHandled = true
             setUser(prev => (prev?.id === session.user.id ? prev : session.user))
             setAuthLoading(false)
             loadUserData(session.user)
             // Clean up OAuth params from URL after successful auth
             cleanOAuthUrl()
           } else if (event === 'INITIAL_SESSION') {
+            initialSessionHandled = true
             setUser(null)
             setAuthLoading(false)
             setDataLoading(false)
@@ -320,22 +329,27 @@ export const useAppAuth = setCurrentPage => {
       // Check for existing session (handles OAuth redirect case)
       // This is critical for Brave/privacy browsers where auto-detection may fail
       try {
-        const { data: { session } } = await auth.getSession()
-        if (session?.user) {
-          if (isDev) console.log('[Viventiva Auth] Found existing session:', session.user.id)
+        const {
+          data: { session },
+        } = await auth.getSession()
+        if (session?.user && !initialSessionHandled) {
+          if (isDev)
+            console.log('[Viventiva Auth] Found existing session via getSession:', session.user.id)
           setUser(prev => (prev?.id === session.user.id ? prev : session.user))
           setAuthLoading(false)
           loadUserData(session.user)
           // Clean up OAuth params from URL
           cleanOAuthUrl()
-        } else {
+        } else if (!initialSessionHandled) {
           // No session - still clean up any OAuth params from URL
           cleanOAuthUrl()
           setAuthLoading(false)
         }
       } catch (error) {
         console.error('[Viventiva Auth] Error getting session:', error)
-        setAuthLoading(false)
+        if (!initialSessionHandled) {
+          setAuthLoading(false)
+        }
       }
     }
     setupAuth()

@@ -1,12 +1,11 @@
 import { Target, Moon, Sun, Home, Sparkles, LogOut, Crown } from './icons'
-import { Switch } from '@headlessui/react'
 
 // Import optimized life selectors
 import { useLifeStore } from '../stores/useLifeStore'
 import { useUIStore } from '../stores/useUIStore'
 import { usePremiumStore } from '../stores/usePremiumStore'
 import { getTheme } from '../utils/themeConfig'
-import { auth, database } from '../lib/supabase'
+import { useLogout } from '../hooks/useLogout'
 
 // Mobile uses 3 tabs: Home, Goals, Premium (Settings via user icon)
 const MOBILE_TABS = [
@@ -43,225 +42,7 @@ const TabNavigation = ({
   const tier = usePremiumStore(state => state.tier)
   const subscriptionLoading = usePremiumStore(state => state.subscriptionLoading)
 
-  const isDev = process.env.NODE_ENV === 'development'
-
-  const handleLogout = async () => {
-    if (isDev) console.log('[Viventiva] Logout initiated')
-
-    // CRITICAL: Force sync all pending data to Supabase before logout
-    // Wait up to 5 seconds to ensure data is saved, but don't block logout forever
-    const syncPromise = (async () => {
-      try {
-        const { user } = await auth.getCurrentUser()
-
-        if (!user) {
-          console.warn('[Viventiva] No user found, skipping sync')
-          return
-        }
-
-        if (isDev) console.log('[Viventiva] Force syncing data to Supabase before logout...')
-
-        // Import stores
-        const milestoneStoreModule = await import('../stores/useMilestoneStore')
-        const selectionStoreModule = await import('../stores/useSelectionStore')
-        const useMilestoneStore = milestoneStoreModule.useMilestoneStore
-        const useSelectionStore = selectionStoreModule.useSelectionStore
-
-        // Get current state
-        const milestoneStore = useMilestoneStore.getState()
-        const selectionStore = useSelectionStore.getState()
-
-        // Force sync milestones (don't wait for debounce)
-        const milestoneData = {
-          milestones: milestoneStore.milestones || {},
-          customMoods: milestoneStore.customMoods || {},
-          customCategories: milestoneStore.customCategories || {},
-        }
-
-        const weekCount = Object.keys(milestoneData.milestones || {}).length
-        if (isDev) {
-          console.log('[Viventiva] Force syncing milestones:', weekCount, 'weeks')
-          console.log('[Viventiva] Milestone data structure:', {
-            milestones: weekCount,
-            customMoods: Object.keys(milestoneData.customMoods || {}).length,
-            customCategories: Object.keys(milestoneData.customCategories || {}).length,
-            sampleWeek: weekCount > 0 ? Object.keys(milestoneData.milestones)[0] : null,
-          })
-        }
-
-        const { error: milestonesError } = await database.saveMilestones(user.id, milestoneData)
-        if (milestonesError) {
-          console.error('[Viventiva] Error force syncing milestones:', milestonesError)
-          throw new Error(`Failed to save milestones: ${milestonesError.message}`)
-        } else {
-          if (isDev)
-            console.log(
-              '[Viventiva] Milestones force synced successfully:',
-              weekCount,
-              'weeks saved'
-            )
-
-          // Verify the save by reading it back
-          const { data: verifyData, error: verifyError } = await database.getMilestones(user.id)
-          if (!verifyError && verifyData?.milestones_data) {
-            const savedCount = verifyData.milestones_data.milestones
-              ? Object.keys(verifyData.milestones_data.milestones || {}).length
-              : Object.keys(verifyData.milestones_data || {}).length
-            if (isDev)
-              console.log('[Viventiva] Verified milestones saved:', savedCount, 'weeks in Supabase')
-            if (savedCount !== weekCount) {
-              console.warn(
-                '[Viventiva] WARNING: Week count mismatch! Expected:',
-                weekCount,
-                'Got:',
-                savedCount
-              )
-            }
-          } else if (isDev) {
-            console.warn('[Viventiva] Could not verify milestones save:', verifyError)
-          }
-        }
-
-        // Force sync selections
-        const selectionsData = {
-          selectedWeeks: Array.from(selectionStore.selectedWeeks || new Set()),
-          pinnedWeeks: Array.from(selectionStore.pinnedWeeks || new Set()),
-          selectedColor: selectionStore.selectedColor,
-        }
-
-        if (isDev)
-          console.log('[Viventiva] Force syncing selections:', {
-            selectedWeeks: selectionsData.selectedWeeks.length,
-            pinnedWeeks: selectionsData.pinnedWeeks.length,
-            selectedColor: selectionsData.selectedColor,
-          })
-
-        const { error: selectionsError } = await database.saveSelections(user.id, selectionsData)
-        if (selectionsError) {
-          console.error('[Viventiva] Error force syncing selections:', selectionsError)
-          // Don't throw - selections are less critical than milestones
-        } else {
-          if (isDev) console.log('[Viventiva] Selections force synced successfully')
-        }
-
-        // Force sync goals
-        try {
-          const goals = milestoneStore.goals || []
-          if (isDev) console.log('[Viventiva] Force syncing goals:', goals.length)
-          const { error: goalsError } = await database.saveGoals(user.id, goals)
-          if (goalsError) {
-            console.error('[Viventiva] Error force syncing goals:', goalsError)
-          } else {
-            if (isDev) console.log('[Viventiva] Goals force synced successfully')
-          }
-        } catch (goalsError) {
-          console.error('[Viventiva] Error in goals sync block:', goalsError)
-        }
-
-        // Force sync settings
-        try {
-          const { useUIStore } = await import('../stores/useUIStore')
-          await useUIStore.getState().syncSettingsToSupabase()
-          if (isDev) console.log('[Viventiva] Settings force synced successfully')
-        } catch (settingsError) {
-          console.error('[Viventiva] Error force syncing settings:', settingsError)
-          // Don't throw - settings are less critical
-        }
-
-        if (isDev) console.log('[Viventiva] All data synced successfully, proceeding with logout')
-      } catch (error) {
-        console.error('[Viventiva] Error force syncing before logout:', error)
-        // Don't throw - we still want to logout even if sync fails
-      }
-    })()
-
-    // Wait up to 5 seconds for sync to complete, then proceed with logout anyway
-    try {
-      await Promise.race([
-        syncPromise,
-        new Promise(resolve =>
-          setTimeout(() => {
-            console.warn('[Viventiva] Sync timeout after 5 seconds, proceeding with logout')
-            resolve()
-          }, 5000)
-        ),
-      ])
-    } catch (error) {
-      console.error('[Viventiva] Sync error, proceeding with logout:', error)
-    }
-
-    // Set logout flag IMMEDIATELY to prevent auth listener from re-authenticating
-    sessionStorage.setItem('viventiva_logging_out', 'true')
-
-    // Clear authentication flags
-    localStorage.removeItem('viventiva_authenticated')
-    localStorage.removeItem('viventiva_profile_complete')
-    localStorage.removeItem('viventiva_just_logged_in')
-
-    // Clear all user-specific data
-    localStorage.removeItem('memento-vivere-life')
-    localStorage.removeItem('memento-vivere-milestones')
-    localStorage.removeItem('memento-vivere-selections') // Also clear selections
-    localStorage.removeItem('viventiva-premium') // Clear subscription cache
-
-    // Clear Zustand stores to ensure clean state
-    try {
-      // Import stores dynamically to avoid circular dependencies
-      const milestoneStoreModule = await import('../stores/useMilestoneStore')
-      const selectionStoreModule = await import('../stores/useSelectionStore')
-      const useMilestoneStore = milestoneStoreModule.useMilestoneStore
-      const useSelectionStore = selectionStoreModule.useSelectionStore
-
-      useMilestoneStore.getState().clearMilestones()
-      useMilestoneStore.getState().setCustomMoods({})
-      useMilestoneStore.getState().setCustomCategories({})
-      useSelectionStore.getState().clearAllSelections()
-    } catch (e) {
-      console.warn('[Viventiva] Could not clear stores:', e)
-    }
-
-    // Clear user name from store
-    try {
-      const store = useLifeStore.getState()
-      if (store.setUserName) {
-        store.setUserName('')
-      }
-    } catch (e) {
-      console.warn('[Viventiva] Could not clear username:', e)
-    }
-
-    // Clear all Supabase auth keys
-    const keysToRemove = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (
-        key &&
-        (key.includes('sb-') || key.includes('supabase.auth') || key.includes('viventiva-auth'))
-      ) {
-        keysToRemove.push(key)
-      }
-    }
-    keysToRemove.forEach(key => {
-      if (isDev) console.log('[Viventiva] Clearing key:', key)
-      localStorage.removeItem(key)
-    })
-
-    // Call auth.signOut() but don't wait for it - redirect immediately
-    auth
-      .signOut()
-      .then(() => {
-        if (isDev) console.log('[Viventiva] Supabase signOut completed')
-      })
-      .catch(error => {
-        console.error('[Viventiva] Supabase signOut error (ignored):', error)
-      })
-
-    // Redirect immediately (use setTimeout to ensure it happens even if there are pending promises)
-    if (isDev) console.log('[Viventiva] Redirecting to home...')
-    setTimeout(() => {
-      window.location.href = '/'
-    }, 100)
-  }
+  const { handleLogout } = useLogout()
 
   return (
     <>
@@ -355,22 +136,23 @@ const TabNavigation = ({
               >
                 {showWeeks ? 'Weeks' : 'Months'}
               </span>
-              <Switch
-                checked={showWeeks}
-                onChange={setShowWeeks}
+              <button
+                role="switch"
+                aria-checked={showWeeks}
+                onClick={() => setShowWeeks(!showWeeks)}
                 className={`${
                   showWeeks
                     ? `bg-gradient-to-r ${theme.primary}`
                     : darkMode
                       ? 'bg-slate-700/50'
                       : 'bg-slate-200'
-                } relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none shadow-lg`}
+                } relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg`}
               >
                 <span className="sr-only">Toggle weeks/months</span>
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${showWeeks ? 'translate-x-5' : 'translate-x-0'}`}
                 />
-              </Switch>
+              </button>
             </div>
             <button
               aria-label="Toggle dark mode"

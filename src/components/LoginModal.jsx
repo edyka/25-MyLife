@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { getTheme } from '../utils/themeConfig'
 import { useUIStore } from '../stores/useUIStore'
@@ -31,6 +31,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
 
   // Track component mounted state for async cleanup
   const mountedRef = useRef(true)
+  const modalRef = useRef(null)
 
   // Update isSignUp when initialMode changes
   useEffect(() => {
@@ -50,6 +51,39 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       setResendSent(false)
     }
   }, [isOpen, initialMode, initialData])
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = e => {
+      if (e.key === 'Escape' && !loading) {
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, loading, onClose])
+
+  // Focus trap: focus the modal container when opened
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      // Focus the first focusable element inside the modal
+      const focusable = modalRef.current.querySelector(
+        'button, input, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable) focusable.focus()
+    }
+  }, [isOpen, showEmailForm, isForgotPassword])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
   // Reset mounted state when component mounts/unmounts
   useEffect(() => {
@@ -280,6 +314,10 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
           transition={{ type: 'spring', duration: 0.3 }}
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={isForgotPassword ? 'Reset Password' : isSignUp ? 'Create Account' : 'Log In'}
           onClick={e => e.stopPropagation()}
           className={`w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl border ${
             darkMode ? 'bg-slate-900/90 border-slate-700/50' : 'bg-white/90 border-white/50'
@@ -791,4 +829,4 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
   )
 }
 
-export default LoginModal
+export default memo(LoginModal)

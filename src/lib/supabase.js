@@ -270,22 +270,23 @@ export const auth = {
     return { error }
   },
 
-  // Get current user - use getSession for reliable session restoration on refresh
+  // Get current user - uses getUser() which validates the JWT against the server
+  // This is more secure than getSession() which only reads from local storage
   getCurrentUser: async () => {
     if (!supabaseClient) return { user: null, error: null } // No client = no user
 
     try {
       const {
-        data: { session },
+        data: { user },
         error,
-      } = await supabaseClient.auth.getSession()
+      } = await supabaseClient.auth.getUser()
 
       // Check for Brave Shields blocking (406 errors)
       if (error && (error.status === 406 || error.message?.includes('406'))) {
         console.warn('[Viventiva] Brave Shields may be blocking Supabase requests (406 error)')
       }
 
-      return { user: session?.user || null, error }
+      return { user: user || null, error }
     } catch (error) {
       // Handle network errors that might indicate Brave Shields blocking
       if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
@@ -457,7 +458,9 @@ export const database = {
 
   // Get milestones
   getMilestones: async userId => {
-    const { data, error } = await supabase
+    if (!supabaseClient) return { data: null, error: null }
+
+    const { data, error } = await supabaseClient
       .from('user_milestones')
       .select('*')
       .eq('user_id', userId)
@@ -467,6 +470,8 @@ export const database = {
 
   // Save goals with retry logic
   saveGoals: async (userId, goals) => {
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
     const { retryWithBackoff } = await import('../utils/retry')
 
     try {
@@ -501,7 +506,9 @@ export const database = {
 
   // Get goals
   getGoals: async userId => {
-    const { data, error } = await supabase
+    if (!supabaseClient) return { data: null, error: null }
+
+    const { data, error } = await supabaseClient
       .from('user_goals')
       .select('*')
       .eq('user_id', userId)
@@ -511,6 +518,8 @@ export const database = {
 
   // Save selections (selectedWeeks, pinnedWeeks) with retry logic
   saveSelections: async (userId, selections) => {
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
     const { retryWithBackoff } = await import('../utils/retry')
 
     try {
@@ -545,7 +554,9 @@ export const database = {
 
   // Get selections
   getSelections: async userId => {
-    const { data, error } = await supabase
+    if (!supabaseClient) return { data: null, error: null }
+
+    const { data, error } = await supabaseClient
       .from('user_selections')
       .select('*')
       .eq('user_id', userId)
@@ -555,6 +566,13 @@ export const database = {
 
   // Delete all user data (GDPR compliance)
   deleteAllUserData: async userId => {
+    if (!supabaseClient)
+      return {
+        success: false,
+        errors: [{ table: 'all', error: new Error('Supabase not available') }],
+        partial: false,
+      }
+
     // Execute all deletions in parallel using Promise.allSettled to ensure all are attempted
     const deletions = await Promise.allSettled([
       supabaseClient.from('user_profiles').delete().eq('user_id', userId),
@@ -585,6 +603,16 @@ export const database = {
 
   // Export all user data (GDPR compliance)
   exportAllUserData: async userId => {
+    if (!supabaseClient)
+      return {
+        profile: null,
+        milestones: null,
+        goals: null,
+        selections: null,
+        settings: null,
+        exportDate: new Date().toISOString(),
+      }
+
     // Execute all queries in parallel for better performance
     const [profile, milestones, goals, selections, settings] = await Promise.all([
       supabaseClient.from('user_profiles').select('*').eq('user_id', userId).single(),
@@ -606,6 +634,8 @@ export const database = {
 
   // Save user settings (dark mode, theme preset, etc.) with retry logic
   saveUserSettings: async (userId, settings) => {
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
     const { retryWithBackoff } = await import('../utils/retry')
 
     try {
@@ -640,7 +670,9 @@ export const database = {
 
   // Get user settings
   getUserSettings: async userId => {
-    const { data, error } = await supabase
+    if (!supabaseClient) return { data: null, error: null }
+
+    const { data, error } = await supabaseClient
       .from('user_settings')
       .select('*')
       .eq('user_id', userId)
@@ -650,7 +682,9 @@ export const database = {
 
   // Waitlist functions
   saveWaitlistSignup: async (email, name, interest) => {
-    const { data, error } = await supabase
+    if (!supabaseClient) return { data: null, error: new Error('Supabase not available') }
+
+    const { data, error } = await supabaseClient
       .from('waitlist')
       .insert({
         email: email.toLowerCase().trim(),
@@ -665,7 +699,9 @@ export const database = {
   },
 
   getWaitlistCount: async () => {
-    const { count, error } = await supabase
+    if (!supabaseClient) return null
+
+    const { count, error } = await supabaseClient
       .from('waitlist')
       .select('*', { count: 'exact', head: true })
 

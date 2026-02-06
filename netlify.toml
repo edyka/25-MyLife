@@ -39,7 +39,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     # Content Security Policy - adjust based on your needs
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://plausible.io https://www.google-analytics.com; frame-ancestors 'none';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io https://www.googletagmanager.com https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://plausible.io https://www.google-analytics.com https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; frame-ancestors 'none';"
 
 # Cache static assets
 [[headers]]
@@ -66,9 +66,8 @@
     Cache-Control = "public, max-age=3600"
     Content-Type = "text/plain; charset=utf-8"
 
-# Preload critical resources hint
+# Cache control for index.html - no preload hints since Vite hashes filenames
 [[headers]]
   for = "/index.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
-    Link = "</assets/index.js>; rel=preload; as=script, </assets/index.css>; rel=preload; as=style"

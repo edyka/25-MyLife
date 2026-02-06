@@ -1,12 +1,14 @@
 import { useCallback } from 'react'
 import { useMilestoneStore, useSelectionStore, useUIStore } from '../stores'
+import { useShallow } from 'zustand/shallow'
 
 /**
  * Modern week interactions hook using Zustand stores
  * Replaces the old useWeekInteractions with store-based state management
  */
 export const useWeekInteractionsZustand = () => {
-  const { setMilestones, getAllCategories } = useMilestoneStore()
+  const setMilestones = useMilestoneStore(state => state.setMilestones)
+  const getAllCategories = useMilestoneStore(state => state.getAllCategories)
   const {
     selectedColor,
     setSelectedWeek,
@@ -27,8 +29,30 @@ export const useWeekInteractionsZustand = () => {
     selectRectangularArea,
     toggleWeekSelection,
     getWeeksInSelection,
-  } = useSelectionStore()
-  const { isMobile } = useUIStore()
+  } = useSelectionStore(
+    useShallow(state => ({
+      selectedColor: state.selectedColor,
+      setSelectedWeek: state.setSelectedWeek,
+      isDragging: state.isDragging,
+      setIsDragging: state.setIsDragging,
+      draggedWeeks: state.draggedWeeks,
+      setDraggedWeeks: state.setDraggedWeeks,
+      setDragStartWeek: state.setDragStartWeek,
+      selectedWeeks: state.selectedWeeks,
+      pinnedWeeks: state.pinnedWeeks,
+      selectionMode: state.selectionMode,
+      rangeStart: state.rangeStart,
+      isInRangeMode: state.isInRangeMode,
+      startRangeSelection: state.startRangeSelection,
+      completeRangeSelection: state.completeRangeSelection,
+      resetRangeSelection: state.resetRangeSelection,
+      clearPinnedWeeks: state.clearPinnedWeeks,
+      selectRectangularArea: state.selectRectangularArea,
+      toggleWeekSelection: state.toggleWeekSelection,
+      getWeeksInSelection: state.getWeeksInSelection,
+    }))
+  )
+  const isMobile = useUIStore(state => state.isMobile)
 
   const allCategories = getAllCategories()
 

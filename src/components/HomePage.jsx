@@ -11,66 +11,66 @@ import WaitlistPage from './WaitlistPage'
 import { WAITLIST_MODE } from '../utils/constants'
 import { prefersReducedMotion } from '../utils/accessibility'
 
-const HomePage = ({ darkMode, onLogin, isCheckingAuth = false }) => {
+// Static theme class map - defined outside component to avoid re-creation on each render
+const themeClasses = {
+  emerald: {
+    textLight: 'text-emerald-400',
+    textDark: 'text-emerald-600',
+    gradient: 'from-emerald-400 to-teal-500',
+    buttonBg:
+      'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700',
+    buttonShadow: 'shadow-emerald-500/30 hover:shadow-emerald-500/50',
+    bgLight: 'bg-emerald-200',
+    bgDark: 'bg-emerald-900',
+    iconColor: 'text-emerald-500',
+    borderHover: 'group-hover:border-emerald-500/50',
+    glowShadow: 'group-hover:shadow-emerald-500/20',
+  },
+  ocean: {
+    textLight: 'text-blue-400',
+    textDark: 'text-blue-600',
+    gradient: 'from-blue-400 to-cyan-500',
+    buttonBg: 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700',
+    buttonShadow: 'shadow-blue-500/30 hover:shadow-blue-500/50',
+    bgLight: 'bg-blue-200',
+    bgDark: 'bg-blue-900',
+    iconColor: 'text-blue-500',
+    borderHover: 'group-hover:border-blue-500/50',
+    glowShadow: 'group-hover:shadow-blue-500/20',
+  },
+  sunset: {
+    textLight: 'text-orange-400',
+    textDark: 'text-orange-600',
+    gradient: 'from-orange-400 to-red-500',
+    buttonBg: 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700',
+    buttonShadow: 'shadow-orange-500/30 hover:shadow-orange-500/50',
+    bgLight: 'bg-orange-200',
+    bgDark: 'bg-orange-900',
+    iconColor: 'text-orange-500',
+    borderHover: 'group-hover:border-orange-500/50',
+    glowShadow: 'group-hover:shadow-orange-500/20',
+  },
+  purple: {
+    textLight: 'text-purple-400',
+    textDark: 'text-purple-600',
+    gradient: 'from-purple-400 to-violet-500',
+    buttonBg:
+      'bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700',
+    buttonShadow: 'shadow-purple-500/30 hover:shadow-purple-500/50',
+    bgLight: 'bg-purple-200',
+    bgDark: 'bg-purple-900',
+    iconColor: 'text-purple-500',
+    borderHover: 'group-hover:border-purple-500/50',
+    glowShadow: 'group-hover:shadow-purple-500/20',
+  },
+}
+
+const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }) => {
   const themePreset = useUIStore(state => state.themePreset)
   const setDarkMode = useUIStore(state => state.setDarkMode)
   const setCurrentPage = useUIStore(state => state.setCurrentPage)
   const theme = getTheme(themePreset)
 
-  // Map presets to full Tailwind classes (dynamic class names don't work with Tailwind purge)
-  const themeClasses = {
-    emerald: {
-      textLight: 'text-emerald-400',
-      textDark: 'text-emerald-600',
-      gradient: 'from-emerald-400 to-teal-500',
-      buttonBg:
-        'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700',
-      buttonShadow: 'shadow-emerald-500/30 hover:shadow-emerald-500/50',
-      bgLight: 'bg-emerald-200',
-      bgDark: 'bg-emerald-900',
-      iconColor: 'text-emerald-500',
-      borderHover: 'group-hover:border-emerald-500/50',
-      glowShadow: 'group-hover:shadow-emerald-500/20',
-    },
-    ocean: {
-      textLight: 'text-blue-400',
-      textDark: 'text-blue-600',
-      gradient: 'from-blue-400 to-cyan-500',
-      buttonBg: 'bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700',
-      buttonShadow: 'shadow-blue-500/30 hover:shadow-blue-500/50',
-      bgLight: 'bg-blue-200',
-      bgDark: 'bg-blue-900',
-      iconColor: 'text-blue-500',
-      borderHover: 'group-hover:border-blue-500/50',
-      glowShadow: 'group-hover:shadow-blue-500/20',
-    },
-    sunset: {
-      textLight: 'text-orange-400',
-      textDark: 'text-orange-600',
-      gradient: 'from-orange-400 to-red-500',
-      buttonBg:
-        'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700',
-      buttonShadow: 'shadow-orange-500/30 hover:shadow-orange-500/50',
-      bgLight: 'bg-orange-200',
-      bgDark: 'bg-orange-900',
-      iconColor: 'text-orange-500',
-      borderHover: 'group-hover:border-orange-500/50',
-      glowShadow: 'group-hover:shadow-orange-500/20',
-    },
-    purple: {
-      textLight: 'text-purple-400',
-      textDark: 'text-purple-600',
-      gradient: 'from-purple-400 to-violet-500',
-      buttonBg:
-        'bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700',
-      buttonShadow: 'shadow-purple-500/30 hover:shadow-purple-500/50',
-      bgLight: 'bg-purple-200',
-      bgDark: 'bg-purple-900',
-      iconColor: 'text-purple-500',
-      borderHover: 'group-hover:border-purple-500/50',
-      glowShadow: 'group-hover:shadow-purple-500/20',
-    },
-  }
   const activeTheme = themeClasses[themePreset] || themeClasses.sunset
 
   const [showLoginModal, setShowLoginModal] = useState(false)

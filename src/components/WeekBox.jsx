@@ -1,6 +1,5 @@
 import { memo, useMemo, useRef } from 'react'
 import { getYearFromWeek } from '../utils/dateUtils'
-import { useRenderPerformance } from '../utils/performanceMonitor'
 
 // Map Tailwind bg classes to hex colors for inline styles
 const colorMap = {
@@ -49,11 +48,7 @@ const WeekBox = memo(
     darkMode = false,
     setTooltip,
   }) => {
-    // Performance monitoring (only in development for performance-critical component)
-    const isDev = process.env.NODE_ENV === 'development'
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    if (isDev) useRenderPerformance(`WeekBox-${weekNum}`)
+    // Performance monitoring removed - conditional hook violated Rules of Hooks
 
     // Memoize expensive calculations
     const weekState = useMemo(() => {

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import React, { memo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Cake, Edit2, Check, X } from 'lucide-react'
 import { getTheme } from '../utils/themeConfig'
@@ -7,7 +7,7 @@ import { usePremiumStore } from '../stores/usePremiumStore'
 import { useProfileEditor } from '../hooks/useProfileEditor'
 import StatsSection from './StatsSection'
 import PremiumBadge from './PremiumBadge'
-import UpgradeModal from './UpgradeModal'
+const UpgradeModal = React.lazy(() => import('./UpgradeModal'))
 
 const Dashboard = ({ stats, darkMode }) => {
   const themePreset = useUIStore(state => state.themePreset)
