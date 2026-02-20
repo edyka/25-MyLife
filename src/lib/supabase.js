@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
+const isDev = process.env.NODE_ENV === 'development'
+
 /**
  * Error classification system for better error handling
  */
@@ -373,7 +375,7 @@ export const database = {
         updates.engagement_stats = profileData.engagementStats
       }
 
-      console.log('[Viventiva] Saving user profile:', { userId, profileData: updates })
+      if (isDev) console.log('[Viventiva] Saving user profile:', { userId })
 
       const { data, error } = await supabaseClient.from('user_profiles').upsert(updates, {
         onConflict: 'user_id',
@@ -384,7 +386,7 @@ export const database = {
         return { data: null, error }
       }
 
-      console.log('[Viventiva] User profile saved successfully')
+      if (isDev) console.log('[Viventiva] User profile saved successfully')
       return { data, error: null }
     } catch (err) {
       console.error('[Viventiva] saveUserProfile exception:', err)

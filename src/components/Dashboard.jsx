@@ -1,6 +1,6 @@
 import React, { memo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Cake, Edit2, Check, X } from 'lucide-react'
+import { Edit2, Check, X } from 'lucide-react'
 import { getTheme } from '../utils/themeConfig'
 import { useUIStore } from '../stores/useUIStore'
 import { usePremiumStore } from '../stores/usePremiumStore'
@@ -52,239 +52,150 @@ const Dashboard = ({ stats, darkMode }) => {
     'December',
   ]
 
-  return (
-    <div className="space-y-6 sm:space-y-12 max-w-7xl mx-auto px-2 sm:px-6 py-4 sm:py-8">
-      {/* Welcome Header - Compact on mobile */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-6 sm:mb-16"
-      >
-        <h1
-          className={`text-2xl sm:text-4xl md:text-5xl font-black mb-2 sm:mb-4 bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}
-        >
-          Welcome{userName ? `, ${userName}` : ' to Your Life'}
-        </h1>
-        <p className={`text-sm sm:text-lg ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-          Track your journey, celebrate your moments
-        </p>
-      </motion.div>
+  const inputClasses = `w-full px-3 py-2 rounded-lg ${
+    darkMode
+      ? 'bg-slate-700 text-white border-slate-600'
+      : 'bg-white text-slate-900 border-slate-300'
+  } border focus:outline-none focus:ring-2 focus:ring-blue-500`
 
-      {/* Birth Information Card - Hidden on mobile, simplified */}
+  return (
+    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto px-2 sm:px-6 py-3 sm:py-5">
+      {/* Compact header with inline life info */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className={`hidden sm:block rounded-2xl p-4 sm:p-6 md:p-8 ${
-          darkMode ? 'premium-card-dark' : 'premium-card'
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`rounded-2xl p-4 sm:p-5 ${
+          darkMode
+            ? 'bg-white/[0.04] border border-white/[0.06]'
+            : 'bg-black/[0.02] border border-black/[0.04]'
         }`}
       >
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div
-              className={`p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br ${theme.primary} shadow-lg`}
-            >
-              <Cake className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-            </div>
-            <div>
-              <h2
-                className={`text-lg sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}
+        {!isEditing ? (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
+              <h1
+                className={`text-xl sm:text-2xl font-bold tracking-tight ${
+                  darkMode ? 'text-white' : 'text-slate-900'
+                }`}
               >
-                Life Information
-              </h2>
-              <p className={`text-xs sm:text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                Your life's starting point
-              </p>
+                {userName ? `${userName}'s Life` : 'Your Life'}
+              </h1>
+              <div
+                className={`flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs sm:text-sm ${
+                  darkMode ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
+                <span>
+                  Born {monthNames[birthMonth - 1]} {birthDay}, {birthYear}
+                </span>
+                <span
+                  className={`hidden sm:inline ${darkMode ? 'text-slate-700' : 'text-slate-300'}`}
+                >
+                  |
+                </span>
+                <span>{lifeExpectancy} year expectancy</span>
+              </div>
             </div>
-          </div>
-
-          {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
                 darkMode
-                  ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                  : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                  ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-black/[0.04]'
               }`}
             >
-              <Edit2 className="w-4 h-4" />
+              <Edit2 className="w-3 h-3" />
               Edit
             </button>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={saveProfile}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-green-500 hover:bg-green-600 text-white transition-all"
-              >
-                <Check className="w-4 h-4" />
-                Save
-              </button>
-              <button
-                onClick={cancelEdit}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  darkMode
-                    ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                    : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                }`}
-              >
-                <X className="w-4 h-4" />
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-
-        {!isEditing ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Name
-              </label>
-              <div
-                className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}
-              >
-                <p
-                  className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}
-                >
-                  {userName || 'Not set'}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Date of Birth
-              </label>
-              <div
-                className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}
-              >
-                <p
-                  className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}
-                >
-                  {monthNames[birthMonth - 1]} {birthDay}, {birthYear}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Life Expectancy
-              </label>
-              <div
-                className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}
-              >
-                <p
-                  className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}
-                >
-                  {lifeExpectancy} years
-                </p>
-              </div>
-            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label
-                htmlFor="edit-name"
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Name
-              </label>
-              <input
-                id="edit-name"
-                type="text"
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                placeholder="Your Name"
-                className={`w-full px-4 py-3 rounded-lg ${
-                  darkMode
-                    ? 'bg-slate-700 text-white border-slate-600'
-                    : 'bg-white text-slate-900 border-slate-300'
-                } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              />
+          /* Edit mode */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                Edit Profile
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveProfile}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-500 hover:bg-green-600 text-white transition-all"
+                >
+                  <Check className="w-3 h-3" />
+                  Save
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    darkMode
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                      : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                  }`}
+                >
+                  <X className="w-3 h-3" />
+                  Cancel
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Date of Birth
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label
-                    htmlFor="edit-day"
-                    className={`block text-xs mb-1 ${
-                      darkMode ? 'text-slate-400' : 'text-slate-600'
-                    }`}
-                  >
-                    Day
-                  </label>
-                  <input
-                    id="edit-day"
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={editDay}
-                    onChange={e => {
-                      const val = e.target.value
-                      setEditDay(val === '' ? '' : parseInt(val))
-                    }}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      darkMode
-                        ? 'bg-slate-700 text-white border-slate-600'
-                        : 'bg-white text-slate-900 border-slate-300'
-                    } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="edit-month"
-                    className={`block text-xs mb-1 ${
-                      darkMode ? 'text-slate-400' : 'text-slate-600'
-                    }`}
-                  >
-                    Month
-                  </label>
-                  <select
-                    id="edit-month"
-                    value={editMonth}
-                    onChange={e => setEditMonth(parseInt(e.target.value))}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      darkMode
-                        ? 'bg-slate-700 text-white border-slate-600'
-                        : 'bg-white text-slate-900 border-slate-300'
-                    } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  >
-                    {monthNames.map((month, index) => (
-                      <option key={month} value={index + 1}>
-                        {month}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label
+                  htmlFor="edit-name"
+                  className={`block text-xs font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
+                >
+                  Name
+                </label>
+                <input
+                  id="edit-name"
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="Your Name"
+                  className={inputClasses}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-day"
+                  className={`block text-xs font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
+                >
+                  Day
+                </label>
+                <input
+                  id="edit-day"
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={editDay}
+                  onChange={e => setEditDay(e.target.value === '' ? '' : parseInt(e.target.value))}
+                  className={inputClasses}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-month"
+                  className={`block text-xs font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
+                >
+                  Month
+                </label>
+                <select
+                  id="edit-month"
+                  value={editMonth}
+                  onChange={e => setEditMonth(parseInt(e.target.value))}
+                  className={inputClasses}
+                >
+                  {monthNames.map((month, index) => (
+                    <option key={month} value={index + 1}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label
                     htmlFor="edit-year"
-                    className={`block text-xs mb-1 ${
-                      darkMode ? 'text-slate-400' : 'text-slate-600'
-                    }`}
+                    className={`block text-xs font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
                   >
                     Year
                   </label>
@@ -294,88 +205,69 @@ const Dashboard = ({ stats, darkMode }) => {
                     min="1900"
                     max={new Date().getFullYear()}
                     value={editYear}
+                    onChange={e =>
+                      setEditYear(e.target.value === '' ? '' : parseInt(e.target.value))
+                    }
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-life-expectancy"
+                    className={`block text-xs font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
+                  >
+                    Expectancy
+                  </label>
+                  <input
+                    id="edit-life-expectancy"
+                    type="number"
+                    min="1"
+                    max="120"
+                    value={editExpectancy}
                     onChange={e => {
                       const val = e.target.value
-                      setEditYear(val === '' ? '' : parseInt(val))
+                      setEditExpectancy(val === '' ? '' : parseInt(val) || '')
                     }}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      darkMode
-                        ? 'bg-slate-700 text-white border-slate-600'
-                        : 'bg-white text-slate-900 border-slate-300'
-                    } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    className={inputClasses}
                   />
                 </div>
               </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="edit-life-expectancy"
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-700'
-                }`}
-              >
-                Life Expectancy (years)
-              </label>
-              <input
-                id="edit-life-expectancy"
-                type="number"
-                min="1"
-                max="120"
-                value={editExpectancy}
-                onChange={e => {
-                  const val = e.target.value
-                  if (val === '') {
-                    setEditExpectancy('')
-                  } else {
-                    setEditExpectancy(parseInt(val) || '')
-                  }
-                }}
-                className={`w-full px-4 py-3 rounded-lg ${
-                  darkMode
-                    ? 'bg-slate-700 text-white border-slate-600'
-                    : 'bg-white text-slate-900 border-slate-300'
-                } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              />
             </div>
           </div>
         )}
       </motion.div>
 
-      {/* Stats Section - Compact on mobile */}
+      {/* Stats Section */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="relative mt-8 sm:mt-16"
+        transition={{ delay: 0.15 }}
+        className="relative"
       >
         <StatsSection stats={stats} darkMode={darkMode} />
 
-        {/* Premium Overlay for Free Users - Compact on mobile */}
+        {/* Premium Overlay */}
         {!hasAdvancedStats && (
           <div className="absolute inset-0 backdrop-blur-sm bg-black/20 rounded-2xl flex items-center justify-center">
             <div
-              className={`text-center p-4 sm:p-8 rounded-xl sm:rounded-2xl ${darkMode ? 'bg-slate-900/90' : 'bg-white/90'} shadow-2xl max-w-sm sm:max-w-md mx-4`}
+              className={`text-center p-4 sm:p-6 rounded-2xl ${darkMode ? 'bg-slate-900/90' : 'bg-white/90'} shadow-2xl max-w-sm mx-4`}
             >
-              <div className="mb-2 sm:mb-4">
+              <div className="mb-3">
                 <PremiumBadge size="md" onClick={() => setShowUpgradeModal(true)} />
               </div>
               <h3
-                className={`text-lg sm:text-2xl font-bold mb-1 sm:mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}
+                className={`text-lg font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}
               >
                 Advanced Analytics
               </h3>
-              <p
-                className={`text-xs sm:text-sm mb-3 sm:mb-6 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
-              >
-                Unlock detailed insights, charts, and trend analysis to understand your life's
-                patterns.
+              <p className={`text-xs mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Unlock detailed insights and trend analysis.
               </p>
               <motion.button
                 onClick={() => setShowUpgradeModal(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl transition-all`}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl transition-all`}
               >
                 Upgrade to Premium
               </motion.button>

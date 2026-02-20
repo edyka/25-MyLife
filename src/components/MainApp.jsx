@@ -390,15 +390,19 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = fal
       {/* Subtle loading overlay - shows while data loads in background */}
       {isLoading && (
         <div className="fixed inset-0 z-[200] pointer-events-none">
-          <div className={`absolute top-0 left-0 right-0 h-1 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+          <div
+            className={`absolute top-0 left-0 right-0 h-1 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}
+          >
             <div
               className={`h-full bg-gradient-to-r ${theme.primary} animate-pulse`}
               style={{ width: '60%', animation: 'loading-bar 1.5s ease-in-out infinite' }}
             />
           </div>
-          <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-medium ${
-            darkMode ? 'bg-slate-800/90 text-slate-300' : 'bg-white/90 text-slate-600'
-          } shadow-lg backdrop-blur-sm`}>
+          <div
+            className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-medium ${
+              darkMode ? 'bg-slate-800/90 text-slate-300' : 'bg-white/90 text-slate-600'
+            } shadow-lg backdrop-blur-sm`}
+          >
             Loading your data...
           </div>
         </div>
@@ -457,14 +461,18 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = fal
         <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-4 pt-2 sm:pt-4 pb-20 md:pb-4">
           {/* Tabbed Navigation Content */}
           {currentTab === 'home' && (
-            <div className="space-y-16">
+            <div className="space-y-4 sm:space-y-6">
               <Dashboard stats={stats} darkMode={darkMode} />
 
               {/* Life Grid Section */}
-              <div id="life-grid" className={`relative overflow-visible space-y-6`}>
-                {/* Modern Mood Palette - Sticky on mobile only */}
+              <div id="life-grid" className="relative overflow-visible space-y-3 sm:space-y-4">
+                {/* Mood Palette */}
                 <div
-                  className={`${darkMode ? 'bg-slate-800/95 border-slate-700' : 'bg-white/95 border-slate-200'} border rounded-2xl p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl md:relative sticky top-0 z-40 mb-4 sm:mb-6`}
+                  className={`${
+                    darkMode
+                      ? 'bg-white/[0.04] border border-white/[0.06]'
+                      : 'bg-black/[0.02] border border-black/[0.04]'
+                  } rounded-2xl p-3 sm:p-5 mx-auto w-full max-w-5xl sm:max-w-6xl md:relative sticky top-0 z-40 backdrop-blur-xl`}
                 >
                   <ModernMoodPalette
                     selectedColor={selectedColor}
@@ -482,36 +490,42 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = fal
                 </div>
                 <div
                   className={`${
-                    darkMode ? 'premium-card-dark' : 'premium-card'
-                  } p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-5xl sm:max-w-6xl`}
+                    darkMode
+                      ? 'bg-white/[0.04] border border-white/[0.06]'
+                      : 'bg-black/[0.02] border border-black/[0.04]'
+                  } rounded-2xl p-3 sm:p-5 lg:p-6 mx-auto w-full max-w-5xl sm:max-w-6xl`}
                 >
-                  {/* Weeks/Months Toggle - Mobile only (desktop has it in nav) */}
-                  <div className="md:hidden flex justify-center mb-4">
+                  {/* Weeks/Months Toggle - Mobile only */}
+                  <div className="md:hidden flex justify-center mb-3">
                     <div
-                      className={`inline-flex items-center gap-1 p-1 rounded-xl ${
-                        darkMode ? 'bg-slate-700/50' : 'bg-slate-200/50'
+                      className={`inline-flex items-center gap-0.5 p-0.5 rounded-lg ${
+                        darkMode ? 'bg-white/[0.06]' : 'bg-black/[0.04]'
                       }`}
                     >
                       <button
                         onClick={() => setShowWeeks(true)}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                           showWeeks
-                            ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
+                            ? darkMode
+                              ? 'bg-white/[0.1] text-white'
+                              : 'bg-white text-slate-900 shadow-sm'
                             : darkMode
-                              ? 'text-slate-400 hover:text-white'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'text-slate-500 hover:text-slate-300'
+                              : 'text-slate-500 hover:text-slate-700'
                         }`}
                       >
                         Weeks
                       </button>
                       <button
                         onClick={() => setShowWeeks(false)}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                           !showWeeks
-                            ? `bg-gradient-to-r ${theme.primary} text-white shadow-md`
+                            ? darkMode
+                              ? 'bg-white/[0.1] text-white'
+                              : 'bg-white text-slate-900 shadow-sm'
                             : darkMode
-                              ? 'text-slate-400 hover:text-white'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'text-slate-500 hover:text-slate-300'
+                              : 'text-slate-500 hover:text-slate-700'
                         }`}
                       >
                         Months
@@ -546,74 +560,37 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = fal
 
                 {/* Share Section */}
                 <div
-                  className={`${darkMode ? 'premium-card-dark' : 'premium-card'} p-4 sm:p-6 mx-auto w-full max-w-5xl sm:max-w-6xl`}
+                  className={`${
+                    darkMode
+                      ? 'bg-white/[0.04] border border-white/[0.06]'
+                      : 'bg-black/[0.02] border border-black/[0.04]'
+                  } rounded-2xl p-3 sm:p-4 mx-auto w-full max-w-5xl sm:max-w-6xl`}
                 >
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                      <h3
-                        className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-800'}`}
-                      >
-                        Share Your Life Grid
-                      </h3>
-                      <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                        Create a beautiful poster and share on social media
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`text-xs sm:text-sm font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}
+                    >
+                      Share your life grid
+                    </span>
+                    <div className="flex gap-2">
                       <button
                         onClick={handleShare}
-                        className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 ${
                           hasShareFeature
-                            ? `bg-gradient-to-r ${theme.primary} text-white hover:opacity-90 hover:scale-105`
+                            ? darkMode
+                              ? 'bg-white/[0.08] text-white hover:bg-white/[0.12]'
+                              : 'bg-black/[0.06] text-slate-700 hover:bg-black/[0.1]'
                             : darkMode
-                              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                              ? 'bg-white/[0.04] text-slate-500 hover:bg-white/[0.08]'
+                              : 'bg-black/[0.03] text-slate-500 hover:bg-black/[0.06]'
                         }`}
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                          />
-                        </svg>
                         Share
                         {!hasShareFeature && (
-                          <span className="ml-1 text-xs px-1.5 py-0.5 bg-amber-500 text-white rounded">
+                          <span className="text-[10px] px-1 py-0.5 bg-amber-500/80 text-white rounded">
                             PRO
                           </span>
                         )}
-                      </button>
-                      <button
-                        disabled
-                        className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 opacity-50 cursor-not-allowed ${
-                          darkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'
-                        }`}
-                        title="Coming soon"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                          />
-                        </svg>
-                        Order Poster
-                        <span className="ml-1 text-xs px-1.5 py-0.5 bg-slate-500 text-white rounded">
-                          SOON
-                        </span>
                       </button>
                     </div>
                   </div>

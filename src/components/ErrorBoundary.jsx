@@ -94,11 +94,7 @@ class ErrorBoundary extends React.Component {
           >
             {/* Error Icon */}
             <div className="flex justify-center mb-6">
-              <div
-                className={`p-4 rounded-full ${
-                  darkMode ? `bg-${themePreset}-500/20` : `bg-${themePreset}-100`
-                }`}
-              >
+              <div className={`p-4 rounded-full ${darkMode ? theme.accentBgDark : theme.accentBg}`}>
                 <AlertTriangle
                   className={`w-8 h-8 ${
                     darkMode

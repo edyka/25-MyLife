@@ -1,29 +1,29 @@
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
-import { useUIStore } from '../stores/useUIStore';
-import { getTheme } from '../utils/themeConfig';
+import { useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react'
+import { useUIStore } from '../stores/useUIStore'
+import { getTheme } from '../utils/themeConfig'
 
 const ToastNotification = ({ message, type = 'info', duration = 5000, onClose }) => {
-  const darkMode = useUIStore(state => state.darkMode);
-  const themePreset = useUIStore(state => state.themePreset);
-  const theme = getTheme(themePreset);
+  const darkMode = useUIStore(state => state.darkMode)
+  const themePreset = useUIStore(state => state.themePreset)
+  const theme = getTheme(themePreset)
 
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(() => {
-        if (onClose) onClose();
-      }, duration);
-      return () => clearTimeout(timer);
+        if (onClose) onClose()
+      }, duration)
+      return () => clearTimeout(timer)
     }
-  }, [duration, onClose]);
+  }, [duration, onClose])
 
   const icons = {
     success: CheckCircle,
     error: XCircle,
     warning: AlertTriangle,
     info: Info,
-  };
+  }
 
   const colors = {
     success: {
@@ -42,14 +42,16 @@ const ToastNotification = ({ message, type = 'info', duration = 5000, onClose })
       icon: 'text-amber-500',
     },
     info: {
-      bg: darkMode ? `bg-gradient-to-r ${theme.primary} bg-opacity-10 border-${themePreset}-500/50` : `bg-blue-50 border-blue-200`,
-      text: darkMode ? `text-${themePreset}-300` : 'text-blue-800',
-      icon: `text-${themePreset}-500`,
+      bg: darkMode
+        ? `bg-gradient-to-r ${theme.primary} bg-opacity-10 ${theme.accentBorder500_50}`
+        : `bg-blue-50 border-blue-200`,
+      text: darkMode ? theme.accentText300 : 'text-blue-800',
+      icon: theme.accent,
     },
-  };
+  }
 
-  const IconComponent = icons[type] || Info;
-  const colorScheme = colors[type] || colors.info;
+  const IconComponent = icons[type] || Info
+  const colorScheme = colors[type] || colors.info
 
   return (
     <motion.div
@@ -71,8 +73,7 @@ const ToastNotification = ({ message, type = 'info', duration = 5000, onClose })
         )}
       </div>
     </motion.div>
-  );
-};
+  )
+}
 
-export default ToastNotification;
-
+export default ToastNotification

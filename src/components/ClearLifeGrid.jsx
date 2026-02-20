@@ -76,9 +76,16 @@ const ClearLifeGrid = memo(
 
     // Calculate optimal week size to ALWAYS fit within container (no overflow)
     const getOptimalWeekSize = () => {
-      if (!isMobile) return showWeeks ? 12 : 20 // Desktop sizes
-
       const availableWidth = containerWidth - gutterWidth - 2 // 2px safety
+
+      if (!isMobile) {
+        // Desktop: auto-size to fill container width evenly
+        const desktopGap = showWeeks ? 1 : 3
+        const gapTotal = (columns - 1) * desktopGap
+        const boxSize = Math.floor((availableWidth - gapTotal) / columns)
+        return showWeeks ? Math.min(boxSize, 20) : Math.min(boxSize, 28)
+      }
+
       const gapSize = 2
       const gapTotal = (columns - 1) * gapSize
       const boxSize = Math.floor((availableWidth - gapTotal) / columns)
@@ -87,7 +94,7 @@ const ClearLifeGrid = memo(
     }
 
     const weekSize = getOptimalWeekSize()
-    const colGap = isMobile ? 2 : showWeeks ? 4 : 6 // Reduced gap on mobile
+    const colGap = isMobile ? 2 : showWeeks ? 1 : 3
 
     // For bi-weekly mode, generate pairs of weeks; for regular mode, generate individual weeks
     const rows = useMemo(() => {
@@ -124,8 +131,8 @@ const ClearLifeGrid = memo(
             {rows.map((rowItems, yearIndex) => {
               const isDecadeStart = yearIndex > 0 && yearIndex % 10 === 0
               const showLabel = yearIndex % 5 === 0
-              const rowGap = isMobile ? 2 : 4
-              const decadeGap = isMobile ? 6 : 10
+              const rowGap = isMobile ? 2 : 1
+              const decadeGap = isMobile ? 6 : 6
 
               return (
                 <div key={yearIndex}>
@@ -145,6 +152,7 @@ const ClearLifeGrid = memo(
                       flexDirection: 'row',
                       flexWrap: 'nowrap',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       marginBottom: `${rowGap}px`,
                       minHeight: `${weekSize + 2}px`,
                     }}

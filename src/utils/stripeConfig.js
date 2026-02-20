@@ -115,6 +115,18 @@ export const redirectToCheckout = async plan => {
     throw new Error('You must be logged in to subscribe')
   }
 
+  // Client-side rate limiting to prevent checkout abuse
+  const { checkRateLimit } = await import('./rateLimiter')
+  const rateLimitCheck = checkRateLimit('checkout', user.id || user.email)
+  if (!rateLimitCheck.allowed) {
+    const minutesRemaining = Math.ceil((rateLimitCheck.resetAt - Date.now()) / 60000)
+    throw new Error(
+      rateLimitCheck.reason === 'lockout'
+        ? `Too many checkout attempts. Please try again in ${minutesRemaining} minutes.`
+        : `Please wait before trying again. ${rateLimitCheck.remaining} attempts remaining.`
+    )
+  }
+
   // Create checkout session - returns { sessionId, url }
   // User identity is extracted from JWT server-side, not passed from client
   const { url } = await createCheckoutSession(product.priceId, product.mode)

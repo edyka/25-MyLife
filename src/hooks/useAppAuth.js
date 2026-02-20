@@ -408,15 +408,16 @@ export const useAppAuth = setCurrentPage => {
   const handleLogin = async () => {
     setAuthLoading(true)
     try {
-      const {
-        data: { session },
-      } = await auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
+      // Use getUser() (server-validated) not getSession() (localStorage-only)
+      const { user } = await auth.getCurrentUser()
+      if (user) {
+        setUser(user)
         setAuthLoading(false)
-        loadUserData(session.user)
+        loadUserData(user)
         // Redirect to main app after login
         if (setCurrentPage) setCurrentPage('main')
+      } else {
+        setAuthLoading(false)
       }
     } catch (error) {
       console.error('[Viventiva Auth] Error in manual login check:', error)

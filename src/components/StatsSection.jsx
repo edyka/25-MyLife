@@ -1,143 +1,124 @@
-import { motion } from "framer-motion";
-import { Clock, TrendingUp, Calendar, Heart, Target, Sparkles } from "lucide-react";
-import { getTheme } from "../utils/themeConfig";
-import { useUIStore } from "../stores/useUIStore";
-
-const StatCard = ({ icon: Icon, value, label, subtitle, gradient, darkMode }) => (
-  <motion.div
-    className={`relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-6 transition-all duration-300 hover:scale-105 ${darkMode
-        ? "premium-card-dark"
-        : "premium-card"
-      }`}
-    whileHover={{ y: -4 }}
-  >
-    <div className="flex items-start justify-between mb-2 sm:mb-4">
-      <div className={`p-1.5 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
-        <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-      </div>
-    </div>
-    <div className={`text-2xl sm:text-4xl font-black mb-1 sm:mb-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-      {value}
-    </div>
-    <div className={`text-xs sm:text-sm font-semibold mb-0.5 sm:mb-1 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-      {label}
-    </div>
-    {subtitle && (
-      <div className={`text-[10px] sm:text-xs hidden sm:block ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
-        {subtitle}
-      </div>
-    )}
-  </motion.div>
-);
+import { motion } from 'framer-motion'
+import { getTheme } from '../utils/themeConfig'
+import { useUIStore } from '../stores/useUIStore'
 
 const StatsSection = ({ stats, darkMode }) => {
-  const themePreset = useUIStore((state) => state.themePreset);
-  const theme = getTheme(themePreset);
+  const themePreset = useUIStore(state => state.themePreset)
+  const theme = getTheme(themePreset)
 
-  const statCards = [
+  const items = [
     {
-      icon: Calendar,
-      value: stats.currentWeek,
-      label: "Weeks Lived",
-      subtitle: `${stats.currentAge} years on Earth`,
-      gradient: theme.primary
+      value: stats.currentWeek.toLocaleString(),
+      label: 'Weeks Lived',
+      sub: `${stats.currentAge}y`,
     },
-    {
-      icon: Clock,
-      value: stats.remainingWeeks,
-      label: "Weeks Remaining",
-      subtitle: "Make them count",
-      gradient: theme.secondary
-    },
-    {
-      icon: TrendingUp,
-      value: `${stats.livedPercent}%`,
-      label: "Life Progress",
-      subtitle: `${100 - stats.livedPercent}% to go`,
-      gradient: theme.tertiary
-    },
-    {
-      icon: Heart,
-      value: stats.milestoneCount,
-      label: "Life Moments",
-      subtitle: "Memories captured",
-      gradient: theme.quaternary
-    }
-  ];
+    { value: stats.remainingWeeks.toLocaleString(), label: 'Remaining', sub: 'left' },
+    { value: `${stats.livedPercent}%`, label: 'Progress', sub: `of 100%` },
+    { value: stats.milestoneCount.toLocaleString(), label: 'Moments', sub: 'captured' },
+  ]
 
   return (
-    <div className="space-y-4 sm:space-y-8">
-      {/* Header - Compact on mobile */}
-      <div className="text-center">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4"
-        >
-          <Target className={`w-5 h-5 sm:w-8 sm:h-8 ${darkMode ? theme.accentDark : theme.accent}`} />
-          <h2 className={`text-xl sm:text-3xl font-black bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`}>
-            Your Life Stats
-          </h2>
-          <Sparkles className={`w-5 h-5 sm:w-8 sm:h-8 ${darkMode ? theme.accentDark : theme.accent}`} />
-        </motion.div>
-        <p className={`text-xs sm:text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-          A snapshot of your life's journey
-        </p>
-      </div>
-
-      {/* Stats Grid - 2 columns on mobile */}
+    <div className="space-y-3 sm:space-y-4">
+      {/* Stats Row - Single unified container */}
       <motion.div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, staggerChildren: 0.1 }}
+        className={`rounded-2xl overflow-hidden ${
+          darkMode
+            ? 'bg-white/[0.04] border border-white/[0.06]'
+            : 'bg-black/[0.02] border border-black/[0.04]'
+        }`}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        {statCards.map((card, index) => (
-          <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 * index }}
-          >
-            <StatCard {...card} darkMode={darkMode} />
-          </motion.div>
-        ))}
+        <div className="grid grid-cols-2 lg:grid-cols-4">
+          {items.map((item, i) => (
+            <div
+              key={item.label}
+              className={`relative p-4 sm:p-6 ${
+                i < items.length - 1
+                  ? darkMode
+                    ? 'border-b lg:border-b-0 lg:border-r border-white/[0.06]'
+                    : 'border-b lg:border-b-0 lg:border-r border-black/[0.06]'
+                  : ''
+              } ${
+                i === 1
+                  ? darkMode
+                    ? 'border-r border-white/[0.06] lg:border-r'
+                    : 'border-r border-black/[0.06] lg:border-r'
+                  : ''
+              }`}
+            >
+              <div
+                className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight tabular-nums ${
+                  darkMode ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                {item.value}
+              </div>
+              <div
+                className={`text-xs sm:text-sm font-medium mt-1 ${
+                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                }`}
+              >
+                {item.label}
+                <span className={`ml-1.5 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {item.sub}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </motion.div>
 
-      {/* Progress Bar - Compact on mobile */}
+      {/* Life Timeline - Minimal */}
       <motion.div
-        className={`p-3 sm:p-6 rounded-xl sm:rounded-2xl mt-4 sm:mt-8 ${darkMode ? "premium-card-dark" : "premium-card"
-          }`}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4 }}
+        className={`rounded-2xl p-4 sm:p-5 ${
+          darkMode
+            ? 'bg-white/[0.04] border border-white/[0.06]'
+            : 'bg-black/[0.02] border border-black/[0.04]'
+        }`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
       >
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
-          <h3 className={`text-sm sm:text-lg font-bold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+        <div className="flex items-center justify-between mb-2.5">
+          <span
+            className={`text-xs sm:text-sm font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}
+          >
             Life Timeline
-          </h3>
-          <span className={`text-xs sm:text-sm font-medium ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-            {stats.currentWeek} of {stats.totalWeeks} weeks
+          </span>
+          <span
+            className={`text-xs font-medium tabular-nums ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}
+          >
+            {stats.livedPercent}%
           </span>
         </div>
-        <div className={`relative h-2 sm:h-4 rounded-full overflow-hidden ${darkMode ? "bg-slate-700" : "bg-slate-200"
-          }`}>
+        <div
+          className={`relative h-1.5 sm:h-2 rounded-full overflow-hidden ${
+            darkMode ? 'bg-white/[0.06]' : 'bg-black/[0.06]'
+          }`}
+        >
           <motion.div
             className={`absolute inset-y-0 left-0 bg-gradient-to-r ${theme.progress} rounded-full`}
             initial={{ width: 0 }}
             animate={{ width: `${stats.livedPercent}%` }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
           />
-          <motion.div
-            className={`absolute inset-y-0 left-0 bg-gradient-to-r ${theme.progressGlow} to-transparent opacity-50 rounded-full blur-sm`}
-            initial={{ width: 0 }}
-            animate={{ width: `${stats.livedPercent}%` }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-          />
+        </div>
+        <div
+          className={`flex justify-between mt-2 text-[10px] sm:text-xs ${
+            darkMode ? 'text-slate-600' : 'text-slate-400'
+          }`}
+        >
+          <span>Born</span>
+          <span className="tabular-nums">
+            {stats.currentWeek.toLocaleString()} / {stats.totalWeeks.toLocaleString()} weeks
+          </span>
+          <span>{stats.totalWeeks / 52}y</span>
         </div>
       </motion.div>
     </div>
-  );
-};
+  )
+}
 
-export default StatsSection;
+export default StatsSection

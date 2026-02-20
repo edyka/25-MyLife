@@ -172,12 +172,11 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       }
 
       let result
-      const cleanPassword = password.trim()
       if (isSignUp) {
         // Pass first name to metadata so the Supabase trigger can pick it up
-        result = await auth.signUpWithEmail(cleanEmail, cleanPassword, firstName)
+        result = await auth.signUpWithEmail(cleanEmail, password, firstName)
       } else {
-        result = await auth.signInWithEmail(cleanEmail, cleanPassword)
+        result = await auth.signInWithEmail(cleanEmail, password)
       }
 
       if (!mountedRef.current) return
@@ -340,7 +339,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
             {/* Header */}
             <div className="text-center mb-10">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <Sparkles className={`w-6 h-6 text-${theme.primary.split('-')[1]}-500`} />
+                <Sparkles className={`w-6 h-6 ${theme.accent}`} />
                 <h2
                   className={`text-3xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}
                 >
