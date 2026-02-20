@@ -1,27 +1,33 @@
-# Ralph Fix Plan
+# Ralph Fix Plan - Performance Optimization
 
 ## High Priority
-- [ ] Set up basic project structure and build system
-- [ ] Define core data structures and types
-- [ ] Implement basic input/output handling
-- [ ] Create test framework and initial tests
+
+- [ ] Profile app startup time - identify what's causing slow initial load
+- [ ] Analyze the loader component - determine if it's necessary or just masking performance issues
+- [ ] Audit bundle size - check for large dependencies or unoptimized imports
+- [ ] Review lazy loading strategy - ensure code splitting is properly configured
+- [ ] Check for render-blocking resources (CSS, JS, fonts)
 
 ## Medium Priority
-- [ ] Add error handling and validation
-- [ ] Implement core business logic
-- [ ] Add configuration management
-- [ ] Create user documentation
+
+- [ ] Optimize images and assets (compression, lazy loading, proper formats)
+- [ ] Review and optimize API calls on startup (are they sequential when they could be parallel?)
+- [ ] Check for unnecessary re-renders in React components
+- [ ] Implement proper caching strategies
+- [ ] Review third-party scripts impact
 
 ## Low Priority
-- [ ] Performance optimization
-- [ ] Extended feature set
-- [ ] Integration with external services
-- [ ] Advanced error recovery
+
+- [ ] Add performance monitoring/metrics
+- [ ] Document performance improvements made
+- [ ] Create performance budget guidelines
+
+## Investigation Notes
+
+- Document findings about why the loader exists
+- Record baseline metrics before optimization
+- Track improvements after each change
 
 ## Completed
-- [x] Project initialization
 
-## Notes
-- Focus on MVP functionality first
-- Ensure each feature is properly tested
-- Update this file after each major milestone
+- [x] Project initialization
