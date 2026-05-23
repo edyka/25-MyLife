@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const isDev = process.env.NODE_ENV === 'development'
+const isDev = import.meta.env.DEV
 
 /**
  * Error classification system for better error handling
@@ -115,17 +115,17 @@ const requireClient = () => {
 
 // Helper functions for authentication
 export const auth = {
-  // Sign in with Google - Using popup for better privacy browser compatibility
+  // Sign in with Google
   signInWithGoogle: async () => {
     const clientError = requireClient()
     if (clientError) return { data: null, ...clientError }
 
     try {
-      // Use signInWithOAuth but handle popup manually for Brave/privacy browsers
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
+          skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
             prompt: 'select_account',
@@ -138,7 +138,15 @@ export const auth = {
         return { data: null, error }
       }
 
-      return { data, error: null }
+      if (data?.url) {
+        window.location.assign(data.url)
+        return { data, error: null }
+      }
+
+      return {
+        data: null,
+        error: new Error('OAuth provider did not return a redirect URL'),
+      }
     } catch (err) {
       console.error('[Supabase] Google OAuth exception:', err)
       return { data: null, error: err }
@@ -150,13 +158,29 @@ export const auth = {
     const clientError = requireClient()
     if (clientError) return { data: null, ...clientError }
 
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    })
-    return { data, error }
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          skipBrowserRedirect: true,
+        },
+      })
+
+      if (error) return { data: null, error }
+
+      if (data?.url) {
+        window.location.assign(data.url)
+        return { data, error: null }
+      }
+
+      return {
+        data: null,
+        error: new Error('OAuth provider did not return a redirect URL'),
+      }
+    } catch (err) {
+      return { data: null, error: err }
+    }
   },
 
   // Sign in with Apple (requires Apple Developer account)
@@ -164,13 +188,29 @@ export const auth = {
     const clientError = requireClient()
     if (clientError) return { data: null, ...clientError }
 
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
-      provider: 'apple',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    })
-    return { data, error }
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          skipBrowserRedirect: true,
+        },
+      })
+
+      if (error) return { data: null, error }
+
+      if (data?.url) {
+        window.location.assign(data.url)
+        return { data, error: null }
+      }
+
+      return {
+        data: null,
+        error: new Error('OAuth provider did not return a redirect URL'),
+      }
+    } catch (err) {
+      return { data: null, error: err }
+    }
   },
 
   // Sign in with Email
