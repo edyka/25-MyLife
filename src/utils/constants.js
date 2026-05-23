@@ -1,10 +1,24 @@
 import {
-  Smile, Frown, Zap, Heart, CloudRain, X, TreePine, Lightbulb, Flower2,
-  Sun, Moon, Meh, Coffee, Target, Sparkles, Wind
-} from 'lucide-react';
+  Smile,
+  Frown,
+  Zap,
+  Heart,
+  CloudRain,
+  X,
+  TreePine,
+  Lightbulb,
+  Flower2,
+  Sun,
+  Moon,
+  Meh,
+  Coffee,
+  Target,
+  Sparkles,
+  Wind,
+} from 'lucide-react'
 
 // Toggle this to switch between waitlist and full homepage
-export const WAITLIST_MODE = false;
+export const WAITLIST_MODE = false
 
 // Modern predefined moods for the new MoodPalette
 export const modernMoods = {
@@ -15,8 +29,8 @@ export const modernMoods = {
   peaceful: { color: 'bg-teal-500', icon: Flower2, label: 'Peaceful' },
   energetic: { color: 'bg-amber-500', icon: Zap, label: 'Energetic' },
   creative: { color: 'bg-purple-500', icon: Sparkles, label: 'Creative' },
-  grateful: { color: 'bg-orange-500', icon: Wind, label: 'Grateful' }
-};
+  grateful: { color: 'bg-orange-500', icon: Wind, label: 'Grateful' },
+}
 
 export const categories = {
   // Essential Emotional States
@@ -29,8 +43,8 @@ export const categories = {
   // Core Life Experiences
   growth: { color: 'bg-purple-500', icon: TreePine, label: 'Growth' },
   creative: { color: 'bg-orange-500', icon: Lightbulb, label: 'Creative' },
-  peaceful: { color: 'bg-teal-400', icon: Flower2, label: 'Peaceful' }
-};
+  peaceful: { color: 'bg-teal-400', icon: Flower2, label: 'Peaceful' },
+}
 
 export const getColorOptions = (customCategories = {}) => ({
   none: { color: 'bg-white border-gray-400', icon: X, label: 'Clear' },
@@ -39,22 +53,22 @@ export const getColorOptions = (customCategories = {}) => ({
   ...getEmotionalCategories(),
   ...getRelationshipCategories(),
   ...getExperienceCategories(),
-  ...customCategories
-});
+  ...customCategories,
+})
 
 export const getAllCategories = (customCategories = {}) => ({
   ...categories,
   ...getEmotionalCategories(),
   ...getRelationshipCategories(),
   ...getExperienceCategories(),
-  ...modernMoods,  // Put modernMoods last so they override any duplicates
-  ...customCategories
-});
+  ...modernMoods, // Put modernMoods last so they override any duplicates
+  ...customCategories,
+})
 
 export const colorOptions = {
   none: { color: 'bg-white border-gray-400', icon: X, label: 'Clear' },
-  ...categories
-};
+  ...categories,
+}
 
 // Organized category functions for MoodPalette
 export const getEmotionalCategories = () => ({
@@ -65,18 +79,18 @@ export const getEmotionalCategories = () => ({
   peaceful: { color: 'bg-teal-400', icon: Flower2, label: 'Peaceful' },
   excited: { color: 'bg-orange-400', icon: Sun, label: 'Excited' },
   calm: { color: 'bg-blue-300', icon: Moon, label: 'Calm' },
-  neutral: { color: 'bg-gray-400', icon: Meh, label: 'Neutral' }
-});
+  neutral: { color: 'bg-gray-400', icon: Meh, label: 'Neutral' },
+})
 
 export const getRelationshipCategories = () => ({
   love: { color: 'bg-pink-400', icon: Heart, label: 'Love' },
-  social: { color: 'bg-purple-400', icon: Coffee, label: 'Social' }
-});
+  social: { color: 'bg-purple-400', icon: Coffee, label: 'Social' },
+})
 
 export const getExperienceCategories = () => ({
   growth: { color: 'bg-purple-500', icon: TreePine, label: 'Growth' },
-  creative: { color: 'bg-orange-500', icon: Lightbulb, label: 'Creative' }
-});
+  creative: { color: 'bg-orange-500', icon: Lightbulb, label: 'Creative' },
+})
 
 // Life stages for visualization
 export const lifeStages = {
@@ -85,62 +99,62 @@ export const lifeStages = {
     start: 0,
     end: 12,
     color: 'bg-yellow-200 border-yellow-400',
-    darkColor: 'bg-yellow-800 border-yellow-600'
+    darkColor: 'bg-yellow-800 border-yellow-600',
   },
   adolescence: {
     label: 'Adolescence',
     start: 13,
     end: 17,
     color: 'bg-orange-200 border-orange-400',
-    darkColor: 'bg-orange-800 border-orange-600'
+    darkColor: 'bg-orange-800 border-orange-600',
   },
   youngAdult: {
     label: 'Young Adult',
     start: 18,
     end: 29,
     color: 'bg-green-200 border-green-400',
-    darkColor: 'bg-green-800 border-green-600'
+    darkColor: 'bg-green-800 border-green-600',
   },
   adult: {
     label: 'Adult',
     start: 30,
     end: 49,
     color: 'bg-blue-200 border-blue-400',
-    darkColor: 'bg-blue-800 border-blue-600'
+    darkColor: 'bg-blue-800 border-blue-600',
   },
   middleAge: {
     label: 'Middle Age',
     start: 50,
     end: 64,
     color: 'bg-purple-200 border-purple-400',
-    darkColor: 'bg-purple-800 border-purple-600'
+    darkColor: 'bg-purple-800 border-purple-600',
   },
   senior: {
     label: 'Senior',
     start: 65,
     end: 100,
     color: 'bg-gray-200 border-gray-400',
-    darkColor: 'bg-gray-700 border-gray-500'
-  }
-};
+    darkColor: 'bg-gray-700 border-gray-500',
+  },
+}
 
 // Calculate relationship insights from milestones
 export const calculateRelationshipInsights = (milestones = {}, birthYear, lifeExpectancy = 80) => {
-  const currentYear = new Date().getFullYear();
-  const currentAge = currentYear - birthYear;
-  const totalWeeks = lifeExpectancy * 52;
-  const currentWeek = Math.floor(currentAge * 52);
-  const remainingWeeks = totalWeeks - currentWeek;
-  const lifeProgress = Math.round((currentWeek / totalWeeks) * 100);
+  const currentYear = new Date().getFullYear()
+  const currentAge = currentYear - birthYear
+  const totalWeeks = lifeExpectancy * 52
+  const currentWeek = Math.floor(currentAge * 52)
+  const remainingWeeks = totalWeeks - currentWeek
+  const lifeProgress = Math.round((currentWeek / totalWeeks) * 100)
 
   // Initialize relationship stats
-  const relationshipStats = {};
+  const relationshipStats = {}
   const relationshipCategories = {
     family: { color: 'bg-pink-500', label: 'Family Time' },
     friends: { color: 'bg-purple-500', label: 'Friends' },
     romance: { color: 'bg-red-500', label: 'Romance' },
-    social: { color: 'bg-blue-500', label: 'Social Life' }
-  };
+    social: { color: 'bg-blue-500', label: 'Social Life' },
+  }
 
   // Count relationship-related milestones
   Object.values(milestones || {}).forEach(milestone => {
@@ -149,25 +163,25 @@ export const calculateRelationshipInsights = (milestones = {}, birthYear, lifeEx
         relationshipStats[milestone.category] = {
           totalWeeks: 0,
           category: relationshipCategories[milestone.category],
-          percentage: 0
-        };
+          percentage: 0,
+        }
       }
-      relationshipStats[milestone.category].totalWeeks += 1;
+      relationshipStats[milestone.category].totalWeeks += 1
     }
-  });
+  })
 
   // Calculate percentages
   Object.keys(relationshipStats).forEach(category => {
     relationshipStats[category].percentage = Math.round(
       (relationshipStats[category].totalWeeks / totalWeeks) * 100
-    );
-  });
+    )
+  })
 
   return {
     relationshipStats,
     totalWeeks,
     currentWeek,
     remainingWeeks,
-    lifeProgress
-  };
-};
+    lifeProgress,
+  }
+}
