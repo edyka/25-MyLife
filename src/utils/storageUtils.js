@@ -1,50 +1,4 @@
-import {
-  saveToSecureStorage,
-  loadFromSecureStorage,
-  exportSecureData,
-  migrateFromLegacyStorage,
-} from "./secureStorage.js";
-
-export const saveToLocalStorage = (
-  birthDay,
-  birthMonth,
-  birthYear,
-  lifeExpectancy,
-  milestones,
-  customCategories = {},
-  goals = []
-) => {
-  try {
-    return saveToSecureStorage(
-      birthDay,
-      birthMonth,
-      birthYear,
-      lifeExpectancy,
-      milestones,
-      customCategories,
-      goals
-    );
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-       
-      console.error("Failed to save data:", error);
-    }
-    return false;
-  }
-};
-
-export const loadFromLocalStorage = () => {
-  try {
-    migrateFromLegacyStorage();
-    return loadFromSecureStorage();
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-       
-      console.error("Failed to load data:", error);
-    }
-    return null;
-  }
-};
+import { validateAppData } from './validation.js'
 
 export const exportData = (
   birthDay,
@@ -56,20 +10,42 @@ export const exportData = (
   goals = []
 ) => {
   try {
-    return exportSecureData(
+    const data = validateAppData({
       birthDay,
       birthMonth,
       birthYear,
       lifeExpectancy,
       milestones,
       customCategories,
-      goals
-    );
+      goals,
+    })
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `memento-vivere-backup-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    return true
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-       
-      console.error("Failed to export data:", error);
+    if (import.meta.env.DEV) {
+      console.error('Failed to export data:', error)
     }
-    return false;
+    return false
   }
-};
+}
+
+// One-shot cleanup of legacy crypto-js storage keys (removed 2026-05-23).
+// Safe to remove this function and call site after a few release cycles.
+export const cleanupLegacyStorage = () => {
+  try {
+    ;['lifeWeeksEncKey', 'lifeWeeksData', 'lifeWeeksData_checksum'].forEach(k =>
+      localStorage.removeItem(k)
+    )
+  } catch {
+    /* storage blocked — nothing to clean */
+  }
+}

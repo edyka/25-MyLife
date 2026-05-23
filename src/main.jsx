@@ -1,97 +1,101 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
-import { initAnalytics } from './utils/analytics';
-import { hasAnalyticsConsent } from './utils/consentManager';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+import { initAnalytics } from './utils/analytics'
+import { hasAnalyticsConsent } from './utils/consentManager'
+import { cleanupLegacyStorage } from './utils/storageUtils'
+
+// One-time removal of orphan crypto-js localStorage keys (encryption removed 2026-05-23).
+cleanupLegacyStorage()
 
 // Initialize Sentry error monitoring (async, non-blocking for faster initial render)
-(async () => {
+;(async () => {
   try {
-    const { initSentry } = await import('./utils/sentry');
-    initSentry();
+    const { initSentry } = await import('./utils/sentry')
+    initSentry()
   } catch (error) {
-    console.error('[Viventiva] Error initializing Sentry:', error);
+    console.error('[Viventiva] Error initializing Sentry:', error)
   }
-})();
+})()
 
 // Initialize analytics only if consent is given
 // Will be re-checked when user accepts cookies
 if (hasAnalyticsConsent()) {
-  initAnalytics();
+  initAnalytics()
 }
 
 // Listen for consent changes to initialize analytics dynamically
-window.addEventListener('privacyConsentChanged', (event) => {
-  const { analyticsEnabled } = event.detail;
+window.addEventListener('privacyConsentChanged', event => {
+  const { analyticsEnabled } = event.detail
   if (analyticsEnabled) {
-    initAnalytics();
+    initAnalytics()
   }
-});
+})
 
 // Initialize performance monitoring (async, non-blocking)
-(async () => {
+;(async () => {
   try {
-    const { initPerformanceMonitoring } = await import('./utils/performanceMonitor');
-    initPerformanceMonitoring();
+    const { initPerformanceMonitoring } = await import('./utils/performanceMonitor')
+    initPerformanceMonitoring()
   } catch (error) {
-    console.error('[Viventiva] Error initializing performance monitoring:', error);
+    console.error('[Viventiva] Error initializing performance monitoring:', error)
   }
-})();
+})()
 
 // Initialize accessibility features (async, non-blocking)
-(async () => {
+;(async () => {
   try {
-    const { initAccessibility } = await import('./utils/accessibility');
-    initAccessibility();
+    const { initAccessibility } = await import('./utils/accessibility')
+    initAccessibility()
   } catch (error) {
-    console.error('[Viventiva] Error initializing accessibility:', error);
+    console.error('[Viventiva] Error initializing accessibility:', error)
   }
-})();
+})()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-);
+  </React.StrictMode>
+)
 
 // Register service worker only in production (skip in development to avoid errors)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
+      const registration = await navigator.serviceWorker.getRegistration()
       if (!registration) {
-        await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.register('/sw.js')
       }
     } catch (err) {
-      console.warn('[Viventiva] SW registration skipped:', err);
+      console.warn('[Viventiva] SW registration skipped:', err)
     }
-  });
+  })
 } else if (import.meta.env.DEV) {
   // Unregister service workers in development (one-time only)
   if ('serviceWorker' in navigator) {
     const unregisterServiceWorkers = async () => {
       try {
-        const registrations = await navigator.serviceWorker.getRegistrations();
+        const registrations = await navigator.serviceWorker.getRegistrations()
         if (registrations.length > 0) {
-          console.log(`[Viventiva] Found ${registrations.length} service worker(s) to unregister`);
+          console.log(`[Viventiva] Found ${registrations.length} service worker(s) to unregister`)
 
           await Promise.all(
-            registrations.map(async (registration) => {
-              const unregistered = await registration.unregister();
-              console.log(`[Viventiva] Service worker unregistered:`, unregistered);
-              return unregistered;
+            registrations.map(async registration => {
+              const unregistered = await registration.unregister()
+              console.log(`[Viventiva] Service worker unregistered:`, unregistered)
+              return unregistered
             })
-          );
+          )
 
-          console.log('[Viventiva] All service workers unregistered');
+          console.log('[Viventiva] All service workers unregistered')
         }
       } catch (error) {
-        console.warn('[Viventiva] Error unregistering service workers:', error);
+        console.warn('[Viventiva] Error unregistering service workers:', error)
       }
-    };
+    }
 
     // Run ONCE on page load only
-    window.addEventListener('load', unregisterServiceWorkers);
+    window.addEventListener('load', unregisterServiceWorkers)
   }
 }
