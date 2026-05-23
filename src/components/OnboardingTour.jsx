@@ -2,19 +2,18 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ArrowRight, ArrowLeft, Sparkles, Palette, Target, Calendar } from 'lucide-react'
 import { useUIStore } from '../stores/useUIStore'
-import { useLifeStore } from '../stores/useLifeStore'
 import { useMilestoneStore } from '../stores/useMilestoneStore'
 import { getTheme } from '../utils/themeConfig'
 
 const TOUR_FLAG = 'viventiva_onboarding_complete'
 
-// A user is "returning" if any of: tour flag set, life store already has birth data,
-// or they have any milestones saved. Covers cleared cache + new device cases where
-// the localStorage flag alone wouldn't be enough.
+// A user is "returning" if the tour flag is set OR they have milestones saved.
+// We deliberately do NOT check `birthYear` here — OnboardingWizard sets it before
+// OnboardingTour mounts, so that check would falsely flag every brand-new signup
+// as "returning" and the tour would never appear. Milestones are only populated
+// by usage, so they're a safe signal that the user has engaged with the grid.
 const isReturningUser = () => {
   if (localStorage.getItem(TOUR_FLAG) === 'true') return true
-  const life = useLifeStore.getState()
-  if (life?.birthYear) return true
   const milestones = useMilestoneStore.getState()?.milestones
   if (milestones && Object.keys(milestones).length > 0) return true
   return false

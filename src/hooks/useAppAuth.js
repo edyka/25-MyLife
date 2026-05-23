@@ -74,6 +74,12 @@ export const useAppAuth = setCurrentPage => {
       return await userDataLoadRef.current.promise
     }
 
+    // Account-switch case: reset the resolved flag so App.jsx shows the spinner
+    // again while the new user's profile loads.
+    if (userDataLoadRef.current.userId && userDataLoadRef.current.userId !== currentUser.id) {
+      setProfileResolved(false)
+    }
+
     const loadId = Symbol('load')
     userDataLoadRef.current.loadId = loadId
 
