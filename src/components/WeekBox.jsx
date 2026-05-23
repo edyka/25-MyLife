@@ -217,7 +217,7 @@ const WeekBox = memo(
         tabIndex={0}
         aria-label={`Week ${weekNum}, Age ${getYearFromWeek(weekNum)} years. ${
           hasMilestone
-            ? `${hasMilestone.title ? hasMilestone.title + ' - ' : ''}${allCategories[hasMilestone.category]?.label || 'Unknown'}`
+            ? `${hasMilestone.title ? hasMilestone.title + ' - ' : ''}Mood: ${allCategories[hasMilestone.category]?.label || 'Unknown'}`
             : 'No mood set'
         }${isSelected ? '. Currently selected' : ''}`}
         aria-pressed={isSelected}
