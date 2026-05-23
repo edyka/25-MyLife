@@ -274,7 +274,7 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
           <h1
             className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extralight mb-6 leading-[1.1] tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}
           >
-            Your life is
+            You have about
             <br />
             <span
               className={`font-semibold text-transparent bg-clip-text bg-gradient-to-r ${activeTheme.gradient}`}
@@ -287,9 +287,9 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
           <p
             className={`text-lg md:text-xl font-light max-w-xl mx-auto mb-10 leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}
           >
-            See them all. Color the ones that matter.
+            Most people never see them all at once.
             <br className="hidden sm:block" />
-            Stop counting days. Start making weeks count.
+            Now you can.
           </p>
 
           {/* Week Visualization */}
@@ -373,7 +373,7 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
               />
               <span className="relative text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
-                Visualize My Life
+                See your weeks
               </span>
             </motion.button>
           </motion.div>
@@ -437,6 +437,15 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
             </p>
           </motion.div>
         </motion.div>
+      </section>
+
+      {/* LIFE CALCULATOR — promoted above the fold so visitors see their own grid before any signup wall */}
+      <section
+        className={`relative z-10 w-full py-16 sm:py-24 px-4 sm:px-6 ${darkMode ? 'bg-slate-900/40' : 'bg-slate-50/60'} backdrop-blur-sm`}
+      >
+        <div className="max-w-4xl mx-auto">
+          <LifeCalculator darkMode={darkMode} onSignUp={handleSignUpClick} />
+        </div>
       </section>
 
       {/* THREE SIMPLE STEPS Section */}
@@ -527,16 +536,11 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
                 />
                 <span className="relative text-white flex items-center gap-2">
                   <Sparkles className="w-5 h-5" />
-                  Visualize My Life
+                  See your weeks
                 </span>
               </motion.button>
             </motion.div>
           </motion.div>
-
-          {/* Life Calculator - Merged into same section */}
-          <div className="mt-8">
-            <LifeCalculator darkMode={darkMode} onSignUp={handleSignUpClick} />
-          </div>
         </div>
       </section>
 
@@ -565,7 +569,7 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative text-white flex items-center gap-3">
                   <Sparkles className="w-6 h-6" />
-                  Visualize My Life
+                  See your weeks
                 </span>
               </motion.button>
             </div>
@@ -592,13 +596,13 @@ const HomePage = ({ darkMode, onLogin, isCheckingAuth: _isCheckingAuth = false }
                 <span
                   className={`text-sm font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
                 >
-                  Join people visualizing their lives
+                  What people say after they see their grid
                 </span>
               </div>
               <h2
                 className={`text-3xl md:text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}
               >
-                Loved Worldwide
+                Seen, then said.
               </h2>
             </div>
 

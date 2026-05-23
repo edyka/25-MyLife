@@ -378,7 +378,7 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
                         ? isSignUp
                           ? 'Start Your Journey'
                           : 'Welcome Back'
-                        : 'Visualize My Life'}
+                        : 'See your weeks'}
                   </h2>
                 </div>
                 <p className={`text-base ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>

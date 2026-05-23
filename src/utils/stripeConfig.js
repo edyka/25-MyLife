@@ -19,7 +19,7 @@ export const isStripeConfigured = () => {
 // Products > Create Product > Copy the Price ID
 export const STRIPE_PRODUCTS = {
   PRO_YEARLY: {
-    name: 'Viventiva Pro (Yearly)',
+    name: 'Reflect (Yearly)',
     description: 'Yearly subscription with all premium features',
     priceId: import.meta.env.VITE_STRIPE_PRO_YEARLY_PRICE_ID || null,
     mode: 'subscription',
@@ -27,7 +27,7 @@ export const STRIPE_PRODUCTS = {
     interval: 'year',
   },
   PRO_MONTHLY: {
-    name: 'Viventiva Pro (Monthly)',
+    name: 'Reflect (Monthly)',
     description: 'Monthly subscription with all premium features',
     priceId: import.meta.env.VITE_STRIPE_PRO_MONTHLY_PRICE_ID || null,
     mode: 'subscription',
@@ -35,7 +35,7 @@ export const STRIPE_PRODUCTS = {
     interval: 'month',
   },
   LIFE: {
-    name: 'Viventiva Life',
+    name: 'Memento',
     description: 'Lifetime access to all features',
     priceId: import.meta.env.VITE_STRIPE_LIFE_PRICE_ID || null,
     mode: 'payment',

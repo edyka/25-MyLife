@@ -19,9 +19,9 @@ const PricingPage = ({ darkMode }) => {
 
   // Map tier names to plan names for comparison
   const getTierForPlan = planName => {
-    if (planName === 'Viventiva') return 'free'
-    if (planName === 'Viventiva Pro') return 'pro'
-    if (planName === 'Viventiva Life') return 'life'
+    if (planName === 'Observe') return 'free'
+    if (planName === 'Reflect') return 'pro'
+    if (planName === 'Memento') return 'life'
     return null
   }
 
@@ -48,8 +48,9 @@ const PricingPage = ({ darkMode }) => {
 
   const tiers = [
     {
-      name: 'Viventiva',
-      tagline: 'Start your intentional living journey',
+      name: 'Observe',
+      tagline:
+        'The grid, your weeks, four moods. Free, always — because awareness should never cost money.',
       price: 'Free',
       period: 'Forever',
       icon: Sparkles,
@@ -61,49 +62,52 @@ const PricingPage = ({ darkMode }) => {
         { text: '1 default theme (Sunset)', active: true },
         { text: 'Secure cloud sync', active: true },
       ],
-      cta: 'Start Your Journey',
+      cta: 'Begin Observing',
       ctaStyle: 'secondary',
       highlighted: false,
       stripeProductKey: null, // Free tier
     },
     {
-      name: 'Viventiva Pro',
-      tagline: 'Live with intention and insight',
+      name: 'Reflect',
+      tagline:
+        'Custom moods, goals, exports. The price of one coffee for a year of weekly clarity.',
       price: billingPeriod === 'yearly' ? '$39.99' : '$4.99',
       period: billingPeriod === 'yearly' ? 'per year' : 'per month',
-      altPeriodText: billingPeriod === 'yearly' ? 'or $4.99/month' : 'or $39.99/year (save 33%)',
+      altPeriodText:
+        billingPeriod === 'yearly'
+          ? 'or $4.99/month'
+          : 'or $39.99/year — about 8 of your remaining weeks',
       icon: Zap,
-      badge: 'Most Popular',
+      badge: 'Recommended',
       features: [
-        { text: 'Everything in Viventiva, plus:', active: true, bold: true },
+        { text: 'Everything in Observe, plus:', active: true, bold: true },
         { text: 'Unlimited custom moods', active: true },
         { text: 'All 4 theme presets', active: true },
         { text: 'Unlimited goals', active: true },
         { text: 'Export grid as PNG', active: true },
         { text: 'Priority email support', active: true },
       ],
-      cta: 'Go Pro',
+      cta: 'Choose Reflect',
       ctaStyle: 'primary',
       highlighted: true,
       savings: billingPeriod === 'yearly' ? 'Save 33%' : null,
       stripeProductKey: billingPeriod === 'yearly' ? 'PRO_YEARLY' : 'PRO_MONTHLY',
     },
     {
-      name: 'Viventiva Life',
-      tagline: 'Own your legacy forever',
+      name: 'Memento',
+      tagline: 'A single payment, for the rest of your weeks. Outlive subscriptions.',
       price: '$99',
-      period: 'Lifetime',
+      period: 'Once',
       originalPrice: '$149',
       icon: Crown,
-      badge: 'Best Value',
       features: [
-        { text: 'Everything in Viventiva Pro, plus:', active: true, bold: true },
+        { text: 'Everything in Reflect, plus:', active: true, bold: true },
         { text: 'Lifetime access to all features', active: true },
         { text: 'Founding member badge', active: true },
         { text: 'All future updates included', active: true },
         { text: 'Early access to new features', active: true },
       ],
-      cta: 'Get Lifetime Access',
+      cta: 'Choose Memento',
       ctaStyle: 'premium',
       highlighted: false,
       stripeProductKey: 'LIFE', // Maps to STRIPE_PRODUCTS.LIFE
@@ -207,7 +211,7 @@ const PricingPage = ({ darkMode }) => {
         {tiers.map((tier, index) => {
           const Icon = tier.icon
           const isHighlighted = tier.highlighted
-          const isPro = tier.name === 'Viventiva Pro'
+          const isPro = tier.name === 'Reflect'
           const planTier = getTierForPlan(tier.name)
           const isCurrentPlan = currentTier === planTier
 
@@ -430,7 +434,7 @@ const PricingPage = ({ darkMode }) => {
           {[
             {
               q: 'What happens to my data if I cancel?',
-              a: "You keep all your data. You'll simply drop back to the free Viventiva tier features. Your data remains safe in our secure cloud and won't be deleted.",
+              a: "You keep all your data. You'll simply drop back to the free Observe tier. Your data remains safe in our secure cloud and won't be deleted.",
             },
             {
               q: 'Is my data really private?',
