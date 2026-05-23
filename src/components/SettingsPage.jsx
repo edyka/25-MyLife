@@ -3,6 +3,7 @@ import { ArrowLeft, Cookie, Download, Lock, Image, LogOut } from 'lucide-react'
 import { usePremiumStore } from '../stores/usePremiumStore'
 const UpgradeModal = React.lazy(() => import('./UpgradeModal'))
 import { exportData } from '../utils/storageUtils'
+import { initAnalytics } from '../utils/analytics'
 import { useUIStore } from '../stores/useUIStore'
 import { useMilestoneStore } from '../stores/useMilestoneStore'
 import { useProfileEditor } from '../hooks/useProfileEditor'
@@ -408,7 +409,6 @@ const SettingsPage = () => {
                           if (newValue) {
                             // Initialize analytics if enabled
                             try {
-                              const { initAnalytics } = await import('../utils/analytics')
                               initAnalytics()
                             } catch (error) {
                               console.error('[Settings] Error initializing analytics:', error)
@@ -444,7 +444,6 @@ const SettingsPage = () => {
                         setCookieConsent('accepted', true)
                         setAnalyticsEnabled(true)
                         try {
-                          const { initAnalytics } = await import('../utils/analytics')
                           initAnalytics()
                         } catch (error) {
                           console.error('[Settings] Error initializing analytics:', error)

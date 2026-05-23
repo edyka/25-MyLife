@@ -5,6 +5,7 @@ import { useUIStore } from '../stores/useUIStore'
 import { useLifeStore } from '../stores/useLifeStore'
 import { useState, memo } from 'react'
 import { auth, database } from '../lib/supabase'
+import { trackUserAction } from '../utils/analytics'
 
 // Static data - defined outside component to avoid recreation on every render
 const MONTH_NAMES = [
@@ -174,7 +175,6 @@ const OnboardingWizard = memo(({ darkMode, onComplete }) => {
 
       // Track profile completion
       try {
-        const { trackUserAction } = await import('../utils/analytics')
         trackUserAction('profile_completed', {
           hasName: !!name,
           lifeExpectancy: parseInt(lifeExpectancy),

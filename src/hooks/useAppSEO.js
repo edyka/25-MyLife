@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useUIStore } from '../stores/useUIStore'
+import { trackPageView as trackPageViewAnalytics } from '../utils/analytics'
 
 const hasAuthTokensInHash = (hash = '') => {
   const h = (hash || '').toLowerCase()
@@ -137,8 +138,7 @@ export const useAppSEO = (currentPage, user) => {
   useEffect(() => {
     const trackPageView = async () => {
       try {
-        const { trackPageView: track } = await import('../utils/analytics')
-        track(getSafePathForTracking())
+        trackPageViewAnalytics(getSafePathForTracking())
       } catch {
         /* ignore */
       }

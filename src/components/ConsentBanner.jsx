@@ -4,6 +4,7 @@ import { Cookie } from 'lucide-react'
 import { useUIStore } from '../stores/useUIStore'
 import { getTheme } from '../utils/themeConfig'
 import { getCookieConsent, setCookieConsent } from '../utils/consentManager'
+import { initAnalytics } from '../utils/analytics'
 
 const ConsentBanner = () => {
   const [showBanner, setShowBanner] = useState(false)
@@ -40,7 +41,6 @@ const ConsentBanner = () => {
 
     // Initialize analytics now that consent is given
     try {
-      const { initAnalytics } = await import('../utils/analytics')
       initAnalytics()
     } catch (error) {
       console.error('[CookieConsent] Error initializing analytics:', error)

@@ -2,6 +2,7 @@
  * Performance monitoring utility
  * Tracks key performance metrics and reports to analytics
  */
+import { trackEvent } from './analytics'
 
 class PerformanceMonitor {
   constructor() {
@@ -133,9 +134,8 @@ class PerformanceMonitor {
   /**
    * Report metric to analytics
    */
-  async reportMetric(name, value, metadata = {}) {
+  reportMetric(name, value, metadata = {}) {
     try {
-      const { trackEvent } = await import('./analytics')
       trackEvent('performance_metric', {
         metric: name,
         value: Math.round(value),
