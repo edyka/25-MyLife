@@ -37,6 +37,7 @@ const App = () => {
     authLoading,
     dataLoading,
     needsProfileSetup,
+    profileResolved,
     isBackendAvailable,
     handleLogin,
     handleProfileComplete,
@@ -167,6 +168,10 @@ const App = () => {
           <Suspense fallback={<LoadingSpinner message="Loading..." />}>
             <HomePage darkMode={darkMode} onLogin={handleLogin} isCheckingAuth={authLoading} />
           </Suspense>
+        ) : !profileResolved ? (
+          // Block MainApp/OnboardingWizard until we know which one to show.
+          // Without this, new users briefly see MainApp before the wizard mounts.
+          <LoadingSpinner message="Loading your journey..." />
         ) : needsProfileSetup ? (
           <Suspense fallback={<LoadingSpinner message="Preparing setup..." />}>
             <OnboardingWizard darkMode={darkMode} onComplete={handleProfileComplete} />

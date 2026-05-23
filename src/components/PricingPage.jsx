@@ -430,7 +430,7 @@ const PricingPage = ({ darkMode }) => {
           {[
             {
               q: 'What happens to my data if I cancel?',
-              a: "You keep all your data. You'll simply drop back to the free Vivid tier features. Your data remains safe in our secure cloud and won't be deleted.",
+              a: "You keep all your data. You'll simply drop back to the free Viventiva tier features. Your data remains safe in our secure cloud and won't be deleted.",
             },
             {
               q: 'Is my data really private?',

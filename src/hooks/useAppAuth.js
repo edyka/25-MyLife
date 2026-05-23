@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { auth } from '../lib/supabase'
+import { auth, database } from '../lib/supabase'
 import { dataService } from '../services/dataService'
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -15,6 +15,10 @@ export const useAppAuth = setCurrentPage => {
   const [authLoading, setAuthLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false)
+  // True once loadUserData has resolved at least once for the current user.
+  // Used by App.jsx to avoid flashing MainApp before we know whether the user
+  // needs onboarding (race fix 2026-05-23).
+  const [profileResolved, setProfileResolved] = useState(false)
   const [isBackendAvailable, setIsBackendAvailable] = useState(true)
   const userDataLoadRef = useRef({ userId: null, promise: null, loadId: null })
   const authTimeoutRef = useRef(null)
@@ -179,7 +183,6 @@ export const useAppAuth = setCurrentPage => {
           localStorage.setItem('viventiva_authenticated', 'true')
 
           // Try to sync local profile to database in the background
-          const { database } = await import('../lib/supabase')
           database
             .saveUserProfile(currentUser.id, {
               name: lifeStore.userName || currentUser.user_metadata?.full_name || 'User',
@@ -241,6 +244,7 @@ export const useAppAuth = setCurrentPage => {
         console.error('[Viventiva Data] Error loading data:', error)
       } finally {
         setDataLoading(false)
+        setProfileResolved(true)
       }
     })()
 
@@ -316,6 +320,7 @@ export const useAppAuth = setCurrentPage => {
           setAuthLoading(false)
           setDataLoading(false)
           setNeedsProfileSetup(false)
+          setProfileResolved(false)
           localStorage.removeItem('viventiva_authenticated')
           localStorage.removeItem('viventiva_profile_complete')
 
@@ -437,6 +442,7 @@ export const useAppAuth = setCurrentPage => {
     authLoading,
     dataLoading,
     needsProfileSetup,
+    profileResolved,
     isBackendAvailable,
     handleLogin,
     handleProfileComplete,
