@@ -50,3 +50,7 @@ temp/
 
 # Local Netlify folder
 .netlify
+
+# Ralph harness state (per-machine, never commit)
+.ralph/
+.claude/launch.json
