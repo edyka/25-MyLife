@@ -316,10 +316,16 @@ export const useAppAuth = setCurrentPage => {
             loadUserData(session.user)
             cleanOAuthUrl()
           } else if (event === 'INITIAL_SESSION') {
-            initialSessionHandled = true
-            setUser(null)
-            setAuthLoading(false)
-            setDataLoading(false)
+            // When a ?code= is in the URL, Supabase's auto PKCE exchange can
+            // silently fail on Brave and emit INITIAL_SESSION with no user.
+            // Don't mark handled here, so the manual exchangeCodeForSession
+            // fallback below still runs.
+            if (!oauthCode) {
+              initialSessionHandled = true
+              setUser(null)
+              setAuthLoading(false)
+              setDataLoading(false)
+            }
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
