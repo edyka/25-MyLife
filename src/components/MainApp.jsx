@@ -472,7 +472,7 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = fal
                     darkMode
                       ? 'bg-white/[0.04] border border-white/[0.06]'
                       : 'bg-black/[0.02] border border-black/[0.04]'
-                  } rounded-2xl p-3 sm:p-5 mx-auto w-full max-w-5xl sm:max-w-6xl md:relative sticky top-0 z-40 backdrop-blur-xl`}
+                  } rounded-2xl p-3 sm:p-5 mx-auto w-full max-w-5xl sm:max-w-6xl sticky top-0 md:top-24 z-40 backdrop-blur-xl`}
                 >
                   <ModernMoodPalette
                     selectedColor={selectedColor}
