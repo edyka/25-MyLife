@@ -113,3 +113,36 @@ See `~/.claude/projects/-Users-m4-Documents-01-Viventiva/memory/project_improvem
 ## Custom Subagents Available
 
 `.claude/agents/`: `app-project-manager`, `backend-architect`, `frontend-engineer`, `life-philosophy-guide`, `qa-validator`.
+
+## Marketing Initiative (kicked off 2026-05-23)
+
+Driven from a separate Claude Code instance at `/Users/m4` (not from this repo). This repo's instance handles code; marketing runs in parallel.
+
+**Split-track architecture (user-approved 2026-05-23):**
+
+| Track                   | Runs in                      | Tooling                                                                          | Purpose                                                             |
+| ----------------------- | ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **A — Paid ads**        | Claude.ai (web/desktop)      | Official Meta Ads MCP — `mcp.facebook.com/ads` (launched 2026-04-29)             | Campaign mgmt, audiences, reporting. Created campaigns auto-paused. |
+| **B — Organic posting** | Claude Code from `/Users/m4` | Custom subagent → Meta Graph API via curl; Supabase Storage as public media host | Page + IG feed posts + carousels. Reels/Stories deferred.           |
+
+**Budget:** $0–100/mo testing. Strategy is creative-led (Advantage+ campaigns, kill losers by day 7) — too small to do audience testing. Goal: find hooks, not ROAS.
+
+**Cross-track feedback loop:** ad creatives that convert → become organic templates; viral organic posts → become ad creative ideas.
+
+**Phase 0 user-side blockers (not yet done as of 2026-05-23):**
+
+- Facebook Page for Viventiva (personal profiles can't be posted to via API)
+- IG account converted to **Business** type
+- IG linked to FB Page (Accounts Center)
+- Meta Developer App (developers.facebook.com, type: Business) with Instagram Graph API + Facebook Login + Pages API products
+- User added as test user on the App (Development mode covers own page, no App Review needed)
+
+**Track B planned phases (MVP = images + carousels only):**
+
+1. Long-lived Page token via Graph API Explorer → store in Supabase Vault. Scopes: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`, `business_management`.
+2. `marketing-media` public bucket in existing Supabase project (IG API needs public URLs, not uploads).
+3. Content template engine — reuse `html-to-image` dep already in the project for Viventiva-branded quote cards.
+4. `marketing-publisher` subagent in `.claude/agents/`.
+5. `/schedule` Sunday-evening cron → drafts to review folder → manual approval → publish.
+
+**Important runtime split:** Meta Ads MCP only works in Claude.ai (custom connector), NOT in Claude Code. If user asks for ad ops here, draft the prompt to paste into Claude.ai rather than try to execute. Graph API path is for organic only — don't reinvent it for paid.
