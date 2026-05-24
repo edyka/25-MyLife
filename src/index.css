@@ -39,6 +39,22 @@
   }
 }
 
+/* Loading bar animation for background data loading */
+@keyframes loading-bar {
+  0% {
+    width: 20%;
+    margin-left: 0;
+  }
+  50% {
+    width: 60%;
+    margin-left: 20%;
+  }
+  100% {
+    width: 20%;
+    margin-left: 80%;
+  }
+}
+
 /* Focus visible styles */
 :focus-visible {
   outline: 2px solid #3b82f6;
@@ -65,7 +81,7 @@
 
 /* Premium Background Gradients */
 .modern-bg {
-  background: 
+  background:
     radial-gradient(800px 600px at 20% -20%, rgba(16, 185, 129, 0.15), transparent 50%),
     radial-gradient(1000px 800px at 80% -30%, rgba(59, 130, 246, 0.12), transparent 50%),
     radial-gradient(600px 400px at 40% 120%, rgba(168, 85, 247, 0.08), transparent 50%),
@@ -73,7 +89,7 @@
 }
 
 .modern-bg-dark {
-  background: 
+  background:
     radial-gradient(800px 600px at 20% -20%, rgba(16, 185, 129, 0.08), transparent 50%),
     radial-gradient(1000px 800px at 80% -30%, rgba(59, 130, 246, 0.06), transparent 50%),
     radial-gradient(600px 400px at 40% 120%, rgba(168, 85, 247, 0.04), transparent 50%),
@@ -83,7 +99,7 @@
 /* Enhanced Glass Morphism Cards with fallback */
 .glass-card {
   background: rgba(255, 255, 255, 0.25); /* Fallback for non-supporting browsers */
-  border: 1px solid rgba(255, 255, 255, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 1.5rem;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
@@ -121,7 +137,7 @@
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 1.5rem;
-  box-shadow: 
+  box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -131,7 +147,7 @@
   background: rgba(30, 41, 59, 0.95);
   border: 1px solid rgba(51, 65, 85, 0.8);
   border-radius: 1.5rem;
-  box-shadow: 
+  box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.4),
     0 10px 10px -5px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -154,21 +170,21 @@
 /* Modern Button Gradients */
 .btn-gradient-primary {
   background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  box-shadow: 
+  box-shadow:
     0 4px 14px rgba(16, 185, 129, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-gradient-secondary {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-  box-shadow: 
+  box-shadow:
     0 4px 14px rgba(59, 130, 246, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-gradient-accent {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
-  box-shadow: 
+  box-shadow:
     0 4px 14px rgba(245, 158, 11, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
@@ -209,16 +225,15 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 /* Note: Enhanced scrollbar styles are defined below in the Enhanced Scrollbar Styling section */
@@ -275,28 +290,28 @@ code {
 
 /* Enhanced Week Grid Styling */
 .week-square {
-  border-radius: 8px;
-  box-shadow: 
+  border-radius: 0;
+  box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.1),
     inset 0 0 0 1px rgba(0, 0, 0, 0.06);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .week-square:hover {
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.15),
     inset 0 0 0 2px rgba(59, 130, 246, 0.3);
   transform: translateY(-1px) scale(1.05);
 }
 
 .dark .week-square {
-  box-shadow: 
+  box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.3),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .dark .week-square:hover {
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.4),
     inset 0 0 0 2px rgba(59, 130, 246, 0.5);
   transform: translateY(-1px) scale(1.05);
@@ -346,28 +361,28 @@ code {
 }
 
 /* Theme-specific scrollbar colors */
-[data-theme="emerald"] {
+[data-theme='emerald'] {
   --scrollbar-thumb-start: #10b981;
   --scrollbar-thumb-end: #059669;
   --scrollbar-thumb-hover-start: #059669;
   --scrollbar-thumb-hover-end: #047857;
 }
 
-[data-theme="ocean"] {
+[data-theme='ocean'] {
   --scrollbar-thumb-start: #3b82f6;
   --scrollbar-thumb-end: #2563eb;
   --scrollbar-thumb-hover-start: #2563eb;
   --scrollbar-thumb-hover-end: #1d4ed8;
 }
 
-[data-theme="purple"] {
+[data-theme='purple'] {
   --scrollbar-thumb-start: #a855f7;
   --scrollbar-thumb-end: #7c3aed;
   --scrollbar-thumb-hover-start: #7c3aed;
   --scrollbar-thumb-hover-end: #6d28d9;
 }
 
-[data-theme="sunset"] {
+[data-theme='sunset'] {
   --scrollbar-thumb-start: #f97316;
   --scrollbar-thumb-end: #dc2626;
   --scrollbar-thumb-hover-start: #dc2626;
@@ -391,7 +406,11 @@ code {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
+  background: linear-gradient(
+    135deg,
+    var(--scrollbar-thumb-hover-start),
+    var(--scrollbar-thumb-hover-end)
+  );
 }
 
 .dark ::-webkit-scrollbar-track {
@@ -404,7 +423,11 @@ code {
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
+  background: linear-gradient(
+    135deg,
+    var(--scrollbar-thumb-hover-start),
+    var(--scrollbar-thumb-hover-end)
+  );
 }
 
 /* Firefox scrollbar */
@@ -448,4 +471,248 @@ code {
 
 .cube-3d:hover {
   transform: scale(1.1) translateZ(10px);
+}
+
+/* ============================================
+   Modern Viewport Units (2025 Standards)
+   svh = Small Viewport Height (stable, browser UI visible)
+   lvh = Large Viewport Height (browser UI hidden)
+   dvh = Dynamic Viewport Height (adapts in real-time)
+   ============================================ */
+
+/* Use svh for stable layouts that shouldn't jump */
+.min-h-screen-stable {
+  min-height: 100vh; /* Fallback */
+  min-height: 100svh;
+}
+
+/* Use dvh for full-screen content that adapts to browser chrome */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh !important;
+  }
+
+  .h-screen {
+    height: 100dvh !important;
+  }
+
+  /* Full height accounting for safe areas */
+  .h-screen-safe {
+    height: calc(100dvh - var(--sat, 0px) - var(--sab, 0px)) !important;
+  }
+}
+
+/* Use svh for elements that need consistent sizing */
+@supports (height: 100svh) {
+  .min-h-screen-svh {
+    min-height: 100svh !important;
+  }
+
+  .h-screen-svh {
+    height: 100svh !important;
+  }
+}
+
+/* Fallback for browsers that don't support modern units */
+@supports not (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
+/* PWA Install Prompt Styles */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.95), rgba(234, 88, 12, 0.95));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.pwa-install-prompt.visible {
+  transform: translateY(0);
+}
+
+.pwa-install-prompt-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.pwa-install-prompt-text {
+  flex: 1;
+  color: white;
+}
+
+.pwa-install-prompt-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.pwa-install-prompt-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.pwa-install-btn {
+  background: white;
+  color: #ea580c;
+  font-weight: 700;
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.pwa-install-btn:active {
+  transform: scale(0.95);
+}
+
+.pwa-install-close {
+  color: white;
+  opacity: 0.8;
+  padding: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+/* ============================================
+   Safe Area Utilities (iOS Notch/Dynamic Island/Home Indicator)
+   ============================================ */
+
+/* Safe area CSS custom properties (also defined in index.html) */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Padding utilities */
+.safe-area-top {
+  padding-top: var(--sat);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--sab);
+}
+
+.safe-area-left {
+  padding-left: var(--sal);
+}
+
+.safe-area-right {
+  padding-right: var(--sar);
+}
+
+.safe-area-all {
+  padding: var(--sat) var(--sar) var(--sab) var(--sal);
+}
+
+/* Margin utilities */
+.safe-margin-top {
+  margin-top: var(--sat);
+}
+
+.safe-margin-bottom {
+  margin-bottom: var(--sab);
+}
+
+/* Position utilities for fixed/sticky elements */
+.fixed-safe-top {
+  top: var(--sat);
+}
+
+.fixed-safe-bottom {
+  bottom: var(--sab);
+}
+
+/* ============================================
+   PWA Standalone Mode Optimizations
+   ============================================ */
+@media (display-mode: standalone) {
+  .pwa-install-prompt {
+    display: none !important;
+  }
+
+  /* Extra bottom padding in standalone mode for home indicator */
+  .standalone-safe-bottom {
+    padding-bottom: var(--sab, 20px);
+  }
+
+  /* Hide browser-only UI in standalone mode */
+  .browser-only {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   Modern Touch & Interaction Utilities
+   ============================================ */
+
+/* Improve touch targets (minimum 44x44px recommended by Apple) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Disable double-tap zoom on interactive elements */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Prevent text selection on UI elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Enable text selection */
+.select-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Momentum scrolling for scroll containers */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Prevent overscroll/bounce */
+.no-overscroll {
+  overscroll-behavior: none;
+}
+
+/* Hardware accelerated scrolling */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-smooth {
+    scroll-behavior: auto;
+  }
 }

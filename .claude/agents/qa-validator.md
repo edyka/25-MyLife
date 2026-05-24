@@ -1,6 +1,7 @@
 ---
 name: qa-validator
 description: Use this agent when you need comprehensive quality assurance, debugging, and testing validation. Examples: After implementing a new feature to verify all components work together correctly, when encountering unexpected behavior that needs systematic debugging, before deploying code to ensure all edge cases are covered, when you need thorough testing of API endpoints or user workflows, or when you want a second pair of eyes to validate that your implementation meets all requirements and handles error cases properly.
+model: opus
 color: yellow
 ---
 

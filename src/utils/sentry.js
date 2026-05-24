@@ -2,14 +2,16 @@
 // To use: Add VITE_SENTRY_DSN to your .env file
 // Get your DSN from: https://sentry.io/settings/[your-org]/projects/[your-project]/keys/
 
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/react'
+
+const isDev = process.env.NODE_ENV === 'development'
 
 export const initSentry = () => {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
-  
+  const dsn = import.meta.env.VITE_SENTRY_DSN
+
   if (!dsn) {
-    console.log('[Sentry] DSN not configured. Error monitoring disabled.');
-    return;
+    // Silently skip - no DSN configured
+    return
   }
 
   Sentry.init({
@@ -30,27 +32,30 @@ export const initSentry = () => {
     // Filter out common non-critical errors
     beforeSend(event, hint) {
       // Don't send errors from browser extensions
-      if (event.exception?.values?.[0]?.value?.includes('chrome-extension://') ||
-          event.exception?.values?.[0]?.value?.includes('moz-extension://')) {
-        return null;
+      if (
+        event.exception?.values?.[0]?.value?.includes('chrome-extension://') ||
+        event.exception?.values?.[0]?.value?.includes('moz-extension://')
+      ) {
+        return null
       }
-      
+
       // Don't send network errors for blocked requests (Brave Shields, etc.)
-      if (event.exception?.values?.[0]?.value?.includes('Failed to fetch') ||
-          event.exception?.values?.[0]?.value?.includes('NetworkError')) {
+      if (
+        event.exception?.values?.[0]?.value?.includes('Failed to fetch') ||
+        event.exception?.values?.[0]?.value?.includes('NetworkError')
+      ) {
         // Only send if it's not a 406 (Brave Shields blocking)
-        const error = hint.originalException;
+        const error = hint.originalException
         if (error?.status === 406) {
-          return null;
+          return null
         }
       }
-      
-      return event;
+
+      return event
     },
-  });
+  })
 
-  console.log('[Sentry] Error monitoring initialized');
-};
+  if (isDev) console.log('[Sentry] Error monitoring initialized')
+}
 
-export default Sentry;
-
+export default Sentry

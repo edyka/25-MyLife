@@ -5,6 +5,25 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Enable Netlify Prerendering for SEO (serves static HTML to bots)
+[build.processing]
+  skip_processing = false
+
+[build.processing.html]
+  pretty_urls = true
+
+# Prerendering for search engine bots (critical for React SPA SEO)
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+
+# Redirects - SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin", "user"]}
+
+# Bot detection - serve prerendered content
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -20,7 +39,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     # Content Security Policy - adjust based on your needs
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://plausible.io https://www.google-analytics.com; frame-ancestors 'none';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://plausible.io https://www.googletagmanager.com https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://plausible.io https://www.google-analytics.com https://www.googletagmanager.com https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; frame-ancestors 'none';"
 
 # Cache static assets
 [[headers]]
@@ -31,5 +50,24 @@
 # Cache service worker
 [[headers]]
   for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# SEO files - short cache for quick indexing updates
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Content-Type = "application/xml; charset=utf-8"
+
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+    Content-Type = "text/plain; charset=utf-8"
+
+# Cache control for index.html - no preload hints since Vite hashes filenames
+[[headers]]
+  for = "/index.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"

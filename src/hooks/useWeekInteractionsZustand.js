@@ -1,13 +1,14 @@
-import { useCallback } from "react";
-import { useLifeStore, useMilestoneStore, useSelectionStore, useUIStore } from "../stores";
+import { useCallback } from 'react'
+import { useMilestoneStore, useSelectionStore, useUIStore } from '../stores'
+import { useShallow } from 'zustand/shallow'
 
 /**
  * Modern week interactions hook using Zustand stores
  * Replaces the old useWeekInteractions with store-based state management
  */
 export const useWeekInteractionsZustand = () => {
-  const { getTotalWeeks } = useLifeStore();
-  const { setMilestones, getAllCategories } = useMilestoneStore();
+  const setMilestones = useMilestoneStore(state => state.setMilestones)
+  const getAllCategories = useMilestoneStore(state => state.getAllCategories)
   const {
     selectedColor,
     setSelectedWeek,
@@ -27,167 +28,215 @@ export const useWeekInteractionsZustand = () => {
     clearPinnedWeeks,
     selectRectangularArea,
     toggleWeekSelection,
-    getWeeksInSelection
-  } = useSelectionStore();
-  const { isMobile, setShowMobileColorSelection } = useUIStore();
+    getWeeksInSelection,
+  } = useSelectionStore(
+    useShallow(state => ({
+      selectedColor: state.selectedColor,
+      setSelectedWeek: state.setSelectedWeek,
+      isDragging: state.isDragging,
+      setIsDragging: state.setIsDragging,
+      draggedWeeks: state.draggedWeeks,
+      setDraggedWeeks: state.setDraggedWeeks,
+      setDragStartWeek: state.setDragStartWeek,
+      selectedWeeks: state.selectedWeeks,
+      pinnedWeeks: state.pinnedWeeks,
+      selectionMode: state.selectionMode,
+      rangeStart: state.rangeStart,
+      isInRangeMode: state.isInRangeMode,
+      startRangeSelection: state.startRangeSelection,
+      completeRangeSelection: state.completeRangeSelection,
+      resetRangeSelection: state.resetRangeSelection,
+      clearPinnedWeeks: state.clearPinnedWeeks,
+      selectRectangularArea: state.selectRectangularArea,
+      toggleWeekSelection: state.toggleWeekSelection,
+      getWeeksInSelection: state.getWeeksInSelection,
+    }))
+  )
+  const isMobile = useUIStore(state => state.isMobile)
 
-  const allCategories = getAllCategories();
+  const allCategories = getAllCategories()
 
-  const getLinearWeeksInSelection = useCallback((startWeek, endWeek) => {
-    const totalWeeks = getTotalWeeks();
-    const a = Math.max(1, Math.min(startWeek, endWeek));
-    const b = Math.min(totalWeeks, Math.max(startWeek, endWeek));
-    const weeks = new Set();
-    for (let i = a; i <= b; i++) weeks.add(i);
-    return weeks;
-  }, [getTotalWeeks]);
-
-  const paintWeek = useCallback((weekNum) => {
-    if (!selectedColor) return;
-
-    if (selectedColor === "none") {
-      setMilestones((prev) => {
-        const updated = { ...prev };
-        delete updated[weekNum];
-        return updated;
-      });
-    } else {
-      setMilestones((prev) => ({
-        ...prev,
-        [weekNum]: {
-          title: "",
-          category: selectedColor,
-        },
-      }));
+  // Helper to get all weeks between two week numbers (inclusive)
+  const getWeeksInRange = useCallback((start, end) => {
+    const weeks = new Set()
+    const min = Math.min(start, end)
+    const max = Math.max(start, end)
+    for (let i = min; i <= max; i++) {
+      weeks.add(i)
     }
-  }, [selectedColor, setMilestones]);
+    return weeks
+  }, [])
 
-  const paintWeeks = useCallback((weeks) => {
-    weeks.forEach(paintWeek);
-  }, [paintWeek]);
+  const paintWeek = useCallback(
+    weekNum => {
+      if (!selectedColor) return
 
-  const handleWeekClick = useCallback((weekNum, event) => {
-    setSelectedWeek(weekNum);
-
-    // Handle different selection modes
-    if (selectionMode === "rectangular" && event?.shiftKey) {
-      const dragStart = rangeStart || weekNum;
-      const newSelection = selectRectangularArea(dragStart, weekNum);
-      if (selectedColor) {
-        paintWeeks(newSelection);
+      if (selectedColor === 'none') {
+        setMilestones(prev => {
+          const updated = { ...prev }
+          delete updated[weekNum]
+          return updated
+        })
+      } else {
+        setMilestones(prev => ({
+          ...prev,
+          [weekNum]: {
+            title: '',
+            category: selectedColor,
+          },
+        }))
       }
-      return;
-    }
+    },
+    [selectedColor, setMilestones]
+  )
 
-    // Handle range selection (click-click mode)
-    if (isInRangeMode) {
-      completeRangeSelection(weekNum);
-      if (selectedColor) {
-        const rangeWeeks = getLinearWeeksInSelection(rangeStart, weekNum);
-        paintWeeks(rangeWeeks);
+  const paintWeeks = useCallback(
+    weeks => {
+      weeks.forEach(paintWeek)
+    },
+    [paintWeek]
+  )
+
+  const handleWeekClick = useCallback(
+    (weekNum, event) => {
+      // Get fresh state from store to avoid stale closure values
+      const currentState = useSelectionStore.getState()
+      const currentRangeStart = currentState.rangeStart
+      const currentIsInRangeMode = currentState.isInRangeMode
+      const currentSelectedColor = currentState.selectedColor
+
+      setSelectedWeek(weekNum)
+
+      // Handle shift+click for rectangular selection (power user feature)
+      if (selectionMode === 'rectangular' && event?.shiftKey && currentRangeStart) {
+        const newSelection = selectRectangularArea(currentRangeStart, weekNum)
+        if (currentSelectedColor) {
+          paintWeeks(newSelection)
+        }
+        resetRangeSelection()
+        return
       }
-      return;
-    }
 
-    // Start range selection if we have a selected color
-    if (selectedColor && !rangeStart) {
-      startRangeSelection(weekNum);
-      if (selectedColor) {
-        paintWeek(weekNum);
+      // If no color selected, just select the week
+      if (!currentSelectedColor) {
+        return
       }
-      return;
-    }
 
-    // Single week interaction
-    if (selectedColor) {
-      paintWeek(weekNum);
-    }
+      // Range selection: if we already have a range start, complete the range
+      if (currentIsInRangeMode && currentRangeStart !== null) {
+        // Get all weeks in the range and paint them
+        const rangeWeeks = getWeeksInRange(currentRangeStart, weekNum)
+        paintWeeks(rangeWeeks)
+        // Complete range selection (resets rangeStart)
+        completeRangeSelection(weekNum)
+        return
+      }
 
-    // Show mobile color selection if no color is selected
-    if (!selectedColor && isMobile) {
-      setShowMobileColorSelection(true);
-    }
-  }, [
-    setSelectedWeek,
-    selectionMode,
-    isInRangeMode,
-    rangeStart,
-    selectedColor,
-    completeRangeSelection,
-    startRangeSelection,
-    selectRectangularArea,
-    getLinearWeeksInSelection,
-    paintWeek,
-    paintWeeks,
-    isMobile,
-    setShowMobileColorSelection
-  ]);
+      // First click: start range selection and paint the first week
+      startRangeSelection(weekNum)
+      paintWeek(weekNum)
+    },
+    [
+      setSelectedWeek,
+      selectionMode,
+      selectRectangularArea,
+      getWeeksInRange,
+      startRangeSelection,
+      completeRangeSelection,
+      resetRangeSelection,
+      paintWeek,
+      paintWeeks,
+    ]
+  )
 
-  const handleWeekMouseDown = useCallback((weekNum, event) => {
-    if (isMobile || !selectedColor) return;
+  const handleWeekMouseDown = useCallback(
+    (weekNum, event) => {
+      if (isMobile || !selectedColor) return
 
-    event.preventDefault();
-    setIsDragging(true);
-    setDragStartWeek(weekNum);
-    setDraggedWeeks(new Set([weekNum]));
+      event.preventDefault()
+      setIsDragging(true)
+      setDragStartWeek(weekNum)
+      setDraggedWeeks(new Set([weekNum]))
 
-    if (selectedColor) {
-      paintWeek(weekNum);
-    }
-  }, [isMobile, selectedColor, setIsDragging, setDragStartWeek, setDraggedWeeks, paintWeek]);
+      if (selectedColor) {
+        paintWeek(weekNum)
+      }
+    },
+    [isMobile, selectedColor, setIsDragging, setDragStartWeek, setDraggedWeeks, paintWeek]
+  )
 
-  const handleWeekMouseEnter = useCallback((weekNum) => {
-    if (isDragging && selectedColor) {
-      const newDraggedWeeks = new Set([...draggedWeeks, weekNum]);
-      setDraggedWeeks(newDraggedWeeks);
-      paintWeek(weekNum);
-    }
-  }, [isDragging, draggedWeeks, selectedColor, setDraggedWeeks, paintWeek]);
+  const handleWeekMouseEnter = useCallback(
+    weekNum => {
+      if (isDragging && selectedColor) {
+        const newDraggedWeeks = new Set([...draggedWeeks, weekNum])
+        setDraggedWeeks(newDraggedWeeks)
+        paintWeek(weekNum)
+      }
+    },
+    [isDragging, draggedWeeks, selectedColor, setDraggedWeeks, paintWeek]
+  )
 
   const handleMouseUp = useCallback(() => {
     if (isDragging) {
-      setIsDragging(false);
-      setDraggedWeeks(new Set());
-      setDragStartWeek(null);
+      setIsDragging(false)
+      setDraggedWeeks(new Set())
+      setDragStartWeek(null)
     }
-  }, [isDragging, setIsDragging, setDraggedWeeks, setDragStartWeek]);
+  }, [isDragging, setIsDragging, setDraggedWeeks, setDragStartWeek])
 
-  // Touch handlers for mobile
-  const handleTouchStart = useCallback((weekNum, event) => {
-    if (!isMobile) return;
-    
-    event.preventDefault();
-    handleWeekClick(weekNum, event);
-  }, [isMobile, handleWeekClick]);
+  // Touch handlers for mobile - enable drag coloring
+  const handleTouchStart = useCallback(
+    (weekNum, event) => {
+      if (!isMobile) return
 
-  const handleTouchMove = useCallback((weekNum) => {
-    if (!isMobile) return;
-    
-    const { isDragging } = useSelectionStore.getState();
-    if (isDragging && selectedColor) {
-      paintWeek(weekNum);
-    }
-  }, [isMobile, selectedColor, paintWeek]);
+      event.preventDefault()
+      // Start dragging mode for continuous coloring
+      setIsDragging(true)
+      setDragStartWeek(weekNum)
+      setDraggedWeeks(new Set([weekNum]))
+
+      // Paint the initial week
+      if (selectedColor) {
+        paintWeek(weekNum)
+      }
+    },
+    [isMobile, selectedColor, setIsDragging, setDragStartWeek, setDraggedWeeks, paintWeek]
+  )
+
+  const handleTouchMove = useCallback(
+    weekNum => {
+      if (!isMobile) return
+
+      const { isDragging } = useSelectionStore.getState()
+      if (isDragging && selectedColor) {
+        // Add to dragged weeks and paint
+        const newDraggedWeeks = new Set([...draggedWeeks, weekNum])
+        setDraggedWeeks(newDraggedWeeks)
+        paintWeek(weekNum)
+      }
+    },
+    [isMobile, selectedColor, draggedWeeks, setDraggedWeeks, paintWeek]
+  )
 
   const handleTouchEnd = useCallback(() => {
-    if (!isMobile) return;
-    
-    const { isDragging } = useSelectionStore.getState();
+    if (!isMobile) return
+
+    const { isDragging } = useSelectionStore.getState()
     if (isDragging) {
-      setIsDragging(false);
-      setDraggedWeeks(new Set());
+      setIsDragging(false)
+      setDraggedWeeks(new Set())
+      setDragStartWeek(null)
     }
-  }, [isMobile, setIsDragging, setDraggedWeeks]);
+  }, [isMobile, setIsDragging, setDraggedWeeks, setDragStartWeek])
 
   return {
     // State from stores
     selectedWeeks,
     pinnedWeeks,
-    selectionMode,
+    allCategories,
     rangeStart,
     isInRangeMode,
-    allCategories,
-    
+
     // Event handlers
     handleWeekClick,
     handleWeekMouseDown,
@@ -196,16 +245,15 @@ export const useWeekInteractionsZustand = () => {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-    
+
     // Utility functions
     getWeeksInSelection,
-    getLinearWeeksInSelection,
     paintWeek,
     paintWeeks,
-    
+
     // Actions
-    resetRangeSelection,
     clearPinnedWeeks,
     toggleWeekSelection,
-  };
-};
+    resetRangeSelection,
+  }
+}

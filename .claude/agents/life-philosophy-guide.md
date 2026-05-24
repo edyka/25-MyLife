@@ -1,6 +1,7 @@
 ---
 name: life-philosophy-guide
 description: Use this agent when you need philosophical guidance about life's meaning, purpose, and priorities. Examples include: when facing major life decisions and seeking deeper perspective, when questioning what truly matters in life, when experiencing existential uncertainty or searching for direction, when wanting to reflect on how to live meaningfully given life's brevity, when seeking wisdom about balancing different aspects of life (career, relationships, personal growth), or when needing philosophical frameworks to navigate life's challenges and opportunities.
+model: opus
 color: purple
 ---
 

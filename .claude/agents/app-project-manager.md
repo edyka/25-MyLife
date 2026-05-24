@@ -1,6 +1,7 @@
 ---
 name: app-project-manager
 description: Use this agent when you need strategic guidance on app development projects, including planning, design decisions, feature prioritization, user experience optimization, monetization strategies, or overall project direction. Examples: <example>Context: User is starting a new mobile app project and needs guidance on project structure and planning. user: 'I want to build a fitness tracking app but I'm not sure where to start or what features to prioritize' assistant: 'Let me use the app-project-manager agent to provide comprehensive project guidance and strategic planning for your fitness app.'</example> <example>Context: User has developed core functionality and needs guidance on making the app market-ready. user: 'My app works but I'm not sure if it's ready for users or how to make it profitable' assistant: 'I'll use the app-project-manager agent to evaluate your app's market readiness and provide monetization strategies.'</example>
+model: opus
 color: red
 ---
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Cache - Viventiva</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Clear Cache</h1>
+        <p>If your app is stuck on "Checking authentication...", click the button below to clear your cache and start fresh.</p>
+        <button onclick="clearCache()">Clear Cache & Reload</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        async function clearCache() {
+            try {
+                // Show progress
+                document.getElementById('message').innerHTML = '<div class="success">⏳ Clearing cache...</div>';
+
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(r => r.unregister()));
+                }
+
+                // Clear all caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+
+                // Show success message
+                document.getElementById('message').innerHTML = '<div class="success">✅ All cache cleared! Reloading...</div>';
+
+                // Hard reload after 1 second to get fresh code
+                setTimeout(() => {
+                    window.location.href = '/?nocache=' + Date.now();
+                    window.location.reload(true);
+                }, 1000);
+            } catch (error) {
+                document.getElementById('message').innerHTML = '<div style="color: red;">❌ Error: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

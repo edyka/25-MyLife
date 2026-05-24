@@ -1,45 +1,59 @@
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
-import { getTheme } from '../utils/themeConfig';
-import * as Sentry from '@sentry/react';
+import React from 'react'
+import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react'
+import { getTheme } from '../utils/themeConfig'
+import { getUserFriendlyError } from '../utils/errorMessages'
+// Lazy-load Sentry to avoid ~50-80KB in initial bundle
+let _Sentry = null
+const getSentry = () => {
+  if (!_Sentry) {
+    _Sentry = import('@sentry/react')
+  }
+  return _Sentry
+}
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
-    super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
+    super(props)
+    this.state = {
+      hasError: false,
+      error: null,
       errorInfo: null,
-      retryCount: 0
-    };
+      retryCount: 0,
+    }
   }
 
   static getDerivedStateFromError(_error) {
-    return { hasError: true };
+    return { hasError: true }
   }
 
   componentDidCatch(error, errorInfo) {
     this.setState({
       error,
-      errorInfo
-    });
-    
-    console.error('Error caught by boundary:', error, errorInfo);
-    
-    // Report to Sentry
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-      tags: {
-        errorBoundary: true,
-      },
-    });
-    
+      errorInfo,
+    })
+
+    console.error('Error caught by boundary:', error, errorInfo)
+
+    // Report to Sentry (lazy-loaded)
+    getSentry()
+      .then(Sentry => {
+        Sentry.captureException(error, {
+          contexts: {
+            react: {
+              componentStack: errorInfo.componentStack,
+            },
+          },
+          tags: {
+            errorBoundary: true,
+          },
+        })
+      })
+      .catch(() => {
+        // Sentry failed to load - error already logged to console above
+      })
+
     if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+      this.props.onError(error, errorInfo)
     }
   }
 
@@ -48,69 +62,64 @@ class ErrorBoundary extends React.Component {
       hasError: false,
       error: null,
       errorInfo: null,
-      retryCount: prevState.retryCount + 1
-    }));
-  };
+      retryCount: prevState.retryCount + 1,
+    }))
+  }
 
   handleResetApp = () => {
     if (confirm('This will clear all your data and restart the app. Are you sure?')) {
-      localStorage.clear();
-      window.location.reload();
+      localStorage.clear()
+      window.location.reload()
     }
-  };
+  }
 
   render() {
     if (this.state.hasError) {
       // Get current theme state from props or defaults
-      const { darkMode = false, themePreset = 'emerald' } = this.props;
-      const theme = getTheme(themePreset);
+      const { darkMode = false, themePreset = 'emerald' } = this.props
+      const theme = getTheme(themePreset)
 
       return (
-        <div className={`min-h-screen flex items-center justify-center p-4 ${
-          darkMode
-            ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
-            : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').trim()}`
-        }`}>
-          <div className={`max-w-lg w-full p-8 rounded-3xl shadow-2xl ${
-            darkMode 
-              ? 'bg-gray-800 border border-gray-700' 
-              : 'bg-white border border-gray-200'
-          }`}>
+        <div
+          className={`min-h-screen flex items-center justify-center p-4 ${
+            darkMode
+              ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
+              : `bg-gradient-to-br ${theme.onboardingLight.replace('bg-gradient-to-r', '').trim()}`
+          }`}
+        >
+          <div
+            className={`max-w-lg w-full p-8 rounded-3xl shadow-2xl ${
+              darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+            }`}
+          >
             {/* Error Icon */}
             <div className="flex justify-center mb-6">
-              <div className={`p-4 rounded-full ${
-                darkMode ? `bg-${themePreset}-500/20` : `bg-${themePreset}-100`
-              }`}>
-                <AlertTriangle className={`w-8 h-8 ${
-                  darkMode ? theme.accentDark.replace('text-', 'text-') : theme.accent.replace('text-', 'text-')
-                }`} />
+              <div className={`p-4 rounded-full ${darkMode ? theme.accentBgDark : theme.accentBg}`}>
+                <AlertTriangle
+                  className={`w-8 h-8 ${
+                    darkMode
+                      ? theme.accentDark.replace('text-', 'text-')
+                      : theme.accent.replace('text-', 'text-')
+                  }`}
+                />
               </div>
             </div>
 
             {/* Error Message */}
             <div className="text-center mb-8">
-              <h1 className={`text-2xl font-bold mb-3 ${
-                darkMode ? 'text-white' : 'text-gray-900'
-              }`}>
+              <h1
+                className={`text-2xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}
+              >
                 Something went wrong
               </h1>
-              <p className={`text-sm leading-relaxed ${
-                darkMode ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                {this.state.error ? (
-                  <>
-                    {(() => {
-                      try {
-                        const { getUserFriendlyError } = require('../utils/errorMessages');
-                        return getUserFriendlyError(this.state.error);
-                      } catch {
-                        return 'We encountered an unexpected error. Don\'t worry - your data is safe. Try refreshing the page or contact support if the problem persists.';
-                      }
-                    })()}
-                  </>
-                ) : (
-                  'We encountered an unexpected error. Don\'t worry - your data is safe. Try refreshing the page or contact support if the problem persists.'
-                )}
+              <p
+                className={`text-sm leading-relaxed ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}
+              >
+                {this.state.error
+                  ? getUserFriendlyError(this.state.error)
+                  : "We encountered an unexpected error. Don't worry - your data is safe. Try refreshing the page or contact support if the problem persists."}
               </p>
             </div>
 
@@ -145,17 +154,19 @@ class ErrorBoundary extends React.Component {
 
             {/* Debug Info (Development Only) */}
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className={`mt-6 p-4 rounded-lg ${
-                darkMode ? 'bg-gray-900' : 'bg-gray-50'
-              }`}>
-                <summary className={`cursor-pointer text-sm font-medium ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
+              <details className={`mt-6 p-4 rounded-lg ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                <summary
+                  className={`cursor-pointer text-sm font-medium ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
                   Debug Information
                 </summary>
-                <pre className={`mt-3 text-xs overflow-auto ${
-                  darkMode ? 'text-red-400' : 'text-red-600'
-                }`}>
+                <pre
+                  className={`mt-3 text-xs overflow-auto ${
+                    darkMode ? 'text-red-400' : 'text-red-600'
+                  }`}
+                >
                   {this.state.error.toString()}
                   {this.state.errorInfo.componentStack}
                 </pre>
@@ -164,19 +175,21 @@ class ErrorBoundary extends React.Component {
 
             {/* Retry Count */}
             {this.state.retryCount > 0 && (
-              <div className={`mt-4 text-center text-xs ${
-                darkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}>
+              <div
+                className={`mt-4 text-center text-xs ${
+                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}
+              >
                 Retry attempts: {this.state.retryCount}
               </div>
             )}
           </div>
         </div>
-      );
+      )
     }
 
-    return this.props.children;
+    return this.props.children
   }
 }
 
-export default ErrorBoundary;
+export default ErrorBoundary

@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 /**
  * Life Store - Manages core life data
@@ -20,81 +20,81 @@ export const useLifeStore = create(
 
       // Actions
       setBirthData: (day, month, year) => {
-        set({ birthDay: day, birthMonth: month, birthYear: year });
+        set({ birthDay: day, birthMonth: month, birthYear: year })
         // Automatically recalculate current week when birth data changes
-        get().calculateCurrentWeek();
+        get().calculateCurrentWeek()
       },
 
-      setLifeExpectancy: (expectancy) => set({ lifeExpectancy: expectancy }),
+      setLifeExpectancy: expectancy => set({ lifeExpectancy: expectancy }),
 
-      setUserName: (name) => set({ userName: name }),
-      
+      setUserName: name => set({ userName: name }),
+
       calculateCurrentWeek: () => {
-        const { birthYear, birthMonth, birthDay } = get();
+        const { birthYear, birthMonth, birthDay } = get()
 
         if (!birthYear || !birthMonth || !birthDay) {
-          set({ currentWeek: 1 });
-          return 1;
+          set({ currentWeek: 1 })
+          return 1
         }
 
-        const birth = new Date(
-          parseInt(birthYear),
-          parseInt(birthMonth) - 1,
-          parseInt(birthDay)
-        );
-        const now = new Date();
-        const diffTime = Math.abs(now - birth);
-        const currentWeek = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1;
+        const birth = new Date(parseInt(birthYear), parseInt(birthMonth) - 1, parseInt(birthDay))
+        const now = new Date()
+        const diffTime = Math.abs(now - birth)
+        const currentWeek = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1
 
-        set({ currentWeek });
-        return currentWeek;
+        set({ currentWeek })
+        return currentWeek
       },
-      
+
       // Computed getters
       getTotalWeeks: () => {
-        const { lifeExpectancy } = get();
-        return lifeExpectancy * 52;
+        const { lifeExpectancy } = get()
+        return lifeExpectancy * 52
       },
-      
-      getAgeFromWeek: (weekNumber) => {
-        return Math.floor((weekNumber - 1) / 52);
+
+      getAgeFromWeek: weekNumber => {
+        return Math.floor((weekNumber - 1) / 52)
       },
-      
-      getQuarterFromWeek: (weekNumber) => {
-        const weekInYear = ((weekNumber - 1) % 52) + 1;
-        return Math.ceil(weekInYear / 13);
+
+      getQuarterFromWeek: weekNumber => {
+        const weekInYear = ((weekNumber - 1) % 52) + 1
+        return Math.ceil(weekInYear / 13)
       },
-      
+
       // Initialize current week on store creation
       initialize: () => {
-        const state = get();
+        const state = get()
 
         // Force recalculation by calling calculateCurrentWeek
-        const newWeek = state.calculateCurrentWeek();
+        const newWeek = state.calculateCurrentWeek()
 
         // Force a state update to trigger re-renders
-        set({ currentWeek: newWeek });
+        set({ currentWeek: newWeek })
 
-        return newWeek;
-      }
+        return newWeek
+      },
     }),
     {
       name: 'memento-vivere-life',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         birthDay: state.birthDay,
         birthMonth: state.birthMonth,
         birthYear: state.birthYear,
         lifeExpectancy: state.lifeExpectancy,
-        currentWeek: state.currentWeek
-      })
+        currentWeek: state.currentWeek,
+        userName: state.userName,
+      }),
+      onRehydrateStorage: () => state => {
+        // Calculate current week after rehydration from localStorage
+        if (state) {
+          state.calculateCurrentWeek()
+        }
+      },
     }
   )
-);
+)
 
 // Optimized individual selectors for fine-grained subscriptions
 // Use these instead of useLifeSelectors to prevent unnecessary re-renders
 // Example: const birthDay = useLifeStore(state => state.birthDay);
-
-// Initialize current week calculation on app start
-useLifeStore.getState().initialize();
