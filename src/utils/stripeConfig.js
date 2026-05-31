@@ -2,6 +2,7 @@
 // Get your publishable key from https://dashboard.stripe.com/apikeys
 
 import { auth } from '../lib/supabase'
+import { trackEvent } from './analytics'
 
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 
@@ -42,7 +43,23 @@ export const STRIPE_PRODUCTS = {
     price: 99,
     interval: null,
   },
+  // Founding-member launch price for Lifetime — a limited-time urgency offer.
+  // It is ONLY usable when its own Stripe Price ID is configured, so the price we
+  // show ($79) can never diverge from what Stripe actually charges. When unset,
+  // the UI falls back to the regular LIFE ($99) product.
+  LIFE_FOUNDING: {
+    name: 'Memento',
+    description: 'Lifetime access — founding member price',
+    priceId: import.meta.env.VITE_STRIPE_LIFE_FOUNDING_PRICE_ID || null,
+    mode: 'payment',
+    price: 79,
+    interval: null,
+  },
 }
+
+// Whether the limited-time founding Lifetime price ($79) is live. Gated on its own
+// Stripe Price ID existing so we never display the discount while charging full price.
+export const isFoundingPriceAvailable = () => Boolean(STRIPE_PRODUCTS.LIFE_FOUNDING.priceId)
 
 // Initialize Stripe
 let stripePromise = null
@@ -127,9 +144,21 @@ export const redirectToCheckout = async plan => {
     )
   }
 
+  // Track checkout intent for ads/analytics (Meta Pixel: InitiateCheckout)
+  trackEvent('initiate_checkout', {
+    value: product.price,
+    currency: 'USD',
+    plan,
+    content_name: product.name,
+  })
+
+  // Carry purchase value back on the success redirect so the Purchase event
+  // (fired in main.jsx) can report value + currency.
+  const successUrl = `${window.location.origin}/?checkout=success&value=${product.price}&currency=USD`
+
   // Create checkout session - returns { sessionId, url }
   // User identity is extracted from JWT server-side, not passed from client
-  const { url } = await createCheckoutSession(product.priceId, product.mode)
+  const { url } = await createCheckoutSession(product.priceId, product.mode, successUrl)
 
   if (!url) {
     throw new Error('Failed to get checkout URL')
@@ -141,6 +170,7 @@ export const redirectToCheckout = async plan => {
 
 export default {
   isStripeConfigured,
+  isFoundingPriceAvailable,
   getStripe,
   createCheckoutSession,
   redirectToCheckout,

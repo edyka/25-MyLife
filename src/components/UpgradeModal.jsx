@@ -5,7 +5,11 @@ import { X, Check, Zap, Crown, Loader2, Sparkles } from 'lucide-react'
 import { useUIStore } from '../stores/useUIStore'
 import { usePremiumStore } from '../stores/usePremiumStore'
 import { getTheme } from '../utils/themeConfig'
-import { redirectToCheckout, isStripeConfigured } from '../utils/stripeConfig'
+import {
+  redirectToCheckout,
+  isStripeConfigured,
+  isFoundingPriceAvailable,
+} from '../utils/stripeConfig'
 
 const UpgradeModal = ({ isOpen, onClose, feature }) => {
   const darkMode = useUIStore(state => state.darkMode)
@@ -16,6 +20,9 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
   const [loadingTier, setLoadingTier] = useState(null)
   const [error, setError] = useState(null)
   const [billingPeriod, setBillingPeriod] = useState('yearly')
+
+  // Founding Lifetime launch price only shows when its Stripe price is configured.
+  const founding = isFoundingPriceAvailable()
 
   const handleUpgrade = async stripeProductKey => {
     if (!stripeProductKey) return
@@ -39,6 +46,9 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
 
   if (!isOpen) return null
 
+  // Lifetime (Memento) leads — it is the highest-value, best-converting offer.
+  // Reflect (subscription) follows; monthly is intentionally de-emphasized behind
+  // the yearly-default billing toggle.
   const tiers = [
     {
       name: 'Observe',
@@ -59,6 +69,27 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
       tierKey: 'free',
     },
     {
+      name: 'Memento',
+      tagline: 'One payment, for the rest of your weeks',
+      price: founding ? '$79' : '$99',
+      originalPrice: founding ? '$99' : null,
+      note: founding ? 'Founding price — limited time' : null,
+      period: 'Once',
+      icon: Crown,
+      badge: 'Best Value',
+      features: [
+        { text: 'Everything in Reflect, plus:', active: true, bold: true },
+        { text: 'Lifetime access — pay once, yours forever', active: true },
+        { text: 'Founding member badge', active: true },
+        { text: 'All future updates included', active: true },
+        { text: 'Early access to new features', active: true },
+      ],
+      cta: founding ? 'Become a Founding Member' : 'Own It for Life',
+      stripeProductKey: founding ? 'LIFE_FOUNDING' : 'LIFE',
+      highlighted: true,
+      tierKey: 'life',
+    },
+    {
       name: 'Reflect',
       tagline: 'Custom moods, goals, exports',
       price: billingPeriod === 'yearly' ? '$39.99' : '$4.99',
@@ -66,7 +97,6 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
       altPrice:
         billingPeriod === 'yearly' ? 'or $4.99/month' : 'or $39.99/year — about 8 of your weeks',
       icon: Zap,
-      badge: 'Recommended',
       savings: billingPeriod === 'yearly' ? 'Save 33%' : null,
       features: [
         { text: 'Everything in Observe, plus:', active: true, bold: true },
@@ -78,26 +108,7 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
       ],
       cta: 'Choose Reflect',
       stripeProductKey: billingPeriod === 'yearly' ? 'PRO_YEARLY' : 'PRO_MONTHLY',
-      highlighted: true,
       tierKey: 'pro',
-    },
-    {
-      name: 'Memento',
-      tagline: 'One payment, for the rest of your weeks',
-      price: '$99',
-      originalPrice: '$149',
-      period: 'Once',
-      icon: Crown,
-      features: [
-        { text: 'Everything in Reflect, plus:', active: true, bold: true },
-        { text: 'Lifetime access to all features', active: true },
-        { text: 'Founding member badge', active: true },
-        { text: 'All future updates included', active: true },
-        { text: 'Early access to new features', active: true },
-      ],
-      cta: 'Choose Memento',
-      stripeProductKey: 'LIFE',
-      tierKey: 'life',
     },
   ]
 
@@ -188,35 +199,27 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
               const Icon = tier.icon
               const isLoading = loadingTier === tier.stripeProductKey
               const isCurrentPlan = currentTier === tier.tierKey
-              const isPro = tier.name === 'Pro'
-              const isLife = tier.name === 'Life'
+              const isPaid = tier.tierKey !== 'free'
+              const isHero = Boolean(tier.highlighted)
 
               return (
                 <motion.div
                   key={tier.name}
                   whileHover={{ y: -4 }}
                   className={`relative p-5 rounded-2xl border transition-all flex flex-col ${
-                    tier.highlighted
+                    isHero
                       ? darkMode
-                        ? 'bg-gradient-to-b from-white/10 to-white/5 border-emerald-500/30 shadow-lg shadow-emerald-500/10'
-                        : 'bg-gradient-to-b from-emerald-50 to-white border-emerald-200 shadow-lg shadow-emerald-500/10'
-                      : isLife
-                        ? darkMode
-                          ? 'bg-gradient-to-b from-purple-500/10 to-pink-500/5 border-purple-500/30'
-                          : 'bg-gradient-to-b from-purple-50 to-pink-50 border-purple-200'
-                        : darkMode
-                          ? 'bg-slate-800/50 border-slate-700'
-                          : 'bg-slate-50 border-slate-200'
-                  } ${tier.highlighted ? 'md:scale-105 z-10' : ''}`}
+                        ? `bg-white/[0.06] border-white/10 shadow-lg ${theme.accentShadowMd} ring-1 ${theme.accentRing}`
+                        : `bg-white border-white/40 shadow-lg ${theme.accentShadowSm} ring-1 ${theme.accentRingLight}`
+                      : darkMode
+                        ? 'bg-slate-800/50 border-slate-700'
+                        : 'bg-slate-50 border-slate-200'
+                  } ${isHero ? 'md:scale-105 z-10' : ''}`}
                 >
                   {/* Badge */}
                   {tier.badge && (
                     <div
-                      className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg ${
-                        isLife
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500'
-                          : `bg-gradient-to-r ${theme.primary}`
-                      }`}
+                      className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg bg-gradient-to-r ${theme.primary}`}
                     >
                       {tier.badge}
                     </div>
@@ -232,17 +235,15 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
                   {/* Icon */}
                   <div
                     className={`inline-flex p-3 rounded-xl mb-4 w-fit ${
-                      isPro || tier.highlighted
+                      isPaid
                         ? `bg-gradient-to-br ${theme.primary}`
-                        : isLife
-                          ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-                          : darkMode
-                            ? 'bg-slate-700'
-                            : 'bg-slate-200'
+                        : darkMode
+                          ? 'bg-slate-700'
+                          : 'bg-slate-200'
                     }`}
                   >
                     <Icon
-                      className={`w-5 h-5 ${isPro || isLife || tier.highlighted ? 'text-white' : darkMode ? 'text-slate-300' : 'text-slate-600'}`}
+                      className={`w-5 h-5 ${isPaid ? 'text-white' : darkMode ? 'text-slate-300' : 'text-slate-600'}`}
                     />
                   </div>
 
@@ -268,13 +269,11 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
                       )}
                       <span
                         className={`text-3xl font-black ${
-                          isPro
+                          isPaid
                             ? `bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`
-                            : isLife
-                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent'
-                              : darkMode
-                                ? 'text-white'
-                                : 'text-slate-900'
+                            : darkMode
+                              ? 'text-white'
+                              : 'text-slate-900'
                         }`}
                       >
                         {tier.price}
@@ -297,6 +296,9 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
                         {tier.altPrice}
                       </p>
                     )}
+                    {tier.note && (
+                      <p className={`text-xs mt-1 font-semibold ${theme.accent}`}>{tier.note}</p>
+                    )}
                   </div>
 
                   {/* Divider */}
@@ -317,13 +319,7 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
                         ) : (
                           <>
                             <Check
-                              className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                                isPro || tier.highlighted
-                                  ? 'text-emerald-500'
-                                  : isLife
-                                    ? 'text-purple-500'
-                                    : 'text-green-500'
-                              }`}
+                              className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isPaid ? theme.accent : 'text-green-500'}`}
                             />
                             <span
                               className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}
@@ -347,13 +343,11 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
                         ? darkMode
                           ? 'bg-slate-700 text-slate-400 cursor-default'
                           : 'bg-slate-200 text-slate-500 cursor-default'
-                        : isLife
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:shadow-xl'
-                          : isPro || tier.highlighted
-                            ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl`
-                            : darkMode
-                              ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                              : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                        : isPaid
+                          ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl`
+                          : darkMode
+                            ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                            : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
                     } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
                   >
                     {isLoading ? (

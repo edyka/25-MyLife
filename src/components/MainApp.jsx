@@ -6,6 +6,7 @@ import Footer from './Footer'
 import OnboardingTour from './OnboardingTour'
 import ClearLifeGrid from './ClearLifeGrid'
 import ModernMoodPalette from './ModernMoodPalette'
+import UpgradeNudge from './UpgradeNudge'
 
 // Import optimized components
 import GoalTracker from './GoalTracker'
@@ -557,6 +558,9 @@ const MainApp = memo(({ isGuestMode = false, onGuestSaveAttempt, isLoading = fal
                     enableVirtualization={true}
                   />
                 </div>
+
+                {/* Upgrade nudge — aha-moment surface for free users (leads with Lifetime) */}
+                <UpgradeNudge isGuestMode={isGuestMode} />
 
                 {/* Share Section */}
                 <div

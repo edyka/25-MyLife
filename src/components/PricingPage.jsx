@@ -4,7 +4,11 @@ import { Check, Sparkles, Zap, Crown, Loader2 } from 'lucide-react'
 import { getTheme } from '../utils/themeConfig'
 import { useUIStore } from '../stores/useUIStore'
 import { usePremiumStore } from '../stores/usePremiumStore'
-import { redirectToCheckout, isStripeConfigured } from '../utils/stripeConfig'
+import {
+  redirectToCheckout,
+  isStripeConfigured,
+  isFoundingPriceAvailable,
+} from '../utils/stripeConfig'
 
 const PricingPage = ({ darkMode }) => {
   const themePreset = useUIStore(state => state.themePreset)
@@ -12,6 +16,9 @@ const PricingPage = ({ darkMode }) => {
   const [loadingTier, setLoadingTier] = useState(null)
   const [error, setError] = useState(null)
   const [billingPeriod, setBillingPeriod] = useState('yearly') // 'yearly' or 'monthly'
+
+  // Founding Lifetime launch price is only shown when its Stripe price is configured.
+  const founding = isFoundingPriceAvailable()
 
   // Get current user's subscription tier
   const currentTier = usePremiumStore(state => state.tier)
@@ -68,6 +75,28 @@ const PricingPage = ({ darkMode }) => {
       stripeProductKey: null, // Free tier
     },
     {
+      name: 'Memento',
+      tagline:
+        'Pay once, keep it for the rest of your weeks. Own your life — outlive subscriptions.',
+      price: founding ? '$79' : '$99',
+      period: 'Once',
+      originalPrice: founding ? '$99' : null,
+      note: founding ? 'Founding price — limited time' : null,
+      icon: Crown,
+      badge: 'Best Value',
+      features: [
+        { text: 'Everything in Reflect, plus:', active: true, bold: true },
+        { text: 'Lifetime access — pay once, yours forever', active: true },
+        { text: 'Founding member badge', active: true },
+        { text: 'All future updates included', active: true },
+        { text: 'Early access to new features', active: true },
+      ],
+      cta: founding ? 'Become a Founding Member' : 'Own It for Life',
+      ctaStyle: 'premium',
+      highlighted: true,
+      stripeProductKey: founding ? 'LIFE_FOUNDING' : 'LIFE',
+    },
+    {
       name: 'Reflect',
       tagline:
         'Custom moods, goals, exports. The price of one coffee for a year of weekly clarity.',
@@ -78,7 +107,6 @@ const PricingPage = ({ darkMode }) => {
           ? 'or $4.99/month'
           : 'or $39.99/year — about 8 of your remaining weeks',
       icon: Zap,
-      badge: 'Recommended',
       features: [
         { text: 'Everything in Observe, plus:', active: true, bold: true },
         { text: 'Unlimited custom moods', active: true },
@@ -89,28 +117,9 @@ const PricingPage = ({ darkMode }) => {
       ],
       cta: 'Choose Reflect',
       ctaStyle: 'primary',
-      highlighted: true,
+      highlighted: false,
       savings: billingPeriod === 'yearly' ? 'Save 33%' : null,
       stripeProductKey: billingPeriod === 'yearly' ? 'PRO_YEARLY' : 'PRO_MONTHLY',
-    },
-    {
-      name: 'Memento',
-      tagline: 'A single payment, for the rest of your weeks. Outlive subscriptions.',
-      price: '$99',
-      period: 'Once',
-      originalPrice: '$149',
-      icon: Crown,
-      features: [
-        { text: 'Everything in Reflect, plus:', active: true, bold: true },
-        { text: 'Lifetime access to all features', active: true },
-        { text: 'Founding member badge', active: true },
-        { text: 'All future updates included', active: true },
-        { text: 'Early access to new features', active: true },
-      ],
-      cta: 'Choose Memento',
-      ctaStyle: 'premium',
-      highlighted: false,
-      stripeProductKey: 'LIFE', // Maps to STRIPE_PRODUCTS.LIFE
     },
   ]
 
@@ -300,7 +309,7 @@ const PricingPage = ({ darkMode }) => {
                   )}
                   <span
                     className={`text-5xl font-black tracking-tight ${
-                      isPro
+                      isPro || isHighlighted
                         ? `bg-gradient-to-r ${theme.primary} bg-clip-text text-transparent`
                         : darkMode
                           ? 'text-white'
@@ -326,6 +335,9 @@ const PricingPage = ({ darkMode }) => {
                   <p className={`text-xs mt-2 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                     or {tier.monthlyPrice}
                   </p>
+                )}
+                {tier.note && (
+                  <p className={`text-xs mt-2 font-semibold ${theme.accent}`}>{tier.note}</p>
                 )}
               </div>
 
@@ -445,8 +457,10 @@ const PricingPage = ({ darkMode }) => {
               a: "Yes! Upgrade anytime from your account settings. We'll credit any unused monthly time toward your yearly subscription.",
             },
             {
-              q: 'Will the Pro price increase to $149?',
-              a: "Yes. We're offering $99 to early supporters during our launch period. Current Pro users are grandfathered at their purchase price.",
+              q: 'Is Memento really a one-time payment?',
+              a: founding
+                ? 'Yes — Memento is lifetime access for a single payment, no subscription ever. The $79 founding price is a limited launch offer (it returns to $99 afterward); lock it in once and every future update is included, free.'
+                : 'Yes — Memento is lifetime access for a single payment, no subscription ever. Pay once and every future update is included, free — your price is locked in for good.',
             },
           ].map((faq, i) => (
             <div key={i}>
