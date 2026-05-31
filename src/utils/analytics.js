@@ -1,8 +1,20 @@
-// Analytics utility for Plausible (privacy-friendly) or Google Analytics
+// Analytics utility for Plausible (privacy-friendly), Google Analytics, and the
+// Meta (Facebook) Pixel.
 // To use Plausible: Add VITE_PLAUSIBLE_DOMAIN to your .env file
 // To use Google Analytics: Add VITE_GA_MEASUREMENT_ID to your .env file
+// To use the Meta Pixel: Add VITE_META_PIXEL_ID to your .env file
 
 const isDev = process.env.NODE_ENV === 'development'
+
+// Map internal action names → Meta Pixel standard events. Only events listed
+// here are forwarded to the Pixel (as standard events); everything else stays
+// in Plausible/GA only, so ad telemetry stays clean.
+const META_STANDARD_EVENTS = {
+  sign_up: 'CompleteRegistration',
+  lead: 'Lead',
+  initiate_checkout: 'InitiateCheckout',
+  purchase: 'Purchase',
+}
 
 /**
  * Check if analytics consent is given
@@ -35,30 +47,25 @@ export const initAnalytics = () => {
 
   const plausibleDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN
   const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID
+  const metaPixelId = import.meta.env.VITE_META_PIXEL_ID
+
+  // Each provider initializes independently so GA and the Meta Pixel can run
+  // side by side (the common setup: GA for product analytics, Pixel for ads).
+  const initialized = []
 
   // Initialize Plausible (privacy-friendly, GDPR compliant)
-  if (plausibleDomain) {
-    // Check if already initialized
-    if (window.plausible) {
-      return 'plausible'
-    }
-
+  if (plausibleDomain && !window.plausible) {
     const script = document.createElement('script')
     script.defer = true
     script.dataset.domain = plausibleDomain
     script.src = 'https://plausible.io/js/script.js'
     document.head.appendChild(script)
     if (isDev) console.log('[Analytics] Plausible initialized for domain:', plausibleDomain)
-    return 'plausible'
+    initialized.push('plausible')
   }
 
   // Initialize Google Analytics 4
-  if (gaMeasurementId) {
-    // Check if already initialized
-    if (window.gtag) {
-      return 'ga'
-    }
-
+  if (gaMeasurementId && !window.gtag) {
     // Load gtag.js
     const script1 = document.createElement('script')
     script1.async = true
@@ -77,11 +84,41 @@ export const initAnalytics = () => {
       cookie_flags: 'SameSite=None;Secure',
     })
     if (isDev) console.log('[Analytics] Google Analytics initialized:', gaMeasurementId)
-    return 'ga'
+    initialized.push('ga')
   }
 
-  // No analytics configured - this is fine, stay silent
-  return null
+  // Initialize Meta (Facebook) Pixel — injected dynamically (no inline script)
+  // so it complies with the CSP in netlify.toml ('unsafe-inline' is not allowed
+  // in script-src; connect.facebook.net is whitelisted there).
+  if (metaPixelId && !window.fbq) {
+    // Pixel bootstrap (function declaration mirrors the gtag pattern above)
+    function fbq(...args) {
+      if (fbq.callMethod) {
+        fbq.callMethod.apply(fbq, args)
+      } else {
+        fbq.queue.push(args)
+      }
+    }
+    if (!window._fbq) window._fbq = fbq
+    fbq.push = fbq
+    fbq.loaded = true
+    fbq.version = '2.0'
+    fbq.queue = []
+    window.fbq = fbq
+
+    const script2 = document.createElement('script')
+    script2.async = true
+    script2.src = 'https://connect.facebook.net/en_US/fbevents.js'
+    document.head.appendChild(script2)
+
+    window.fbq('init', metaPixelId)
+    window.fbq('track', 'PageView')
+    if (isDev) console.log('[Analytics] Meta Pixel initialized:', metaPixelId)
+    initialized.push('meta')
+  }
+
+  // No analytics configured (or all already initialized) - stay silent
+  return initialized.length > 0 ? initialized : null
 }
 
 /**
@@ -95,6 +132,7 @@ export const trackPageView = path => {
 
   const plausibleDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN
   const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID
+  const metaPixelId = import.meta.env.VITE_META_PIXEL_ID
 
   if (plausibleDomain && window.plausible) {
     window.plausible('pageview', { u: path })
@@ -104,6 +142,10 @@ export const trackPageView = path => {
     window.gtag('config', gaMeasurementId, {
       page_path: path,
     })
+  }
+
+  if (metaPixelId && window.fbq) {
+    window.fbq('track', 'PageView')
   }
 }
 
@@ -118,6 +160,7 @@ export const trackEvent = (eventName, props = {}) => {
 
   const plausibleDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN
   const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID
+  const metaPixelId = import.meta.env.VITE_META_PIXEL_ID
 
   if (plausibleDomain && window.plausible) {
     window.plausible(eventName, { props })
@@ -125,6 +168,14 @@ export const trackEvent = (eventName, props = {}) => {
 
   if (gaMeasurementId && window.gtag) {
     window.gtag('event', eventName, props)
+  }
+
+  // Forward only mapped conversions to the Meta Pixel as standard events.
+  if (metaPixelId && window.fbq) {
+    const standardEvent = META_STANDARD_EVENTS[eventName]
+    if (standardEvent) {
+      window.fbq('track', standardEvent, props)
+    }
   }
 }
 

@@ -193,6 +193,8 @@ const LoginModal = ({ isOpen, onClose, onLogin, initialMode = 'login', initialDa
       } else {
         // For SIGNUP: user needs to confirm email before session is established
         if (isSignUp) {
+          // Registration succeeded (fires whether or not email confirmation is pending)
+          trackUserAction('sign_up', { method: 'email' })
           if (isDev)
             console.log('[Viventiva LoginModal] Signup successful - user may need to confirm email')
 

@@ -69,6 +69,18 @@ Husky + lint-staged run ESLint --fix and Prettier on `*.{js,jsx}` at commit time
 - **Env vars**: `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_STRIPE_PRO_MONTHLY_PRICE_ID`, `VITE_STRIPE_PRO_YEARLY_PRICE_ID`, `VITE_STRIPE_LIFE_PRICE_ID`
 - **`usePremiumStore` does NOT use persist middleware** — tier must be re-fetched from server, never trusted from localStorage
 
+## Analytics & Conversion Tracking
+
+- **`src/utils/analytics.js`** supports three providers, all **consent-gated** (`viventiva_cookie_consent`) and **env-driven**; each initializes independently so they can run together:
+  - Plausible (`VITE_PLAUSIBLE_DOMAIN`), GA4 (`VITE_GA_MEASUREMENT_ID`), **Meta Pixel (`VITE_META_PIXEL_ID`)**.
+  - The Meta Pixel is **injected dynamically** (not an inline snippet) so it satisfies the CSP (`script-src` has no `'unsafe-inline'`; `connect.facebook.net` is whitelisted).
+- **Conversion events** fire to all configured providers; only events mapped in `META_STANDARD_EVENTS` reach the Pixel (as standard events):
+  - `sign_up` → **CompleteRegistration** — email signup in `LoginModal.jsx`.
+  - `initiate_checkout` → **InitiateCheckout** — in `stripeConfig.redirectToCheckout` (passes value+currency via the success URL).
+  - `purchase` → **Purchase** — fired in `main.jsx` on the `?checkout=success` return, then strips the params (refresh-safe).
+- **Known gaps:** OAuth signups (Google/FB/Apple) don't fire CompleteRegistration yet (email only); Purchase is client-side only — server-side CAPI in `stripe-webhook` is the accurate path (deferred).
+- Set `VITE_META_PIXEL_ID` in `.env` **and** Netlify env vars (Vite inlines it at build time). Pixel ID itself comes from Meta Events Manager.
+
 ## Supabase MCP
 
 Configured in `.mcp.json`. Project ID `jnzwuknbqpihuhbdbhhv`. All `mcp__supabase__*` tools allowed in `.claude/settings.local.json`.
@@ -85,7 +97,7 @@ Run advisors (security + performance) after schema changes.
 - All RLS policies use `(select auth.uid())` for caching (optimized 2026-02-06)
 - All public functions have explicit `search_path` set
 - `service_role` policies scoped `TO service_role`, not `public`
-- CSP in `netlify.toml`: no `'unsafe-inline'` in `script-src`, no `'unsafe-eval'` (Brave strips it; uses `'wasm-unsafe-eval'` instead); Stripe + googletagmanager whitelisted in `connect-src`
+- CSP in `netlify.toml`: no `'unsafe-inline'` in `script-src`, no `'unsafe-eval'` (Brave strips it; uses `'wasm-unsafe-eval'` instead); Stripe + googletagmanager whitelisted in `connect-src`; Meta Pixel whitelisted (`connect.facebook.net` in `script-src`, `www.facebook.com` in `connect-src`). Service worker (`public/sw.js`) also skips Facebook domains.
 - `getCurrentUser()` uses `getUser()` (server-validated) NOT `getSession()` (localStorage-only)
 - `.env` files must never contain real credentials (`.env.example` was cleaned 2026-02-06)
 - **Open**: client-side rate limiter is in-memory and resets on reload — server-side limiter still needed
@@ -98,6 +110,21 @@ Run advisors (security + performance) after schema changes.
 - Largest chunk after split: ~391 KB (was 560 KB before vendor split)
 - Entry `index-*.js`: ~8 KB (most logic lazy-split — keep it that way)
 - Bundle warnings to fix: `analytics.js` and `lib/supabase.js` are imported both statically AND dynamically — pick one strategy per file or chunking is defeated
+
+## Build Version Stamp
+
+- `vite.config.js` injects `__APP_VERSION__` (from `package.json`), `__GIT_COMMIT__` (Netlify `COMMIT_REF`, else local `git rev-parse`), and `__BUILD_TIME__` via `define`; all declared as globals in `eslint.config.js`.
+- `src/utils/version.js` exposes `APP_VERSION`, `GIT_COMMIT`, `BUILD_TIME`, `VERSION_LABEL`.
+- Shown subtly in the footer (`v<version> · <commit>`, build time on hover) and as `window.__BUILD__` for console deploy-verification (esbuild strips `console.*` in prod, so a window global is used). Bump the visible version via `package.json` `version`.
+
+## Native App (iOS — Capacitor)
+
+- **Capacitor 8** wraps the Vite/React PWA as a native iOS app (SPM-based, no CocoaPods Podfile). Native project in `ios/`; config in `capacitor.config.ts` (appId `com.viventiva.app`, `webDir: dist`). iOS-first — Android not added yet.
+- **`src/native/index.js`** — `isNativeApp()`, `getNativePlatform()`, `openOAuthUrl()`, `initNative({ onOAuthCode })`. No-op on web; only `@capacitor/core` is imported statically, the plugins (`@capacitor/app`, `@capacitor/browser`) are dynamic-imported inside native-only paths so they stay out of the web bundle.
+- **OAuth deep-linking** — native sign-in (`lib/supabase.js` helpers) opens the provider via `@capacitor/browser` with `redirectTo` = `viventiva://auth/callback` (scheme in `ios/App/App/Info.plist`). `initNative`'s `appUrlOpen` listener runs the `exchangeCodeForSession` handler **injected from `main.jsx`** — the native layer never imports `supabase.js`, avoiding a static/dynamic bundle warning. **Supabase must whitelist `viventiva://auth/callback`** (Auth → URL Configuration) or native login fails.
+- **Free-tier on native** — Apple/Google forbid external payment for digital goods, so `isNativeApp()` gates the Stripe CTAs in `UpgradeModal.jsx` + `PricingPage.jsx` to an "Available on the web" label and short-circuits the checkout handlers. Premium is bought on the website; tier is read from the server and unlocks in-app.
+- **Build**: `npm run build:ios` (vite build + `cap sync ios`), `npm run ios` (open Xcode), `npm run cap:sync`. Icons/splash regen: edit `assets/` then `npx capacitor-assets generate --ios`.
+- **Launch checklist** (Apple Developer account, signing, App Store Connect, review notes, the Supabase redirect-URL step): `docs/IOS_LAUNCH.md`.
 
 ## Repo Hygiene
 
@@ -146,3 +173,5 @@ Driven from a separate Claude Code instance at `/Users/m4` (not from this repo).
 5. `/schedule` Sunday-evening cron → drafts to review folder → manual approval → publish.
 
 **Important runtime split:** Meta Ads MCP only works in Claude.ai (custom connector), NOT in Claude Code. If user asks for ad ops here, draft the prompt to paste into Claude.ai rather than try to execute. Graph API path is for organic only — don't reinvent it for paid.
+
+**Phase 0 complete + first IG + FB posts live (2026-05-24).** FB Page ID `832064029998701`, IG Business Account ID `17841476529494834`, Meta App ID `1746842466474094`. IG handle is `@vieventiva` (kept despite typo vs brand). Tokens + scripts at `~/.config/viventiva-marketing/`. First posts: IG Media ID `17936884836257075`, FB Post ID `832064029998701_122129588457143462` (Memento Vivere quote card, same on both). Outstanding: App Secret (long-lived tokens), Supabase Storage `marketing-media` bucket (catbox.moe is test-only), subagent + cron. See `~/.claude/projects/-Users-m4/memory/project_viventiva_marketing_phase0.md` for full state.

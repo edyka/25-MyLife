@@ -69,7 +69,9 @@ self.addEventListener('fetch', event => {
     request.url.includes('googletagmanager.com') ||
     request.url.includes('google-analytics.com') ||
     request.url.includes('plausible.io') ||
-    request.url.includes('stripe.com')
+    request.url.includes('stripe.com') ||
+    request.url.includes('connect.facebook.net') ||
+    request.url.includes('facebook.com')
   ) {
     return
   }

@@ -1,5 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+
+// Build/version stamp — resolved once at config load and injected via `define`
+// below so the deployed footer can show exactly what's live.
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
+const resolveGitCommit = () => {
+  // Netlify exposes the deployed commit as COMMIT_REF; fall back to git locally.
+  if (process.env.COMMIT_REF) return process.env.COMMIT_REF.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return 'local'
+  }
+}
+const APP_VERSION = pkg.version
+const GIT_COMMIT = resolveGitCommit()
+const BUILD_TIME = new Date().toISOString()
 
 export default defineConfig(({ mode }) => {
   const isProd = mode === 'production'
@@ -140,6 +160,10 @@ export default defineConfig(({ mode }) => {
       // Define environment variables for better tree shaking
       __DEV__: !isProd,
       __PROD__: isProd,
+      // Build/version stamp (shown in the footer + window.__BUILD__)
+      __APP_VERSION__: JSON.stringify(APP_VERSION),
+      __GIT_COMMIT__: JSON.stringify(GIT_COMMIT),
+      __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     },
   }
 })

@@ -9,6 +9,7 @@ import {
   isStripeConfigured,
   isFoundingPriceAvailable,
 } from '../utils/stripeConfig'
+import { isNativeApp } from '../native'
 
 const PricingPage = ({ darkMode }) => {
   const themePreset = useUIStore(state => state.themePreset)
@@ -23,6 +24,8 @@ const PricingPage = ({ darkMode }) => {
   // Get current user's subscription tier
   const currentTier = usePremiumStore(state => state.tier)
   // NOTE: isLifetime is currently unused in this component (kept in store for future UX).
+  // On native (App Store) builds, purchases aren't offered in-app; premium is bought on the web.
+  const isNative = isNativeApp()
 
   // Map tier names to plan names for comparison
   const getTierForPlan = planName => {
@@ -35,6 +38,7 @@ const PricingPage = ({ darkMode }) => {
   // Handle checkout for paid tiers
   const handleCheckout = async (tierName, stripeProductKey) => {
     if (!stripeProductKey) return // Free tier, no checkout needed
+    if (isNative) return // No in-app purchases on native; premium is bought on the web.
 
     setLoadingTier(tierName)
     setError(null)
@@ -392,37 +396,47 @@ const PricingPage = ({ darkMode }) => {
                 ))}
               </ul>
 
-              {/* CTA Button */}
+              {/* CTA Button — purchases are web-only on native (App Store policy) */}
               <div className="mt-auto">
-                <motion.button
-                  whileHover={{ scale: loadingTier || isCurrentPlan ? 1 : 1.02 }}
-                  whileTap={{ scale: loadingTier || isCurrentPlan ? 1 : 0.98 }}
-                  onClick={() => !isCurrentPlan && handleCheckout(tier.name, tier.stripeProductKey)}
-                  disabled={loadingTier === tier.name || isCurrentPlan}
-                  className={`w-full py-4 px-6 rounded-2xl font-bold text-sm tracking-wide transition-all duration-300 backdrop-blur-md flex items-center justify-center gap-2 ${
-                    isCurrentPlan
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border border-white/10 cursor-default'
-                      : tier.ctaStyle === 'primary' || tier.ctaStyle === 'premium'
-                        ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg ${theme.accentShadowLg} hover:shadow-xl border border-white/10`
-                        : darkMode
-                          ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
-                          : 'bg-white/40 hover:bg-white/60 text-slate-900 border border-white/20'
-                  } ${loadingTier === tier.name ? 'opacity-70 cursor-wait' : ''}`}
-                >
-                  {loadingTier === tier.name ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : isCurrentPlan ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Current Plan
-                    </>
-                  ) : (
-                    tier.cta
-                  )}
-                </motion.button>
+                {isNative && tier.stripeProductKey ? (
+                  <div
+                    className={`w-full py-4 px-6 rounded-2xl font-semibold text-xs text-center ${darkMode ? 'bg-white/5 text-slate-400 border border-white/10' : 'bg-white/40 text-slate-500 border border-white/20'}`}
+                  >
+                    Available on the web
+                  </div>
+                ) : (
+                  <motion.button
+                    whileHover={{ scale: loadingTier || isCurrentPlan ? 1 : 1.02 }}
+                    whileTap={{ scale: loadingTier || isCurrentPlan ? 1 : 0.98 }}
+                    onClick={() =>
+                      !isCurrentPlan && handleCheckout(tier.name, tier.stripeProductKey)
+                    }
+                    disabled={loadingTier === tier.name || isCurrentPlan}
+                    className={`w-full py-4 px-6 rounded-2xl font-bold text-sm tracking-wide transition-all duration-300 backdrop-blur-md flex items-center justify-center gap-2 ${
+                      isCurrentPlan
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border border-white/10 cursor-default'
+                        : tier.ctaStyle === 'primary' || tier.ctaStyle === 'premium'
+                          ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg ${theme.accentShadowLg} hover:shadow-xl border border-white/10`
+                          : darkMode
+                            ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
+                            : 'bg-white/40 hover:bg-white/60 text-slate-900 border border-white/20'
+                    } ${loadingTier === tier.name ? 'opacity-70 cursor-wait' : ''}`}
+                  >
+                    {loadingTier === tier.name ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : isCurrentPlan ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Current Plan
+                      </>
+                    ) : (
+                      tier.cta
+                    )}
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           )

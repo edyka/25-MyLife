@@ -10,7 +10,16 @@ export default [
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: { ...globals.browser, ...globals.node },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        // Build-time constants injected by Vite `define` (see vite.config.js)
+        __APP_VERSION__: 'readonly',
+        __GIT_COMMIT__: 'readonly',
+        __BUILD_TIME__: 'readonly',
+        __DEV__: 'readonly',
+        __PROD__: 'readonly',
+      },
       parserOptions: {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
@@ -32,10 +41,7 @@ export default [
       'react/prop-types': 'off',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'react/no-unescaped-entities': 'off',
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
 ]

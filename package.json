@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ios": "vite build && cap sync ios",
+    "cap:sync": "cap sync",
+    "ios": "cap open ios",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -40,6 +43,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@sentry/react": "^10.23.0",
     "@stripe/stripe-js": "^8.5.3",
     "@supabase/supabase-js": "^2.58.0",
@@ -52,6 +61,8 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.3.4",
     "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",

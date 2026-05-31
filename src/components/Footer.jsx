@@ -16,6 +16,7 @@ import {
 import { useUIStore } from '../stores/useUIStore'
 import { usePremiumStore } from '../stores/usePremiumStore'
 import { getTheme } from '../utils/themeConfig'
+import { VERSION_LABEL, BUILD_TIME } from '../utils/version'
 const UpgradeModal = React.lazy(() => import('./UpgradeModal'))
 
 // Static data arrays - defined outside component to avoid recreation on every render
@@ -237,6 +238,14 @@ const Footer = memo(({ darkMode, onNavigate, isAuthenticated = true }) => {
               }`}
             >
               © {currentYear} Viventiva. All rights reserved.
+              <span
+                className={`ml-3 text-xs font-normal align-middle ${
+                  darkMode ? 'text-slate-600' : 'text-slate-400'
+                }`}
+                title={BUILD_TIME ? `Built ${BUILD_TIME}` : undefined}
+              >
+                {VERSION_LABEL}
+              </span>
             </div>
 
             {/* Theme Selector with Dots - Only show for authenticated users */}

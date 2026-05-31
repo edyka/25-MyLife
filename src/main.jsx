@@ -2,12 +2,23 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
-import { initAnalytics } from './utils/analytics'
+import { initAnalytics, trackEvent } from './utils/analytics'
+import { APP_VERSION, GIT_COMMIT, BUILD_TIME } from './utils/version'
 import { hasAnalyticsConsent } from './utils/consentManager'
 import { cleanupLegacyStorage } from './utils/storageUtils'
+import { initNative } from './native'
+import { auth } from './lib/supabase'
 
 // One-time removal of orphan crypto-js localStorage keys (encryption removed 2026-05-23).
 cleanupLegacyStorage()
+
+// Expose the build stamp for quick deploy verification from the console
+// (console.* is stripped in prod builds, so a window global is used instead).
+window.__BUILD__ = { version: APP_VERSION, commit: GIT_COMMIT, time: BUILD_TIME }
+
+// Initialize native (Capacitor) integration — no-op on the web build. The OAuth
+// code-exchange handler is injected so the native layer doesn't import supabase.
+initNative({ onOAuthCode: code => auth.exchangeCodeForSession(code) })
 
 // Initialize Sentry error monitoring (async, non-blocking for faster initial render)
 ;(async () => {
@@ -32,6 +43,29 @@ window.addEventListener('privacyConsentChanged', event => {
     initAnalytics()
   }
 })
+
+// Track a returning Stripe Checkout success as a Purchase conversion, then strip
+// the params so a refresh can't double-count. Value/currency are passed through
+// the success_url by stripeConfig.redirectToCheckout.
+;(() => {
+  try {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('checkout') === 'success') {
+      const value = parseFloat(params.get('value'))
+      trackEvent('purchase', {
+        ...(Number.isFinite(value) ? { value } : {}),
+        currency: params.get('currency') || 'USD',
+      })
+      params.delete('checkout')
+      params.delete('value')
+      params.delete('currency')
+      const query = params.toString()
+      window.history.replaceState(null, '', window.location.pathname + (query ? `?${query}` : ''))
+    }
+  } catch (error) {
+    console.warn('[Viventiva] Checkout success tracking skipped:', error)
+  }
+})()
 
 // Initialize performance monitoring (async, non-blocking)
 ;(async () => {

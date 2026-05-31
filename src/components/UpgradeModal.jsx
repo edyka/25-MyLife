@@ -10,12 +10,15 @@ import {
   isStripeConfigured,
   isFoundingPriceAvailable,
 } from '../utils/stripeConfig'
+import { isNativeApp } from '../native'
 
 const UpgradeModal = ({ isOpen, onClose, feature }) => {
   const darkMode = useUIStore(state => state.darkMode)
   const themePreset = useUIStore(state => state.themePreset)
   const theme = getTheme(themePreset)
   const currentTier = usePremiumStore(state => state.tier)
+  // On native (App Store) builds, purchases aren't offered in-app; premium is bought on the web.
+  const isNative = isNativeApp()
 
   const [loadingTier, setLoadingTier] = useState(null)
   const [error, setError] = useState(null)
@@ -26,6 +29,7 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
 
   const handleUpgrade = async stripeProductKey => {
     if (!stripeProductKey) return
+    if (isNative) return // No in-app purchases on native; premium is bought on the web.
 
     if (!isStripeConfigured()) {
       setError('Payments are not yet configured. Please check back soon!')
@@ -332,35 +336,43 @@ const UpgradeModal = ({ isOpen, onClose, feature }) => {
                     ))}
                   </ul>
 
-                  {/* CTA Button */}
-                  <motion.button
-                    onClick={() => handleUpgrade(tier.stripeProductKey)}
-                    disabled={isLoading || isCurrentPlan}
-                    whileHover={{ scale: isLoading || isCurrentPlan ? 1 : 1.02 }}
-                    whileTap={{ scale: isLoading || isCurrentPlan ? 1 : 0.98 }}
-                    className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                      isCurrentPlan
-                        ? darkMode
-                          ? 'bg-slate-700 text-slate-400 cursor-default'
-                          : 'bg-slate-200 text-slate-500 cursor-default'
-                        : isPaid
-                          ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl`
-                          : darkMode
-                            ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                            : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
-                    } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : isCurrentPlan ? (
-                      'Current Plan'
-                    ) : (
-                      tier.cta
-                    )}
-                  </motion.button>
+                  {/* CTA Button — purchases are web-only on native (App Store policy) */}
+                  {isNative && isPaid ? (
+                    <div
+                      className={`w-full py-3 px-4 rounded-xl font-semibold text-xs text-center ${darkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}
+                    >
+                      Available on the web
+                    </div>
+                  ) : (
+                    <motion.button
+                      onClick={() => handleUpgrade(tier.stripeProductKey)}
+                      disabled={isLoading || isCurrentPlan}
+                      whileHover={{ scale: isLoading || isCurrentPlan ? 1 : 1.02 }}
+                      whileTap={{ scale: isLoading || isCurrentPlan ? 1 : 0.98 }}
+                      className={`w-full py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                        isCurrentPlan
+                          ? darkMode
+                            ? 'bg-slate-700 text-slate-400 cursor-default'
+                            : 'bg-slate-200 text-slate-500 cursor-default'
+                          : isPaid
+                            ? `bg-gradient-to-r ${theme.primary} text-white shadow-lg hover:shadow-xl`
+                            : darkMode
+                              ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                      } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : isCurrentPlan ? (
+                        'Current Plan'
+                      ) : (
+                        tier.cta
+                      )}
+                    </motion.button>
+                  )}
                 </motion.div>
               )
             })}

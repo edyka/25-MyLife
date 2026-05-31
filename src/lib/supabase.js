@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { isNativeApp, NATIVE_OAUTH_REDIRECT, openOAuthUrl } from '../native'
 
 const isDev = import.meta.env.DEV
 
@@ -124,7 +125,7 @@ export const auth = {
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: isNativeApp() ? NATIVE_OAUTH_REDIRECT : `${window.location.origin}/`,
           skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
@@ -139,7 +140,13 @@ export const auth = {
       }
 
       if (data?.url) {
-        window.location.assign(data.url)
+        // Native: open the provider in the in-app browser; the redirect back to
+        // viventiva://auth/callback is handled by initNative(). Web: full redirect.
+        if (isNativeApp()) {
+          await openOAuthUrl(data.url)
+        } else {
+          window.location.assign(data.url)
+        }
         return { data, error: null }
       }
 
@@ -162,7 +169,7 @@ export const auth = {
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: isNativeApp() ? NATIVE_OAUTH_REDIRECT : `${window.location.origin}/`,
           skipBrowserRedirect: true,
         },
       })
@@ -170,7 +177,13 @@ export const auth = {
       if (error) return { data: null, error }
 
       if (data?.url) {
-        window.location.assign(data.url)
+        // Native: open the provider in the in-app browser; the redirect back to
+        // viventiva://auth/callback is handled by initNative(). Web: full redirect.
+        if (isNativeApp()) {
+          await openOAuthUrl(data.url)
+        } else {
+          window.location.assign(data.url)
+        }
         return { data, error: null }
       }
 
@@ -192,7 +205,7 @@ export const auth = {
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: isNativeApp() ? NATIVE_OAUTH_REDIRECT : `${window.location.origin}/`,
           skipBrowserRedirect: true,
         },
       })
@@ -200,7 +213,13 @@ export const auth = {
       if (error) return { data: null, error }
 
       if (data?.url) {
-        window.location.assign(data.url)
+        // Native: open the provider in the in-app browser; the redirect back to
+        // viventiva://auth/callback is handled by initNative(). Web: full redirect.
+        if (isNativeApp()) {
+          await openOAuthUrl(data.url)
+        } else {
+          window.location.assign(data.url)
+        }
         return { data, error: null }
       }
 
